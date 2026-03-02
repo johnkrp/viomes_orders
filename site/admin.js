@@ -20,14 +20,16 @@ function resolveApiBase() {
 
   const host = window.location.hostname;
   const isLocal = host === "localhost" || host === "127.0.0.1";
-  if (isLocal && window.location.port && window.location.port !== "8000") {
-    return `http://${host}:8000`;
+  if (isLocal && window.location.port && window.location.port !== "3001") {
+    return `http://${host}:3001`;
   }
 
   return "";
 }
 
 const API_BASE = resolveApiBase();
+let currentDetailedOrders = [];
+let selectedOrderId = null;
 
 const els = {
   adminStatus: document.getElementById("adminStatus"),
@@ -141,6 +143,10 @@ function formatDays(value) {
   return `${formatNumber(value)} ημ.`;
 }
 
+function findDetailedOrder(orderId) {
+  return currentDetailedOrders.find((order) => String(order.order_id) === String(orderId)) || null;
+}
+
 function setAuthenticatedUI(me) {
   const authenticated = Boolean(me?.authenticated);
   els.loginPanel.hidden = authenticated;
@@ -180,16 +186,86 @@ function resetStats() {
   `;
   els.recentOrdersBody.innerHTML = `
     <tr>
-      <td colspan="6" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
     </tr>
   `;
+  currentDetailedOrders = [];
+  selectedOrderId = null;
   els.detailedOrdersList.innerHTML = `
     <article class="admin-order-card admin-order-empty">
-      Δεν υπάρχουν ακόμη παραγγελίες προς ανάλυση.
+      Επιλέξτε μια παραγγελία για να εμφανιστεί η αναλυτική προβολή.
     </article>
   `;
   els.emptyState.hidden = false;
   els.statsPanel.hidden = true;
+}
+
+function renderSelectedOrderDetails() {
+  const selectedOrder = findDetailedOrder(selectedOrderId);
+  if (!selectedOrder) {
+    els.detailedOrdersList.innerHTML = `
+      <article class="admin-order-card admin-order-empty">
+        Επιλέξτε μια παραγγελία για να εμφανιστεί η αναλυτική προβολή.
+      </article>
+    `;
+    return;
+  }
+
+  const linesHtml = Array.isArray(selectedOrder.lines) && selectedOrder.lines.length
+    ? selectedOrder.lines
+        .map((line) => {
+          return `
+            <tr>
+              <td>${escapeHtml(line.code)}</td>
+              <td>${escapeHtml(line.description)}</td>
+              <td>${escapeHtml(formatNumber(line.qty))}</td>
+              <td>${escapeHtml(formatMoney(line.unit_price))}</td>
+              <td>${escapeHtml(`${line.discount_pct}%`)}</td>
+              <td>${escapeHtml(formatMoney(line.line_net_value))}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="6" class="admin-table-empty">Δεν υπάρχουν γραμμές.</td>
+        </tr>
+      `;
+
+  els.detailedOrdersList.innerHTML = `
+    <article class="admin-order-card admin-order-card-active">
+      <div class="admin-order-head">
+        <div>
+          <h3>Order #${escapeHtml(selectedOrder.order_id)}</h3>
+          <p>${escapeHtml(formatDate(selectedOrder.created_at))}</p>
+        </div>
+        <div class="admin-order-kpis">
+          <span>${escapeHtml(formatNumber(selectedOrder.total_lines))} γραμμές</span>
+          <span>${escapeHtml(formatNumber(selectedOrder.total_pieces))} τεμ.</span>
+          <strong>${escapeHtml(formatMoney(selectedOrder.total_net_value))}</strong>
+        </div>
+      </div>
+      <div class="admin-order-note">${escapeHtml(selectedOrder.notes || "Χωρίς σχόλια")}</div>
+      <div class="admin-order-meta">
+        <span>Μ. έκπτωση: ${escapeHtml(`${selectedOrder.average_discount_pct}%`)}</span>
+      </div>
+      <div class="admin-table-wrap admin-order-table-wrap">
+        <table class="admin-table admin-order-table">
+          <thead>
+            <tr>
+              <th>Κωδ.</th>
+              <th>Περιγραφή</th>
+              <th>Τεμάχια</th>
+              <th>Τιμή</th>
+              <th>Έκπτωση</th>
+              <th>Καθαρή αξία</th>
+            </tr>
+          </thead>
+          <tbody>${linesHtml}</tbody>
+        </table>
+      </div>
+    </article>
+  `;
 }
 
 function renderStats(data) {
@@ -198,7 +274,8 @@ function renderStats(data) {
   const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const recentOrders = Array.isArray(data?.recent_orders) ? data.recent_orders : [];
-  const detailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
+  currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
+  selectedOrderId = null;
 
   els.customerNameHeading.textContent = customer.name || "Άγνωστος πελάτης";
   els.customerMeta.textContent = [customer.code, customer.email].filter(Boolean).join(" • ") || "-";
@@ -264,81 +341,25 @@ function renderStats(data) {
               <td>${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td>${escapeHtml(formatMoney(item.total_net_value))}</td>
               <td>${escapeHtml(`${item.average_discount_pct}%`)}</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn ghost admin-order-select"
+                  data-order-id="${escapeHtml(item.order_id)}"
+                >
+                  Προβολή
+                </button>
+              </td>
             </tr>
           `;
         })
         .join("")
     : `
         <tr>
-          <td colspan="6" class="admin-table-empty">Δεν υπάρχουν πρόσφατες παραγγελίες.</td>
+          <td colspan="7" class="admin-table-empty">Δεν υπάρχουν πρόσφατες παραγγελίες.</td>
         </tr>
       `;
-
-  els.detailedOrdersList.innerHTML = detailedOrders.length
-    ? detailedOrders
-        .map((order) => {
-          const linesHtml = Array.isArray(order.lines) && order.lines.length
-            ? order.lines
-                .map((line) => {
-                  return `
-                    <tr>
-                      <td>${escapeHtml(line.code)}</td>
-                      <td>${escapeHtml(line.description)}</td>
-                      <td>${escapeHtml(formatNumber(line.qty))}</td>
-                      <td>${escapeHtml(formatMoney(line.unit_price))}</td>
-                      <td>${escapeHtml(`${line.discount_pct}%`)}</td>
-                      <td>${escapeHtml(formatMoney(line.line_net_value))}</td>
-                    </tr>
-                  `;
-                })
-                .join("")
-            : `
-                <tr>
-                  <td colspan="6" class="admin-table-empty">Δεν υπάρχουν γραμμές.</td>
-                </tr>
-              `;
-
-          return `
-            <article class="admin-order-card">
-              <div class="admin-order-head">
-                <div>
-                  <h3>Order #${escapeHtml(order.order_id)}</h3>
-                  <p>${escapeHtml(formatDate(order.created_at))}</p>
-                </div>
-                <div class="admin-order-kpis">
-                  <span>${escapeHtml(formatNumber(order.total_lines))} γραμμές</span>
-                  <span>${escapeHtml(formatNumber(order.total_pieces))} τεμ.</span>
-                  <strong>${escapeHtml(formatMoney(order.total_net_value))}</strong>
-                </div>
-              </div>
-              <div class="admin-order-note">${escapeHtml(order.notes || "Χωρίς σχόλια")}</div>
-              <div class="admin-order-meta">
-                <span>Μ. έκπτωση: ${escapeHtml(`${order.average_discount_pct}%`)}</span>
-              </div>
-              <div class="admin-table-wrap admin-order-table-wrap">
-                <table class="admin-table admin-order-table">
-                  <thead>
-                    <tr>
-                      <th>Κωδ.</th>
-                      <th>Περιγραφή</th>
-                      <th>Τεμάχια</th>
-                      <th>Τιμή</th>
-                      <th>Έκπτωση</th>
-                      <th>Καθαρή αξία</th>
-                    </tr>
-                  </thead>
-                  <tbody>${linesHtml}</tbody>
-                </table>
-              </div>
-            </article>
-          `;
-        })
-        .join("")
-    : `
-        <article class="admin-order-card admin-order-empty">
-          Δεν υπάρχουν ακόμη παραγγελίες προς ανάλυση.
-        </article>
-      `;
+  renderSelectedOrderDetails();
 
   els.emptyState.hidden = true;
   els.statsPanel.hidden = false;
@@ -449,6 +470,18 @@ els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
 els.customerSearchForm?.addEventListener("submit", loadCustomerStats);
 els.clearStatsBtn?.addEventListener("click", clearCustomerStats);
+els.recentOrdersBody?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-order-id]");
+  if (!button) return;
+
+  selectedOrderId = button.getAttribute("data-order-id");
+  renderSelectedOrderDetails();
+
+  els.recentOrdersBody.querySelectorAll("[data-order-id]").forEach((candidate) => {
+    const isActive = candidate.getAttribute("data-order-id") === String(selectedOrderId);
+    candidate.classList.toggle("is-active", isActive);
+  });
+});
 
 resetStats();
 refreshSession({ silent: false }).then((me) => {
