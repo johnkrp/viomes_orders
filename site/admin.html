@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="el">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="screen-orientation" content="landscape" />
+    <title>VIOMES Admin</title>
+    <link rel="icon" href="/images/favicon.ico" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body class="admin-body">
+    <div id="rotateOverlay" class="rotate-overlay" aria-hidden="true">
+      <div class="rotate-card">
+        <div class="rotate-icon" aria-hidden="true">⤾</div>
+        <h2>Περιστρέψτε το tablet</h2>
+        <p>Το admin περιβάλλον έχει σχεδιαστεί για οριζόντια προβολή.</p>
+      </div>
+    </div>
+
+    <header>
+      <div class="wrap admin-topbar">
+        <div class="brand">
+          <img
+            class="brand-logo"
+            src="https://viomes.gr/images/viomes-logo.png"
+            alt="VIOMES"
+            onerror="this.style.display = 'none'"
+          />
+        </div>
+
+        <div class="admin-topbar-actions">
+          <a class="btn ghost admin-link-btn" href="index.html">Δημόσια φόρμα</a>
+          <button id="logoutBtn" type="button" class="btn ghost" hidden>
+            Αποσύνδεση
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap admin-shell">
+        <section class="page-head hero-inner admin-hero">
+          <p class="admin-eyebrow">VIOMES Admin</p>
+          <h1 class="hero-title">Στατιστικά πελατών</h1>
+          <p class="hero-sub">
+            Συνδεθείτε ως διαχειριστής και αναζητήστε πελάτη με κωδικό για να δείτε σύνοψη, πιο συχνά προϊόντα και πρόσφατες παραγγελίες.
+          </p>
+        </section>
+
+        <div id="adminStatus" class="toast admin-toast" role="status" aria-live="polite"></div>
+
+        <section id="loginPanel" class="panel admin-panel admin-login-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Σύνδεση</h2>
+              <p>Η πρόσβαση στα στατιστικά είναι διαθέσιμη μόνο σε admin χρήστες.</p>
+            </div>
+          </div>
+
+          <form id="loginForm" class="admin-form-grid">
+            <label class="field">
+              <span>Username</span>
+              <input
+                id="username"
+                type="text"
+                autocomplete="username"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                placeholder="admin"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span>Password</span>
+              <input
+                id="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                required
+              />
+            </label>
+
+            <div class="admin-login-actions">
+              <button id="loginBtn" type="submit">Σύνδεση</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="dashboardPanel" class="admin-dashboard" hidden>
+          <section class="panel admin-panel">
+            <div class="panel-head panel-head-inline">
+              <div>
+                <h2>Αναζήτηση πελάτη</h2>
+                <p id="sessionInfo">Συνδεδεμένος admin.</p>
+              </div>
+            </div>
+
+            <form id="customerSearchForm" class="admin-searchbar">
+              <label class="field field-grow">
+                <span>Κωδικός πελάτη</span>
+                <input
+                  id="customerCode"
+                  type="text"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  placeholder="π.χ. CUST001"
+                  required
+                />
+              </label>
+
+              <div class="admin-search-actions">
+                <button id="loadStatsBtn" type="submit">Φόρτωση στατιστικών</button>
+                <button id="clearStatsBtn" type="button" class="btn ghost">Καθαρισμός</button>
+              </div>
+            </form>
+          </section>
+
+          <section id="emptyState" class="panel admin-panel admin-empty-state">
+            <h2>Δεν έχει φορτωθεί πελάτης</h2>
+            <p>Δώστε κωδικό πελάτη για να εμφανιστούν τα διαθέσιμα στοιχεία.</p>
+          </section>
+
+          <section id="statsPanel" class="admin-stats-stack" hidden>
+            <section class="panel admin-panel">
+              <div class="panel-head panel-head-inline">
+                <div>
+                  <h2 id="customerNameHeading">Πελάτης</h2>
+                  <p id="customerMeta">-</p>
+                </div>
+              </div>
+
+              <div class="admin-stat-grid">
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Σύνολο παραγγελιών</span>
+                  <strong id="totalOrdersValue">0</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Σύνολο τεμαχίων</span>
+                  <strong id="totalPiecesValue">0</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Τελευταία παραγγελία</span>
+                  <strong id="lastOrderDateValue">-</strong>
+                </article>
+              </div>
+            </section>
+
+            <div class="admin-results-grid">
+              <section class="panel admin-panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Top προϊόντα</h2>
+                    <p>Τα προϊόντα με τη μεγαλύτερη ζήτηση για τον επιλεγμένο πελάτη.</p>
+                  </div>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Κωδ.</th>
+                        <th>Περιγραφή</th>
+                        <th>Τεμάχια</th>
+                        <th>Παραγγελίες</th>
+                      </tr>
+                    </thead>
+                    <tbody id="topProductsBody">
+                      <tr>
+                        <td colspan="4" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="panel admin-panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Πρόσφατες παραγγελίες</h2>
+                    <p>Οι τελευταίες εγγραφές που έχουν αντιστοιχιστεί στον πελάτη.</p>
+                  </div>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Ημερομηνία</th>
+                        <th>Γραμμές</th>
+                        <th>Τεμάχια</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentOrdersBody">
+                      <tr>
+                        <td colspan="4" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </section>
+        </section>
+      </div>
+
+      <footer class="site-footer">
+        <div class="wrap foot-inner">
+          <span class="footer-text">© VIOMES • Admin tools</span>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        const overlay = document.getElementById("rotateOverlay");
+        const tabletPortraitQuery = window.matchMedia(
+          "(min-width: 700px) and (max-width: 1366px) and (orientation: portrait)",
+        );
+
+        function syncOrientationLock() {
+          const isLocked = tabletPortraitQuery.matches;
+          document.body.classList.toggle("tablet-portrait-lock", isLocked);
+          overlay.setAttribute("aria-hidden", String(!isLocked));
+        }
+
+        syncOrientationLock();
+
+        if (typeof tabletPortraitQuery.addEventListener === "function") {
+          tabletPortraitQuery.addEventListener("change", syncOrientationLock);
+        } else if (typeof tabletPortraitQuery.addListener === "function") {
+          tabletPortraitQuery.addListener(syncOrientationLock);
+        }
+
+        window.addEventListener("resize", syncOrientationLock, { passive: true });
+        window.addEventListener("orientationchange", syncOrientationLock, {
+          passive: true,
+        });
+      })();
+    </script>
+    <script src="admin.js"></script>
+  </body>
+</html>
