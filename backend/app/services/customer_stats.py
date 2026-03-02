@@ -29,7 +29,7 @@ def get_customer_stats_by_code(customer_code: str) -> dict:
     summary = cur.execute(
         """
         SELECT
-          COUNT(*) AS total_orders,
+          COUNT(DISTINCT o.id) AS total_orders,
           COALESCE(SUM(ol.qty_pieces), 0) AS total_pieces,
           MAX(o.created_at) AS last_order_date
         FROM orders o
@@ -106,4 +106,3 @@ def get_customer_stats_by_code(customer_code: str) -> dict:
             for row in recent_orders
         ],
     }
-

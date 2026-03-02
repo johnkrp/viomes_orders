@@ -31,7 +31,16 @@ From `backend/`:
 .\.venv\Scripts\python.exe -m uvicorn main:app --reload
 ```
 
+## Seed demo customer stats
+
+From `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe seed_demo_data.py
+```
+
+This creates demo customers and linked orders so `admin.html` can show real data immediately.
+
 ## Next integration step
 
 Replace the local customer stats implementation with an Entersoft adapter under `backend/app/services/`.
-
