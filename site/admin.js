@@ -49,9 +49,18 @@ const els = {
   customerMeta: document.getElementById("customerMeta"),
   totalOrdersValue: document.getElementById("totalOrdersValue"),
   totalPiecesValue: document.getElementById("totalPiecesValue"),
+  totalRevenueValue: document.getElementById("totalRevenueValue"),
+  averageOrderValue: document.getElementById("averageOrderValue"),
+  daysSinceLastOrderValue: document.getElementById("daysSinceLastOrderValue"),
+  averageDaysBetweenOrdersValue: document.getElementById("averageDaysBetweenOrdersValue"),
+  revenue3mValue: document.getElementById("revenue3mValue"),
+  revenue6mValue: document.getElementById("revenue6mValue"),
+  revenue12mValue: document.getElementById("revenue12mValue"),
   lastOrderDateValue: document.getElementById("lastOrderDateValue"),
-  topProductsBody: document.getElementById("topProductsBody"),
+  topProductsQtyBody: document.getElementById("topProductsQtyBody"),
+  topProductsValueBody: document.getElementById("topProductsValueBody"),
   recentOrdersBody: document.getElementById("recentOrdersBody"),
+  detailedOrdersList: document.getElementById("detailedOrdersList"),
 };
 
 function setStatus(text, type = "info") {
@@ -114,6 +123,24 @@ function formatDate(value) {
   }).format(date);
 }
 
+function formatMoney(value) {
+  return new Intl.NumberFormat("el-GR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("el-GR").format(Number(value || 0));
+}
+
+function formatDays(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  return `${formatNumber(value)} ημ.`;
+}
+
 function setAuthenticatedUI(me) {
   const authenticated = Boolean(me?.authenticated);
   els.loginPanel.hidden = authenticated;
@@ -133,16 +160,33 @@ function resetStats() {
   els.customerMeta.textContent = "-";
   els.totalOrdersValue.textContent = "0";
   els.totalPiecesValue.textContent = "0";
+  els.totalRevenueValue.textContent = "-";
+  els.averageOrderValue.textContent = "-";
+  els.daysSinceLastOrderValue.textContent = "-";
+  els.averageDaysBetweenOrdersValue.textContent = "-";
+  els.revenue3mValue.textContent = "-";
+  els.revenue6mValue.textContent = "-";
+  els.revenue12mValue.textContent = "-";
   els.lastOrderDateValue.textContent = "-";
-  els.topProductsBody.innerHTML = `
+  els.topProductsQtyBody.innerHTML = `
     <tr>
-      <td colspan="4" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+    </tr>
+  `;
+  els.topProductsValueBody.innerHTML = `
+    <tr>
+      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
     </tr>
   `;
   els.recentOrdersBody.innerHTML = `
     <tr>
-      <td colspan="4" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      <td colspan="6" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
     </tr>
+  `;
+  els.detailedOrdersList.innerHTML = `
+    <article class="admin-order-card admin-order-empty">
+      Δεν υπάρχουν ακόμη παραγγελίες προς ανάλυση.
+    </article>
   `;
   els.emptyState.hidden = false;
   els.statsPanel.hidden = true;
@@ -151,31 +195,61 @@ function resetStats() {
 function renderStats(data) {
   const customer = data?.customer || {};
   const summary = data?.summary || {};
-  const topProducts = Array.isArray(data?.top_products) ? data.top_products : [];
+  const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
+  const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const recentOrders = Array.isArray(data?.recent_orders) ? data.recent_orders : [];
+  const detailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
 
   els.customerNameHeading.textContent = customer.name || "Άγνωστος πελάτης";
   els.customerMeta.textContent = [customer.code, customer.email].filter(Boolean).join(" • ") || "-";
-  els.totalOrdersValue.textContent = String(summary.total_orders ?? 0);
-  els.totalPiecesValue.textContent = String(summary.total_pieces ?? 0);
+  els.totalOrdersValue.textContent = formatNumber(summary.total_orders ?? 0);
+  els.totalPiecesValue.textContent = formatNumber(summary.total_pieces ?? 0);
+  els.totalRevenueValue.textContent = formatMoney(summary.total_revenue);
+  els.averageOrderValue.textContent = formatMoney(summary.average_order_value);
+  els.daysSinceLastOrderValue.textContent = formatDays(summary.days_since_last_order);
+  els.averageDaysBetweenOrdersValue.textContent = formatDays(summary.average_days_between_orders);
+  els.revenue3mValue.textContent = formatMoney(summary.revenue_3m);
+  els.revenue6mValue.textContent = formatMoney(summary.revenue_6m);
+  els.revenue12mValue.textContent = formatMoney(summary.revenue_12m);
   els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
 
-  els.topProductsBody.innerHTML = topProducts.length
-    ? topProducts
+  els.topProductsQtyBody.innerHTML = topProductsByQty.length
+    ? topProductsByQty
         .map((item) => {
           return `
             <tr>
               <td>${escapeHtml(item.code)}</td>
               <td>${escapeHtml(item.description)}</td>
-              <td>${escapeHtml(item.qty)}</td>
-              <td>${escapeHtml(item.orders)}</td>
+              <td>${escapeHtml(formatNumber(item.qty))}</td>
+              <td>${escapeHtml(formatNumber(item.orders))}</td>
+              <td>${escapeHtml(formatMoney(item.revenue))}</td>
             </tr>
           `;
         })
         .join("")
     : `
         <tr>
-          <td colspan="4" class="admin-table-empty">Δεν βρέθηκαν top προϊόντα για τον πελάτη.</td>
+          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν top προϊόντα για τον πελάτη.</td>
+        </tr>
+      `;
+
+  els.topProductsValueBody.innerHTML = topProductsByValue.length
+    ? topProductsByValue
+        .map((item) => {
+          return `
+            <tr>
+              <td>${escapeHtml(formatNumber(item.qty))}</td>
+              <td>${escapeHtml(item.code)}</td>
+              <td>${escapeHtml(item.description)}</td>
+              <td>${escapeHtml(formatMoney(item.revenue))}</td>
+              <td>${escapeHtml(formatMoney(item.avg_unit_price))}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν value προϊόντα για τον πελάτη.</td>
         </tr>
       `;
 
@@ -186,16 +260,84 @@ function renderStats(data) {
             <tr>
               <td>${escapeHtml(item.order_id)}</td>
               <td>${escapeHtml(formatDate(item.created_at))}</td>
-              <td>${escapeHtml(item.total_lines)}</td>
-              <td>${escapeHtml(item.total_pieces)}</td>
+              <td>${escapeHtml(formatNumber(item.total_lines))}</td>
+              <td>${escapeHtml(formatNumber(item.total_pieces))}</td>
+              <td>${escapeHtml(formatMoney(item.total_net_value))}</td>
+              <td>${escapeHtml(`${item.average_discount_pct}%`)}</td>
             </tr>
           `;
         })
         .join("")
     : `
         <tr>
-          <td colspan="4" class="admin-table-empty">Δεν υπάρχουν πρόσφατες παραγγελίες.</td>
+          <td colspan="6" class="admin-table-empty">Δεν υπάρχουν πρόσφατες παραγγελίες.</td>
         </tr>
+      `;
+
+  els.detailedOrdersList.innerHTML = detailedOrders.length
+    ? detailedOrders
+        .map((order) => {
+          const linesHtml = Array.isArray(order.lines) && order.lines.length
+            ? order.lines
+                .map((line) => {
+                  return `
+                    <tr>
+                      <td>${escapeHtml(line.code)}</td>
+                      <td>${escapeHtml(line.description)}</td>
+                      <td>${escapeHtml(formatNumber(line.qty))}</td>
+                      <td>${escapeHtml(formatMoney(line.unit_price))}</td>
+                      <td>${escapeHtml(`${line.discount_pct}%`)}</td>
+                      <td>${escapeHtml(formatMoney(line.line_net_value))}</td>
+                    </tr>
+                  `;
+                })
+                .join("")
+            : `
+                <tr>
+                  <td colspan="6" class="admin-table-empty">Δεν υπάρχουν γραμμές.</td>
+                </tr>
+              `;
+
+          return `
+            <article class="admin-order-card">
+              <div class="admin-order-head">
+                <div>
+                  <h3>Order #${escapeHtml(order.order_id)}</h3>
+                  <p>${escapeHtml(formatDate(order.created_at))}</p>
+                </div>
+                <div class="admin-order-kpis">
+                  <span>${escapeHtml(formatNumber(order.total_lines))} γραμμές</span>
+                  <span>${escapeHtml(formatNumber(order.total_pieces))} τεμ.</span>
+                  <strong>${escapeHtml(formatMoney(order.total_net_value))}</strong>
+                </div>
+              </div>
+              <div class="admin-order-note">${escapeHtml(order.notes || "Χωρίς σχόλια")}</div>
+              <div class="admin-order-meta">
+                <span>Μ. έκπτωση: ${escapeHtml(`${order.average_discount_pct}%`)}</span>
+              </div>
+              <div class="admin-table-wrap admin-order-table-wrap">
+                <table class="admin-table admin-order-table">
+                  <thead>
+                    <tr>
+                      <th>Κωδ.</th>
+                      <th>Περιγραφή</th>
+                      <th>Τεμάχια</th>
+                      <th>Τιμή</th>
+                      <th>Έκπτωση</th>
+                      <th>Καθαρή αξία</th>
+                    </tr>
+                  </thead>
+                  <tbody>${linesHtml}</tbody>
+                </table>
+              </div>
+            </article>
+          `;
+        })
+        .join("")
+    : `
+        <article class="admin-order-card admin-order-empty">
+          Δεν υπάρχουν ακόμη παραγγελίες προς ανάλυση.
+        </article>
       `;
 
   els.emptyState.hidden = true;

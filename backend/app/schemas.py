@@ -59,6 +59,8 @@ class TopProductStat(BaseModel):
     description: str
     qty: int
     orders: int
+    revenue: float
+    avg_unit_price: float
 
 
 class RecentOrderStat(BaseModel):
@@ -66,11 +68,40 @@ class RecentOrderStat(BaseModel):
     created_at: str
     total_lines: int
     total_pieces: int
+    total_net_value: float
+    average_discount_pct: float
+
+
+class OrderLineStat(BaseModel):
+    code: str
+    description: str
+    qty: int
+    unit_price: float
+    discount_pct: float
+    line_net_value: float
+
+
+class DetailedOrderStat(BaseModel):
+    order_id: int
+    created_at: str
+    notes: str
+    total_lines: int
+    total_pieces: int
+    total_net_value: float
+    average_discount_pct: float
+    lines: list[OrderLineStat]
 
 
 class CustomerSummary(BaseModel):
     total_orders: int
     total_pieces: int
+    total_revenue: float
+    revenue_3m: float
+    revenue_6m: float
+    revenue_12m: float
+    average_order_value: float
+    average_days_between_orders: Optional[float] = None
+    days_since_last_order: Optional[int] = None
     last_order_date: Optional[str] = None
 
 
@@ -83,6 +114,7 @@ class CustomerInfo(BaseModel):
 class CustomerStatsResponse(BaseModel):
     customer: CustomerInfo
     summary: CustomerSummary
-    top_products: list[TopProductStat]
+    top_products_by_qty: list[TopProductStat]
+    top_products_by_value: list[TopProductStat]
     recent_orders: list[RecentOrderStat]
-
+    detailed_orders: list[DetailedOrderStat]

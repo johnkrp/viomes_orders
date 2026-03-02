@@ -44,7 +44,7 @@
           <p class="admin-eyebrow">VIOMES Admin</p>
           <h1 class="hero-title">Στατιστικά πελατών</h1>
           <p class="hero-sub">
-            Συνδεθείτε ως διαχειριστής και αναζητήστε πελάτη με κωδικό για να δείτε σύνοψη, πιο συχνά προϊόντα και πρόσφατες παραγγελίες.
+            Συνδεθείτε ως διαχειριστής και αναζητήστε πελάτη με κωδικό για να δείτε σύνοψη, έσοδα, συχνότητα αγορών, top προϊόντα και ανάλυση προηγούμενων παραγγελιών.
           </p>
         </section>
 
@@ -145,6 +145,34 @@
                   <strong id="totalPiecesValue">0</strong>
                 </article>
                 <article class="admin-stat-card">
+                  <span class="admin-stat-label">Συνολική αξία</span>
+                  <strong id="totalRevenueValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Μ.Ο. παραγγελίας</span>
+                  <strong id="averageOrderValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Μέρες από τελευταία</span>
+                  <strong id="daysSinceLastOrderValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Μ.Ο. διάστημα</span>
+                  <strong id="averageDaysBetweenOrdersValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Αξία 3 μηνών</span>
+                  <strong id="revenue3mValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Αξία 6 μηνών</span>
+                  <strong id="revenue6mValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Αξία 12 μηνών</span>
+                  <strong id="revenue12mValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
                   <span class="admin-stat-label">Τελευταία παραγγελία</span>
                   <strong id="lastOrderDateValue">-</strong>
                 </article>
@@ -155,8 +183,8 @@
               <section class="panel admin-panel">
                 <div class="panel-head">
                   <div>
-                    <h2>Top προϊόντα</h2>
-                    <p>Τα προϊόντα με τη μεγαλύτερη ζήτηση για τον επιλεγμένο πελάτη.</p>
+                    <h2>Top προϊόντα σε τεμάχια</h2>
+                    <p>Τα προϊόντα με τη μεγαλύτερη ζήτηση σε όγκο.</p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
@@ -167,11 +195,12 @@
                         <th>Περιγραφή</th>
                         <th>Τεμάχια</th>
                         <th>Παραγγελίες</th>
+                        <th>Αξία</th>
                       </tr>
                     </thead>
-                    <tbody id="topProductsBody">
+                    <tbody id="topProductsQtyBody">
                       <tr>
-                        <td colspan="4" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -181,29 +210,72 @@
               <section class="panel admin-panel">
                 <div class="panel-head">
                   <div>
-                    <h2>Πρόσφατες παραγγελίες</h2>
-                    <p>Οι τελευταίες εγγραφές που έχουν αντιστοιχιστεί στον πελάτη.</p>
+                    <h2>Top προϊόντα σε αξία</h2>
+                    <p>Προϊόντα που έχουν αποδώσει το μεγαλύτερο revenue.</p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
                   <table class="admin-table">
                     <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Ημερομηνία</th>
-                        <th>Γραμμές</th>
                         <th>Τεμάχια</th>
+                        <th>Κωδ.</th>
+                        <th>Περιγραφή</th>
+                        <th>Αξία</th>
+                        <th>Μ.Τιμή</th>
                       </tr>
                     </thead>
-                    <tbody id="recentOrdersBody">
+                    <tbody id="topProductsValueBody">
                       <tr>
-                        <td colspan="4" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </section>
             </div>
+
+            <section class="panel admin-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Πρόσφατες παραγγελίες</h2>
+                  <p>Γρήγορη εικόνα για τα πιο πρόσφατα orders με αξία και μέση έκπτωση.</p>
+                </div>
+              </div>
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Ημερομηνία</th>
+                      <th>Γραμμές</th>
+                      <th>Τεμάχια</th>
+                      <th>Αξία</th>
+                      <th>Μ.Έκπτωση</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentOrdersBody">
+                    <tr>
+                      <td colspan="6" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel admin-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Ανάλυση παραγγελιών</h2>
+                  <p>Ανά order προβάλλονται γραμμές, τιμές, εκπτώσεις και καθαρή αξία.</p>
+                </div>
+              </div>
+              <div id="detailedOrdersList" class="admin-order-stack">
+                <article class="admin-order-card admin-order-empty">
+                  Δεν υπάρχουν ακόμη παραγγελίες προς ανάλυση.
+                </article>
+              </div>
+            </section>
           </section>
         </section>
       </div>

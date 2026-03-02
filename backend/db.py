@@ -52,6 +52,8 @@ def init_schema() -> None:
       customer_email TEXT,
       customer_code TEXT,
       notes TEXT,
+      total_qty_pieces INTEGER NOT NULL DEFAULT 0,
+      total_net_value REAL NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
     """)
@@ -62,6 +64,9 @@ def init_schema() -> None:
       order_id INTEGER NOT NULL,
       product_id INTEGER NOT NULL,
       qty_pieces INTEGER NOT NULL CHECK(qty_pieces > 0),
+      unit_price REAL NOT NULL DEFAULT 0,
+      discount_pct REAL NOT NULL DEFAULT 0,
+      line_net_value REAL NOT NULL DEFAULT 0,
       FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,
       FOREIGN KEY(product_id) REFERENCES products(id)
     );
@@ -99,6 +104,11 @@ def init_schema() -> None:
     """)
 
     _ensure_column(cur, "orders", "customer_code", "customer_code TEXT")
+    _ensure_column(cur, "orders", "total_qty_pieces", "total_qty_pieces INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(cur, "orders", "total_net_value", "total_net_value REAL NOT NULL DEFAULT 0")
+    _ensure_column(cur, "order_lines", "unit_price", "unit_price REAL NOT NULL DEFAULT 0")
+    _ensure_column(cur, "order_lines", "discount_pct", "discount_pct REAL NOT NULL DEFAULT 0")
+    _ensure_column(cur, "order_lines", "line_net_value", "line_net_value REAL NOT NULL DEFAULT 0")
 
     conn.commit()
     conn.close()
