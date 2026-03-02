@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="el">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="screen-orientation" content="landscape" />
+    <title>Φόρμα Παραγγελίας</title>
+	<link rel="icon" href="/images/favicon.ico" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <div id="rotateOverlay" class="rotate-overlay" aria-hidden="true">
+      <div class="rotate-card">
+        <div class="rotate-icon" aria-hidden="true">⤾</div>
+        <h2>Περιστρέψτε το tablet</h2>
+        <p>Για καλύτερη χρήση, η φόρμα λειτουργεί σε οριζόντια προβολή.</p>
+      </div>
+    </div>
+    <header>
+      <div class="wrap">
+        <div class="brand">
+          <!-- άλλαξε logo path αν έχεις -->
+          <img
+            class="brand-logo"
+            src="https://viomes.gr/images/viomes-logo.png"
+            alt="VIOMES"
+            onerror="this.style.display = 'none'"
+          />
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <div class="page-head hero-inner">
+          <h1 class="hero-title">Φόρμα Παραγγελίας</h1>
+          <p class="hero-sub">
+            Αναζητήστε προϊόντα με κωδικό/περιγραφή/χρώμα και προσθέστε τα στο καλάθι με τεμάχια ή συσκευασίες. Με <strong>Enter</strong> γίνεται άμεσα η προσθήκη από όπου κι αν βρίσκεστε, με <strong>click</strong> σε προϊόν συμπληρώνεται ο κωδικός στην αναζήτηση, και με <strong>Esc</strong> καθαρίζει το πεδίο αναζήτησης.
+          </p>
+        </div>
+
+        <div class="grid">
+          <!-- Catalog -->
+          <section class="panel">
+            <div class="toolbar">
+              <input
+                id="q"
+                type="search"
+                placeholder="Αναζήτηση με κωδικό/περιγραφή/χρώμα..."
+                list="codesList"
+                autocomplete="off"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+              />
+              <datalist id="codesList"></datalist>
+
+              <!-- ✅ ΝΕΟ: τεμάχια δίπλα στην αναζήτηση -->
+              <input
+                id="toolbarQty"
+                type="tel"
+                min="1"
+                step="1"
+                placeholder="Τεμάχια"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                autocomplete="off"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                enterkeyhint="done"
+                style="max-width: 140px"
+              />
+
+              <!-- ✅ ΝΕΟ: κουμπί προσθήκης -->
+              <button id="toolbarAddBtn" type="button">
+                Enter για προσθήκη
+              </button>
+
+              <button
+                id="reloadBtn"
+                type="button"
+                class="btn ghost"
+                onclick="return window.__hardClearCatalog && window.__hardClearCatalog(event)"
+                onpointerup="return window.__hardClearCatalog && window.__hardClearCatalog(event)"
+                ontouchend="return window.__hardClearCatalog && window.__hardClearCatalog(event)"
+              >
+                Καθαρισμός
+              </button>
+              <span id="countPill" class="pill">0 προϊόντα</span>
+            </div>
+            <div
+              id="toolbarMsg"
+              class="toast"
+              role="status"
+              aria-live="polite"
+            ></div>
+            <div class="catalog-table-wrap">
+              <div id="catalog"></div>
+            </div>
+            <div class="status" style="display: none">
+              <span id="catalogStatus"></span>
+            </div>
+            <div id="pager" class="pager"></div>
+          </section>
+
+          <!-- Order / Cart -->
+          <aside class="panel">
+            <h3>Στοιχεία & Παραγγελία</h3>
+
+            <div class="actions">
+              <div class="customerName">
+                <label for="customerName">Όνομα πελάτη:</label>
+                <input
+                  id="customerName"
+                  type="text"
+                  placeholder="π.χ. ABC Market"
+                />
+              </div>
+
+              <div class="customerEmail">
+                <label for="customerEmail">Email πελάτη:</label>
+                <input
+                  id="customerEmail"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="email"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  placeholder="π.χ. buyer@example.com"
+                />
+              </div>
+
+              <div style="margin: 0px 0 6px; font-weight: 700">
+                Επιλεγμένα προϊόντα
+              </div>
+              <div id="cart" class="cart"></div>
+
+              <div style="margin-top: 12px">
+                <label class="small" for="notes">Σχόλια:</label>
+                <textarea
+                  id="notes"
+                  placeholder="π.χ. Παράδοση Δευτέρα..."
+                ></textarea>
+              </div>
+
+              <div class="buttons">
+                <button id="clearBtn" type="button" class="secondary">
+                  Καθαρισμός
+                </button>
+                <button id="downloadExcelBtn" type="button" class="btn ghost">
+                  Λήψη Excel
+                </button>
+                <button id="submitBtn" type="button">Υποβολή</button>
+              </div>
+
+              <div id="submitStatus" class="status"></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <footer class="site-footer">
+        <div class="wrap foot-inner">
+          <span class="footer-text"
+            >© VIOMES • Developed by <strong>VIOMES</strong></span
+          >
+        </div>
+      </footer>
+    </main>
+
+    <!-- Image modal (optional) -->
+    <div id="imgModal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+      <div class="modal-card">
+        <button class="modal-close" data-close="1" aria-label="Close">×</button>
+        <img id="imgModalImg" alt="Εικόνα" />
+        <div id="imgModalCap" class="modal-cap"></div>
+      </div>
+    </div>
+
+    <!-- Submit Modal -->
+    <div class="modal" id="submitModal" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+
+      <div class="modal-card submit-card" role="dialog" aria-modal="true">
+        <button
+          type="button"
+          class="modal-x"
+          data-close="1"
+          aria-label="Κλείσιμο"
+        >
+          ×
+        </button>
+
+        <div class="modal-head">Αποστολή παραγγελίας</div>
+
+        <div class="modal-body">
+          Πού θέλετε να ανοίξει το προσχέδιο email;
+          <div id="submitModalStatus" class="small modal-status"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" id="sendGmailBtn">
+            Gmail
+          </button>
+          <button type="button" class="btn ghost" id="sendMailtoBtn">
+            Outlook
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+      (function () {
+        const overlay = document.getElementById("rotateOverlay");
+        const tabletPortraitQuery = window.matchMedia(
+          "(min-width: 700px) and (max-width: 1366px) and (orientation: portrait)",
+        );
+
+        function syncOrientationLock() {
+          const isLocked = tabletPortraitQuery.matches;
+          document.body.classList.toggle("tablet-portrait-lock", isLocked);
+          overlay.setAttribute("aria-hidden", String(!isLocked));
+        }
+
+        syncOrientationLock();
+
+        if (typeof tabletPortraitQuery.addEventListener === "function") {
+          tabletPortraitQuery.addEventListener("change", syncOrientationLock);
+        } else if (typeof tabletPortraitQuery.addListener === "function") {
+          tabletPortraitQuery.addListener(syncOrientationLock);
+        }
+
+        window.addEventListener("resize", syncOrientationLock, { passive: true });
+        window.addEventListener("orientationchange", syncOrientationLock, {
+          passive: true,
+        });
+      })();
+    </script>
+    <script src="order-form.js"></script>
+  </body>
+</html>
