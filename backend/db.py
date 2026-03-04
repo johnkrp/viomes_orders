@@ -3,6 +3,7 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent / "app.db"
 
+
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -19,11 +20,11 @@ def _ensure_column(cur: sqlite3.Cursor, table: str, column: str, ddl: str) -> No
     if not _has_column(cur, table, column):
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
 
+
 def init_schema() -> None:
     conn = get_conn()
     cur = conn.cursor()
 
-    # προϊόντα
     cur.execute("""
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +33,7 @@ def init_schema() -> None:
           length(code) > 0
           AND code GLOB '[0-9]*'
           AND code NOT GLOB '*[^0-9-+/.,_ ]*'
-        ),   -- απλό constraint: αριθμοί-αριθμοί
+        ),
       description TEXT NOT NULL,
       image_url TEXT,
       pieces_per_package INTEGER NOT NULL CHECK(pieces_per_package > 0),
@@ -40,11 +41,9 @@ def init_schema() -> None:
       color TEXT,
       description_norm TEXT,
       color_norm TEXT
-              
     );
     """)
 
-    # παραγγελίες
     cur.execute("""
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,6 +95,113 @@ def init_schema() -> None:
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(customer_code, document_no),
       FOREIGN KEY(customer_code) REFERENCES customers(code) ON DELETE CASCADE
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS imported_customers (
+      customer_code TEXT PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      delivery_code TEXT,
+      delivery_description TEXT,
+      address_1 TEXT,
+      postal_code TEXT,
+      city TEXT,
+      region TEXT,
+      country TEXT,
+      phone TEXT,
+      pallet_info TEXT,
+      delivery_method TEXT,
+      salesperson_code TEXT,
+      salesperson_name TEXT,
+      is_inactive INTEGER NOT NULL DEFAULT 0,
+      source_file TEXT,
+      imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS imported_sales_lines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_file TEXT NOT NULL,
+      order_date TEXT NOT NULL,
+      order_year INTEGER NOT NULL,
+      order_month INTEGER NOT NULL,
+      document_no TEXT NOT NULL,
+      document_type TEXT,
+      item_code TEXT NOT NULL,
+      item_description TEXT NOT NULL,
+      unit_code TEXT,
+      qty REAL NOT NULL DEFAULT 0,
+      qty_base REAL NOT NULL DEFAULT 0,
+      unit_price REAL NOT NULL DEFAULT 0,
+      net_value REAL NOT NULL DEFAULT 0,
+      customer_code TEXT NOT NULL,
+      customer_name TEXT NOT NULL,
+      delivery_code TEXT,
+      delivery_description TEXT,
+      account_code TEXT,
+      account_description TEXT,
+      branch_code TEXT,
+      branch_description TEXT,
+      note_1 TEXT,
+      UNIQUE(source_file, document_no, item_code, customer_code, delivery_code, net_value, qty)
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS imported_orders (
+      order_id TEXT PRIMARY KEY,
+      customer_code TEXT NOT NULL,
+      customer_name TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      total_lines INTEGER NOT NULL DEFAULT 0,
+      total_pieces REAL NOT NULL DEFAULT 0,
+      total_net_value REAL NOT NULL DEFAULT 0,
+      average_discount_pct REAL NOT NULL DEFAULT 0,
+      document_type TEXT,
+      delivery_code TEXT,
+      delivery_description TEXT,
+      source_file TEXT,
+      imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS imported_monthly_sales (
+      customer_code TEXT NOT NULL,
+      order_year INTEGER NOT NULL,
+      order_month INTEGER NOT NULL,
+      revenue REAL NOT NULL DEFAULT 0,
+      pieces REAL NOT NULL DEFAULT 0,
+      PRIMARY KEY(customer_code, order_year, order_month)
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS imported_product_sales (
+      customer_code TEXT NOT NULL,
+      item_code TEXT NOT NULL,
+      item_description TEXT NOT NULL,
+      revenue REAL NOT NULL DEFAULT 0,
+      pieces REAL NOT NULL DEFAULT 0,
+      orders INTEGER NOT NULL DEFAULT 0,
+      avg_unit_price REAL NOT NULL DEFAULT 0,
+      PRIMARY KEY(customer_code, item_code)
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS import_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      dataset TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      status TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      finished_at TEXT,
+      rows_in INTEGER NOT NULL DEFAULT 0,
+      rows_upserted INTEGER NOT NULL DEFAULT 0,
+      error_text TEXT
     );
     """)
 

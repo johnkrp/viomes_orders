@@ -4,6 +4,9 @@ backend/.venv/
 backend/app.db
 backend/customers.xlsx
 backend/montly_sales.CSV
+backend/customers.csv
+backend/info_2025.csv
+backend/info_2026.csv
 site/node_modules/
 site/*.log
 .DS_Store

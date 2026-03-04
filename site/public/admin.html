@@ -186,26 +186,33 @@
               <section class="panel admin-panel">
                 <div class="panel-head panel-head-inline">
                   <div>
-                    <h2>Monthly sales</h2>
-                    <p>Revenue and pieces per month for previous year and current year.</p>
+                    <h2>Πωλήσεις ανά μήνα</h2>
+                    <p>Τζίρος ανά μήνα για το προηγούμενο και το τρέχον έτος.</p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
                   <table class="admin-table admin-monthly-table">
                     <thead>
                       <tr>
-                        <th>Month</th>
-                        <th id="monthlyPrevRevenueHeading">Prev. year revenue</th>
-                        <th id="monthlyPrevPiecesHeading">Prev. year pieces</th>
-                        <th id="monthlyCurrRevenueHeading">Current year revenue</th>
-                        <th id="monthlyCurrPiecesHeading">Current year pieces</th>
+                        <th>Μήνας</th>
+                        <th id="monthlyPrevRevenueHeading">Προηγ. έτος</th>
+                        <th id="monthlyCurrRevenueHeading">Τρέχον έτος</th>
+                        <th class="admin-monthly-total-heading">Γενικό σύνολο</th>
                       </tr>
                     </thead>
                     <tbody id="monthlySalesBody">
                       <tr>
-                        <td colspan="5" class="admin-table-empty">No monthly sales loaded yet.</td>
+                        <td colspan="4" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη μηνιαίες πωλήσεις.</td>
                       </tr>
                     </tbody>
+                    <tfoot id="monthlySalesFoot">
+                      <tr>
+                        <td>Σύνολο</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </section>
@@ -213,17 +220,17 @@
               <section class="panel admin-panel">
                 <div class="panel-head panel-head-inline">
                   <div>
-                    <h2>Receivables</h2>
-                    <p>Open customer ledger balance per invoiced store.</p>
+                    <h2>Υπόλοιπα</h2>
+                    <p>Ανοικτό υπόλοιπο καρτέλας ανά τιμολογημένο κατάστημα.</p>
                   </div>
                 </div>
                 <div class="admin-stat-grid admin-mini-stat-grid">
                   <article class="admin-stat-card">
-                    <span class="admin-stat-label">Open balance</span>
+                    <span class="admin-stat-label">Ανοιχτό υπόλοιπο</span>
                     <strong id="receivablesOpenValue">-</strong>
                   </article>
                   <article class="admin-stat-card">
-                    <span class="admin-stat-label">Overdue balance</span>
+                    <span class="admin-stat-label">Ληξιπρόθεσμο υπόλοιπο</span>
                     <strong id="receivablesOverdueValue">-</strong>
                   </article>
                 </div>
@@ -231,18 +238,18 @@
                   <table class="admin-table">
                     <thead>
                       <tr>
-                        <th>Document</th>
-                        <th>Date</th>
-                        <th>Due date</th>
-                        <th>Total</th>
-                        <th>Paid</th>
-                        <th>Open</th>
-                        <th>Status</th>
+                        <th>Παραστατικό</th>
+                        <th>Ημερομηνία</th>
+                        <th>Λήξη</th>
+                        <th>Σύνολο</th>
+                        <th>Πληρωμένο</th>
+                        <th>Υπόλοιπο</th>
+                        <th>Κατάσταση</th>
                       </tr>
                     </thead>
                     <tbody id="receivablesBody">
                       <tr>
-                        <td colspan="7" class="admin-table-empty">No receivables loaded yet.</td>
+                        <td colspan="7" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη υπόλοιπα.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -251,17 +258,17 @@
             </div>
 
             <section class="panel admin-panel">
-              <div class="panel-head panel-head-inline">
-                <div>
-                  <h2>Sales by product code</h2>
-                  <p>Full product list for the selected store. Switch between revenue and pieces.</p>
-                </div>
+                <div class="panel-head panel-head-inline">
+                  <div>
+                  <h2>Πωλήσεις ανά κωδικό</h2>
+                  <p>Πλήρης λίστα προϊόντων για το επιλεγμένο κατάστημα με εναλλαγή σε τζίρο ή τεμάχια.</p>
+                  </div>
                 <div class="admin-inline-controls">
                   <label class="field admin-compact-field">
-                    <span>Metric</span>
+                    <span>Μέτρηση</span>
                     <select id="productSalesMetric">
-                      <option value="revenue">Revenue</option>
-                      <option value="pieces">Pieces</option>
+                      <option value="revenue">Τζίρος</option>
+                      <option value="pieces">Τεμάχια</option>
                     </select>
                   </label>
                 </div>
@@ -270,20 +277,25 @@
                 <table class="admin-table">
                   <thead>
                     <tr>
-                      <th>Code</th>
-                      <th>Description</th>
-                      <th id="productSalesMetricHeading">Revenue</th>
-                      <th>Pieces</th>
-                      <th>Orders</th>
-                      <th>Avg unit price</th>
+                      <th>Κωδικός</th>
+                      <th>Περιγραφή</th>
+                      <th id="productSalesMetricHeading">Τζίρος</th>
+                      <th>Τεμάχια</th>
+                      <th>Παραγγελίες</th>
+                      <th>Μ. τιμή μονάδας</th>
                     </tr>
                   </thead>
                   <tbody id="productSalesBody">
                     <tr>
-                      <td colspan="6" class="admin-table-empty">No product sales loaded yet.</td>
+                      <td colspan="6" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη πωλήσεις προϊόντων.</td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+              <div class="admin-pagination" id="productSalesPagination" hidden>
+                <button id="productSalesPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
+                <span id="productSalesPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
+                <button id="productSalesNextBtn" type="button" class="btn ghost">Επόμενη</button>
               </div>
             </section>
 

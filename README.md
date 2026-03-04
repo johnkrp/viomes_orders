@@ -43,6 +43,26 @@ From `backend/`:
 
 This creates demo customers and linked orders so `admin.html` can show real data immediately.
 
+## Entersoft file import
+
+The current real-data path is file-based.
+
+Entersoft exports are placed in `backend/` and imported into `backend/app.db` by:
+
+```powershell
+python backend\import_entersoft.py
+```
+
+Current files:
+
+- `backend/customers.csv`
+- `backend/info_2025.csv`
+- `backend/info_2026.csv`
+
+Detailed mapping, table behavior, and known limitations are documented in:
+
+- [backend/ENTERSOFT_IMPORT_README.md](/d:/Desktop/programming/viomes/order_form/backend/ENTERSOFT_IMPORT_README.md)
+
 ## Next integration step
 
 Replace the local SQLite-backed customer stats implementation with an Entersoft-backed adapter while keeping the same JSON contract exposed by `site/server.js`.

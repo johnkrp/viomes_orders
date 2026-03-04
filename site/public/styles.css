@@ -1349,6 +1349,47 @@ button.secondary:hover,
   white-space: nowrap;
 }
 
+.admin-monthly-table th:first-child,
+.admin-monthly-table td:first-child {
+  width: 22%;
+}
+
+.admin-monthly-table .admin-monthly-total-heading,
+.admin-monthly-table .admin-monthly-total-cell {
+  background: #e7f0ea;
+  font-weight: 800;
+}
+
+.admin-monthly-table tbody tr:nth-child(even) .admin-monthly-total-cell {
+  background: #deebe2;
+}
+
+.admin-monthly-table tfoot td {
+  background: #edf4ef;
+  font-weight: 800;
+  border-top: 1px solid #cfddd2;
+}
+
+.admin-table-number {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 18px 18px;
+}
+
+.admin-pagination-meta {
+  min-width: 110px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .admin-table-wrap {
   padding: 0 18px 18px;
   overflow-x: auto;
@@ -1383,6 +1424,11 @@ button.secondary:hover,
 .admin-table-empty {
   color: var(--muted);
   text-align: center !important;
+}
+
+.admin-number-negative {
+  color: #d92d20;
+  font-weight: 800;
 }
 
 .admin-order-select {
