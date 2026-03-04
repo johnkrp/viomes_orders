@@ -46,3 +46,36 @@ This creates demo customers and linked orders so `admin.html` can show real data
 ## Next integration step
 
 Replace the local SQLite-backed customer stats implementation with an Entersoft-backed adapter while keeping the same JSON contract exposed by `site/server.js`.
+
+## Customer stats provider switch
+
+The admin endpoint `GET /api/admin/customers/:code/stats` now uses a provider layer.
+
+Default:
+
+- `CUSTOMER_STATS_PROVIDER=sqlite`
+
+Entersoft handoff mode:
+
+- `CUSTOMER_STATS_PROVIDER=entersoft`
+- `ENTERSOFT_BASE_URL=https://...`
+- `ENTERSOFT_CUSTOMER_STATS_PATH=/customers/{code}/stats`
+- `ENTERSOFT_RESPONSE_SHAPE=entersoft-customer-stats-v1`
+- `ENTERSOFT_TIMEOUT_MS=10000`
+
+Optional auth:
+
+- `ENTERSOFT_BEARER_TOKEN=...`
+- `ENTERSOFT_USERNAME=...`
+- `ENTERSOFT_PASSWORD=...`
+- `ENTERSOFT_API_KEY=...`
+- `ENTERSOFT_API_KEY_HEADER=X-API-Key`
+
+Supported upstream payload shapes:
+
+- `viomes-admin-stats`
+  Use this if the Entersoft-side adapter already returns the exact existing frontend contract.
+- `entersoft-customer-stats-v1`
+  Use this if the upstream returns a more Entersoft-oriented payload and should be mapped by Node before reaching the frontend.
+
+The health endpoint now reports the active provider as `customer_stats_provider` so staging can confirm the switch safely before production rollout.

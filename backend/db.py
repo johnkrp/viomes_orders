@@ -83,6 +83,23 @@ def init_schema() -> None:
     """)
 
     cur.execute("""
+    CREATE TABLE IF NOT EXISTS customer_receivables (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_code TEXT NOT NULL,
+      document_no TEXT NOT NULL,
+      document_date TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      amount_total REAL NOT NULL DEFAULT 0,
+      amount_paid REAL NOT NULL DEFAULT 0,
+      open_balance REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'open',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(customer_code, document_no),
+      FOREIGN KEY(customer_code) REFERENCES customers(code) ON DELETE CASCADE
+    );
+    """)
+
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,

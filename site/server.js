@@ -7,6 +7,7 @@ import path from "node:path";
 import sqlite3 from "sqlite3";
 import { fileURLToPath } from "node:url";
 import { open } from "sqlite";
+import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +25,7 @@ const publicDir = __dirname;
 
 const app = express();
 let db;
+let customerStatsProvider;
 
 app.use(
   cors({
@@ -62,27 +64,6 @@ function verifyPassword(password, storedHash) {
 
 function newSessionToken() {
   return crypto.randomBytes(32).toString("base64url");
-}
-
-function asMoney(value) {
-  return Number(Number(value || 0).toFixed(2));
-}
-
-function parseIso(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function productStatRow(row) {
-  return {
-    code: row.code,
-    description: row.description,
-    qty: row.qty || 0,
-    orders: row.orders || 0,
-    revenue: asMoney(row.revenue),
-    avg_unit_price: asMoney(row.avg_unit_price),
-  };
 }
 
 async function initDb() {
@@ -132,6 +113,21 @@ async function initDb() {
       name TEXT NOT NULL,
       email TEXT,
       source TEXT NOT NULL DEFAULT 'local'
+    );
+
+    CREATE TABLE IF NOT EXISTS customer_receivables (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_code TEXT NOT NULL,
+      document_no TEXT NOT NULL,
+      document_date TEXT NOT NULL,
+      due_date TEXT NOT NULL,
+      amount_total REAL NOT NULL DEFAULT 0,
+      amount_paid REAL NOT NULL DEFAULT 0,
+      open_balance REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'open',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(customer_code, document_no),
+      FOREIGN KEY(customer_code) REFERENCES customers(code) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS admin_users (
@@ -190,6 +186,8 @@ async function initDb() {
       [ADMIN_USERNAME, hashPassword(ADMIN_PASSWORD)],
     );
   }
+
+  customerStatsProvider = createCustomerStatsProvider({ db, env: process.env });
 }
 
 async function requireAdmin(req, res, next) {
@@ -226,219 +224,8 @@ async function requireAdmin(req, res, next) {
   }
 }
 
-async function buildCustomerStats(customerCode) {
-  const code = String(customerCode || "").trim();
-  if (!code) {
-    const error = new Error("Customer code is required.");
-    error.status = 400;
-    throw error;
-  }
-
-  const customer = await db.get(
-    `
-      SELECT code, name, email
-      FROM customers
-      WHERE code = ?
-    `,
-    [code],
-  );
-
-  if (!customer) {
-    const error = new Error(`Customer not found: ${code}`);
-    error.status = 404;
-    throw error;
-  }
-
-  const summary = await db.get(
-    `
-      SELECT
-        COUNT(DISTINCT o.id) AS total_orders,
-        COALESCE(SUM(ol.qty_pieces), 0) AS total_pieces,
-        COALESCE(SUM(ol.line_net_value), 0) AS total_revenue,
-        MAX(o.created_at) AS last_order_date
-      FROM orders o
-      LEFT JOIN order_lines ol ON ol.order_id = o.id
-      WHERE o.customer_code = ?
-    `,
-    [code],
-  );
-
-  const productQuery = `
-    SELECT
-      p.code,
-      p.description,
-      SUM(ol.qty_pieces) AS qty,
-      COUNT(DISTINCT o.id) AS orders,
-      COALESCE(SUM(ol.line_net_value), 0) AS revenue,
-      CASE
-        WHEN SUM(ol.qty_pieces) > 0 THEN COALESCE(SUM(ol.line_net_value), 0) / SUM(ol.qty_pieces)
-        ELSE 0
-      END AS avg_unit_price
-    FROM orders o
-    JOIN order_lines ol ON ol.order_id = o.id
-    JOIN products p ON p.id = ol.product_id
-    WHERE o.customer_code = ?
-    GROUP BY p.id, p.code, p.description
-  `;
-
-  const topProductsByQty = await db.all(
-    `${productQuery} ORDER BY qty DESC, revenue DESC, p.code ASC LIMIT 10`,
-    [code],
-  );
-  const topProductsByValue = await db.all(
-    `${productQuery} ORDER BY revenue DESC, qty DESC, p.code ASC LIMIT 10`,
-    [code],
-  );
-
-  const recentOrders = await db.all(
-    `
-      SELECT
-        o.id AS order_id,
-        o.created_at,
-        o.total_net_value,
-        COUNT(ol.id) AS total_lines,
-        COALESCE(SUM(ol.qty_pieces), 0) AS total_pieces,
-        COALESCE(AVG(ol.discount_pct), 0) AS average_discount_pct
-      FROM orders o
-      LEFT JOIN order_lines ol ON ol.order_id = o.id
-      WHERE o.customer_code = ?
-      GROUP BY o.id, o.created_at, o.total_net_value
-      ORDER BY o.created_at DESC
-      LIMIT 10
-    `,
-    [code],
-  );
-
-  const detailedOrderHeaders = await db.all(
-    `
-      SELECT
-        o.id AS order_id,
-        o.created_at,
-        o.notes,
-        o.total_net_value,
-        COUNT(ol.id) AS total_lines,
-        COALESCE(SUM(ol.qty_pieces), 0) AS total_pieces,
-        COALESCE(AVG(ol.discount_pct), 0) AS average_discount_pct
-      FROM orders o
-      LEFT JOIN order_lines ol ON ol.order_id = o.id
-      WHERE o.customer_code = ?
-      GROUP BY o.id, o.created_at, o.notes, o.total_net_value
-      ORDER BY o.created_at DESC
-      LIMIT 6
-    `,
-    [code],
-  );
-
-  const detailedOrders = [];
-  for (const order of detailedOrderHeaders) {
-    const lines = await db.all(
-      `
-        SELECT
-          p.code,
-          p.description,
-          ol.qty_pieces,
-          ol.unit_price,
-          ol.discount_pct,
-          ol.line_net_value
-        FROM order_lines ol
-        JOIN products p ON p.id = ol.product_id
-        WHERE ol.order_id = ?
-        ORDER BY p.code ASC
-      `,
-      [order.order_id],
-    );
-
-    detailedOrders.push({
-      order_id: order.order_id,
-      created_at: order.created_at,
-      notes: order.notes || "",
-      total_lines: order.total_lines || 0,
-      total_pieces: order.total_pieces || 0,
-      total_net_value: asMoney(order.total_net_value),
-      average_discount_pct: asMoney(order.average_discount_pct),
-      lines: lines.map((line) => ({
-        code: line.code,
-        description: line.description,
-        qty: line.qty_pieces || 0,
-        unit_price: asMoney(line.unit_price),
-        discount_pct: asMoney(line.discount_pct),
-        line_net_value: asMoney(line.line_net_value),
-      })),
-    });
-  }
-
-  const now = new Date();
-  const lastOrderDate = parseIso(summary.last_order_date);
-  const daysSinceLastOrder = lastOrderDate
-    ? Math.max(0, Math.floor((now.getTime() - lastOrderDate.getTime()) / 86400000))
-    : null;
-
-  const recentChronological = [...recentOrders]
-    .map((row) => ({ ...row, parsedDate: parseIso(row.created_at) }))
-    .filter((row) => row.parsedDate)
-    .sort((a, b) => a.parsedDate - b.parsedDate);
-
-  let averageDaysBetweenOrders = null;
-  if (recentChronological.length >= 2) {
-    const gaps = [];
-    for (let index = 1; index < recentChronological.length; index += 1) {
-      const previous = recentChronological[index - 1].parsedDate;
-      const current = recentChronological[index].parsedDate;
-      gaps.push(Math.floor((current.getTime() - previous.getTime()) / 86400000));
-    }
-    if (gaps.length) {
-      averageDaysBetweenOrders = Number((gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length).toFixed(1));
-    }
-  }
-
-  function revenueSince(days) {
-    const cutoff = new Date(now.getTime() - days * 86400000);
-    return asMoney(
-      recentOrders.reduce((sum, order) => {
-        const date = parseIso(order.created_at);
-        if (!date || date < cutoff) return sum;
-        return sum + Number(order.total_net_value || 0);
-      }, 0),
-    );
-  }
-
-  const totalOrders = summary.total_orders || 0;
-  const totalRevenue = asMoney(summary.total_revenue);
-
-  return {
-    customer: {
-      code: customer.code,
-      name: customer.name,
-      email: customer.email,
-    },
-    summary: {
-      total_orders: totalOrders,
-      total_pieces: summary.total_pieces || 0,
-      total_revenue: totalRevenue,
-      revenue_3m: revenueSince(90),
-      revenue_6m: revenueSince(180),
-      revenue_12m: revenueSince(365),
-      average_order_value: totalOrders ? asMoney(totalRevenue / totalOrders) : 0,
-      average_days_between_orders: averageDaysBetweenOrders,
-      days_since_last_order: daysSinceLastOrder,
-      last_order_date: summary.last_order_date,
-    },
-    top_products_by_qty: topProductsByQty.map(productStatRow),
-    top_products_by_value: topProductsByValue.map(productStatRow),
-    recent_orders: recentOrders.map((order) => ({
-      order_id: order.order_id,
-      created_at: order.created_at,
-      total_lines: order.total_lines || 0,
-      total_pieces: order.total_pieces || 0,
-      total_net_value: asMoney(order.total_net_value),
-      average_discount_pct: asMoney(order.average_discount_pct),
-    })),
-    detailed_orders: detailedOrders,
-  };
-}
-
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, app: APP_NAME });
+  res.json({ ok: true, app: APP_NAME, customer_stats_provider: customerStatsProvider?.name || null });
 });
 
 app.get("/api/catalog", async (req, res) => {
@@ -601,7 +388,7 @@ app.post("/api/admin/logout", async (req, res) => {
 
 app.get("/api/admin/customers/:code/stats", requireAdmin, async (req, res) => {
   try {
-    const payload = await buildCustomerStats(req.params.code);
+    const payload = await customerStatsProvider.getCustomerStats(req.params.code);
     res.json(payload);
   } catch (error) {
     console.error(error);
@@ -671,6 +458,7 @@ initDb()
       console.log(`${APP_NAME} listening on :${PORT}`);
       console.log(`Static root: ${publicDir}`);
       console.log(`Database: ${DB_PATH}`);
+      console.log(`Customer stats provider: ${customerStatsProvider?.name || "n/a"}`);
     });
   })
   .catch((error) => {

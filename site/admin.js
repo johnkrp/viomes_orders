@@ -28,7 +28,10 @@ function resolveApiBase() {
 }
 
 const API_BASE = resolveApiBase();
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 let currentDetailedOrders = [];
+let currentProductSales = [];
 let selectedOrderId = null;
 
 const els = {
@@ -59,6 +62,17 @@ const els = {
   revenue6mValue: document.getElementById("revenue6mValue"),
   revenue12mValue: document.getElementById("revenue12mValue"),
   lastOrderDateValue: document.getElementById("lastOrderDateValue"),
+  monthlySalesBody: document.getElementById("monthlySalesBody"),
+  monthlyPrevRevenueHeading: document.getElementById("monthlyPrevRevenueHeading"),
+  monthlyPrevPiecesHeading: document.getElementById("monthlyPrevPiecesHeading"),
+  monthlyCurrRevenueHeading: document.getElementById("monthlyCurrRevenueHeading"),
+  monthlyCurrPiecesHeading: document.getElementById("monthlyCurrPiecesHeading"),
+  receivablesOpenValue: document.getElementById("receivablesOpenValue"),
+  receivablesOverdueValue: document.getElementById("receivablesOverdueValue"),
+  receivablesBody: document.getElementById("receivablesBody"),
+  productSalesMetric: document.getElementById("productSalesMetric"),
+  productSalesMetricHeading: document.getElementById("productSalesMetricHeading"),
+  productSalesBody: document.getElementById("productSalesBody"),
   topProductsQtyBody: document.getElementById("topProductsQtyBody"),
   topProductsValueBody: document.getElementById("topProductsValueBody"),
   recentOrdersBody: document.getElementById("recentOrdersBody"),
@@ -120,6 +134,17 @@ function formatDate(value) {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  }).format(date);
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("el-GR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
@@ -140,7 +165,7 @@ function formatNumber(value) {
 
 function formatDays(value) {
   if (value === null || value === undefined || value === "") return "-";
-  return `${formatNumber(value)} ημ.`;
+  return `${formatNumber(value)} d`;
 }
 
 function findDetailedOrder(orderId) {
@@ -154,15 +179,54 @@ function setAuthenticatedUI(me) {
   els.logoutBtn.hidden = !authenticated;
 
   if (!authenticated) {
-    els.sessionInfo.textContent = "Δεν υπάρχει ενεργή σύνδεση.";
+    els.sessionInfo.textContent = "No active admin session.";
     return;
   }
 
-  els.sessionInfo.textContent = `Συνδεδεμένος ως ${me.username}. API: ${API_BASE || "same-origin"}`;
+  els.sessionInfo.textContent = `Logged in as ${me.username}. API: ${API_BASE || "same-origin"}`;
+}
+
+function resetProductSales() {
+  currentProductSales = [];
+  if (els.productSalesMetric) els.productSalesMetric.value = "revenue";
+  if (els.productSalesMetricHeading) els.productSalesMetricHeading.textContent = "Revenue";
+  if (els.productSalesBody) {
+    els.productSalesBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="admin-table-empty">No product sales loaded yet.</td>
+      </tr>
+    `;
+  }
+}
+
+function resetMonthlySales() {
+  if (els.monthlyPrevRevenueHeading) els.monthlyPrevRevenueHeading.textContent = "Prev. year revenue";
+  if (els.monthlyPrevPiecesHeading) els.monthlyPrevPiecesHeading.textContent = "Prev. year pieces";
+  if (els.monthlyCurrRevenueHeading) els.monthlyCurrRevenueHeading.textContent = "Current year revenue";
+  if (els.monthlyCurrPiecesHeading) els.monthlyCurrPiecesHeading.textContent = "Current year pieces";
+  if (els.monthlySalesBody) {
+    els.monthlySalesBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="admin-table-empty">No monthly sales loaded yet.</td>
+      </tr>
+    `;
+  }
+}
+
+function resetReceivables() {
+  if (els.receivablesOpenValue) els.receivablesOpenValue.textContent = "-";
+  if (els.receivablesOverdueValue) els.receivablesOverdueValue.textContent = "-";
+  if (els.receivablesBody) {
+    els.receivablesBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="admin-table-empty">No receivables loaded yet.</td>
+      </tr>
+    `;
+  }
 }
 
 function resetStats() {
-  els.customerNameHeading.textContent = "Πελάτης";
+  els.customerNameHeading.textContent = "Customer";
   els.customerMeta.textContent = "-";
   els.totalOrdersValue.textContent = "0";
   els.totalPiecesValue.textContent = "0";
@@ -174,26 +238,29 @@ function resetStats() {
   els.revenue6mValue.textContent = "-";
   els.revenue12mValue.textContent = "-";
   els.lastOrderDateValue.textContent = "-";
+  resetMonthlySales();
+  resetReceivables();
+  resetProductSales();
   els.topProductsQtyBody.innerHTML = `
     <tr>
-      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      <td colspan="5" class="admin-table-empty">No data yet.</td>
     </tr>
   `;
   els.topProductsValueBody.innerHTML = `
     <tr>
-      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      <td colspan="5" class="admin-table-empty">No data yet.</td>
     </tr>
   `;
   els.recentOrdersBody.innerHTML = `
     <tr>
-      <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      <td colspan="7" class="admin-table-empty">No data yet.</td>
     </tr>
   `;
   currentDetailedOrders = [];
   selectedOrderId = null;
   els.detailedOrdersList.innerHTML = `
     <article class="admin-order-card admin-order-empty">
-      Επιλέξτε μια παραγγελία για να εμφανιστεί η αναλυτική προβολή.
+      Select an order from the recent orders table to see line-level details.
     </article>
   `;
   els.emptyState.hidden = false;
@@ -205,7 +272,7 @@ function renderSelectedOrderDetails() {
   if (!selectedOrder) {
     els.detailedOrdersList.innerHTML = `
       <article class="admin-order-card admin-order-empty">
-        Επιλέξτε μια παραγγελία για να εμφανιστεί η αναλυτική προβολή.
+        Select an order from the recent orders table to see line-level details.
       </article>
     `;
     return;
@@ -228,7 +295,7 @@ function renderSelectedOrderDetails() {
         .join("")
     : `
         <tr>
-          <td colspan="6" class="admin-table-empty">Δεν υπάρχουν γραμμές.</td>
+          <td colspan="6" class="admin-table-empty">No order lines.</td>
         </tr>
       `;
 
@@ -237,28 +304,28 @@ function renderSelectedOrderDetails() {
       <div class="admin-order-head">
         <div>
           <h3>Order #${escapeHtml(selectedOrder.order_id)}</h3>
-          <p>${escapeHtml(formatDate(selectedOrder.created_at))}</p>
+          <p>${escapeHtml(formatDateTime(selectedOrder.created_at))}</p>
         </div>
         <div class="admin-order-kpis">
-          <span>${escapeHtml(formatNumber(selectedOrder.total_lines))} γραμμές</span>
-          <span>${escapeHtml(formatNumber(selectedOrder.total_pieces))} τεμ.</span>
+          <span>${escapeHtml(formatNumber(selectedOrder.total_lines))} lines</span>
+          <span>${escapeHtml(formatNumber(selectedOrder.total_pieces))} pcs</span>
           <strong>${escapeHtml(formatMoney(selectedOrder.total_net_value))}</strong>
         </div>
       </div>
-      <div class="admin-order-note">${escapeHtml(selectedOrder.notes || "Χωρίς σχόλια")}</div>
+      <div class="admin-order-note">${escapeHtml(selectedOrder.notes || "No notes")}</div>
       <div class="admin-order-meta">
-        <span>Μ. έκπτωση: ${escapeHtml(`${selectedOrder.average_discount_pct}%`)}</span>
+        <span>Avg discount: ${escapeHtml(`${selectedOrder.average_discount_pct}%`)}</span>
       </div>
       <div class="admin-table-wrap admin-order-table-wrap">
         <table class="admin-table admin-order-table">
           <thead>
             <tr>
-              <th>Κωδ.</th>
-              <th>Περιγραφή</th>
-              <th>Τεμάχια</th>
-              <th>Τιμή</th>
-              <th>Έκπτωση</th>
-              <th>Καθαρή αξία</th>
+              <th>Code</th>
+              <th>Description</th>
+              <th>Pieces</th>
+              <th>Price</th>
+              <th>Discount</th>
+              <th>Net value</th>
             </tr>
           </thead>
           <tbody>${linesHtml}</tbody>
@@ -268,17 +335,124 @@ function renderSelectedOrderDetails() {
   `;
 }
 
+function renderMonthlySales(monthlySales) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const previousYear = currentYear - 1;
+  const currentYearRows = Array.isArray(monthlySales?.current_year) ? monthlySales.current_year : [];
+  const previousYearRows = Array.isArray(monthlySales?.previous_year) ? monthlySales.previous_year : [];
+  const rows = [];
+
+  for (let month = 1; month <= 12; month += 1) {
+    const previous = previousYearRows.find((row) => Number(row.month) === month) || {};
+    const current = currentYearRows.find((row) => Number(row.month) === month) || {};
+    rows.push(`
+      <tr>
+        <td>${MONTH_LABELS[month - 1]}</td>
+        <td>${escapeHtml(formatMoney(previous.revenue))}</td>
+        <td>${escapeHtml(formatNumber(previous.pieces))}</td>
+        <td>${escapeHtml(formatMoney(current.revenue))}</td>
+        <td>${escapeHtml(formatNumber(current.pieces))}</td>
+      </tr>
+    `);
+  }
+
+  els.monthlyPrevRevenueHeading.textContent = `${previousYear} revenue`;
+  els.monthlyPrevPiecesHeading.textContent = `${previousYear} pieces`;
+  els.monthlyCurrRevenueHeading.textContent = `${currentYear} revenue`;
+  els.monthlyCurrPiecesHeading.textContent = `${currentYear} pieces`;
+  els.monthlySalesBody.innerHTML = rows.join("");
+}
+
+function renderReceivables(receivables) {
+  const items = Array.isArray(receivables?.items) ? receivables.items : [];
+  els.receivablesOpenValue.textContent = formatMoney(receivables?.open_balance);
+  els.receivablesOverdueValue.textContent = formatMoney(receivables?.overdue_balance);
+
+  els.receivablesBody.innerHTML = items.length
+    ? items
+        .map((item) => {
+          const status = item.is_overdue ? "overdue" : item.status || "open";
+          return `
+            <tr>
+              <td>${escapeHtml(item.document_no)}</td>
+              <td>${escapeHtml(formatDate(item.document_date))}</td>
+              <td>${escapeHtml(formatDate(item.due_date))}</td>
+              <td>${escapeHtml(formatMoney(item.amount_total))}</td>
+              <td>${escapeHtml(formatMoney(item.amount_paid))}</td>
+              <td>${escapeHtml(formatMoney(item.open_balance))}</td>
+              <td>${escapeHtml(status)}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="7" class="admin-table-empty">No open receivables for this store.</td>
+        </tr>
+      `;
+}
+
+function renderProductSales() {
+  const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
+  const sortedItems = [...currentProductSales].sort((a, b) => {
+    if (metric === "pieces") {
+      return Number(b.pieces || 0) - Number(a.pieces || 0) || Number(b.revenue || 0) - Number(a.revenue || 0);
+    }
+    return Number(b.revenue || 0) - Number(a.revenue || 0) || Number(b.pieces || 0) - Number(a.pieces || 0);
+  });
+
+  if (els.productSalesMetricHeading) {
+    els.productSalesMetricHeading.textContent = metric === "pieces" ? "Pieces" : "Revenue";
+  }
+
+  els.productSalesBody.innerHTML = sortedItems.length
+    ? sortedItems
+        .map((item) => {
+          const metricValue = metric === "pieces" ? formatNumber(item.pieces) : formatMoney(item.revenue);
+          return `
+            <tr>
+              <td>${escapeHtml(item.code)}</td>
+              <td>${escapeHtml(item.description)}</td>
+              <td>${escapeHtml(metricValue)}</td>
+              <td>${escapeHtml(formatNumber(item.pieces))}</td>
+              <td>${escapeHtml(formatNumber(item.orders))}</td>
+              <td>${escapeHtml(formatMoney(item.avg_unit_price))}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="6" class="admin-table-empty">No product sales found for this store.</td>
+        </tr>
+      `;
+}
+
 function renderStats(data) {
   const customer = data?.customer || {};
   const summary = data?.summary || {};
+  const monthlySales = data?.monthly_sales || {};
+  const productSales = data?.product_sales || {};
+  const receivables = data?.receivables || {};
   const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const recentOrders = Array.isArray(data?.recent_orders) ? data.recent_orders : [];
+
   currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
+  currentProductSales = Array.isArray(productSales.items) ? productSales.items : [];
   selectedOrderId = null;
 
-  els.customerNameHeading.textContent = customer.name || "Άγνωστος πελάτης";
-  els.customerMeta.textContent = [customer.code, customer.email].filter(Boolean).join(" • ") || "-";
+  const metaParts = [customer.code, customer.email];
+  if (customer.aggregation_level) {
+    metaParts.push(`scope: ${customer.aggregation_level}`);
+  }
+  if (customer.chain_name) {
+    metaParts.push(`chain: ${customer.chain_name}`);
+  }
+
+  els.customerNameHeading.textContent = customer.name || "Unknown customer";
+  els.customerMeta.textContent = metaParts.filter(Boolean).join(" | ") || "-";
   els.totalOrdersValue.textContent = formatNumber(summary.total_orders ?? 0);
   els.totalPiecesValue.textContent = formatNumber(summary.total_pieces ?? 0);
   els.totalRevenueValue.textContent = formatMoney(summary.total_revenue);
@@ -288,7 +462,12 @@ function renderStats(data) {
   els.revenue3mValue.textContent = formatMoney(summary.revenue_3m);
   els.revenue6mValue.textContent = formatMoney(summary.revenue_6m);
   els.revenue12mValue.textContent = formatMoney(summary.revenue_12m);
-  els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
+  els.lastOrderDateValue.textContent = formatDateTime(summary.last_order_date);
+
+  renderMonthlySales(monthlySales);
+  renderReceivables(receivables);
+  els.productSalesMetric.value = productSales.metric === "pieces" ? "pieces" : "revenue";
+  renderProductSales();
 
   els.topProductsQtyBody.innerHTML = topProductsByQty.length
     ? topProductsByQty
@@ -306,7 +485,7 @@ function renderStats(data) {
         .join("")
     : `
         <tr>
-          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν top προϊόντα για τον πελάτη.</td>
+          <td colspan="5" class="admin-table-empty">No top products by pieces found.</td>
         </tr>
       `;
 
@@ -326,7 +505,7 @@ function renderStats(data) {
         .join("")
     : `
         <tr>
-          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν value προϊόντα για τον πελάτη.</td>
+          <td colspan="5" class="admin-table-empty">No top products by value found.</td>
         </tr>
       `;
 
@@ -336,7 +515,7 @@ function renderStats(data) {
           return `
             <tr>
               <td>${escapeHtml(item.order_id)}</td>
-              <td>${escapeHtml(formatDate(item.created_at))}</td>
+              <td>${escapeHtml(formatDateTime(item.created_at))}</td>
               <td>${escapeHtml(formatNumber(item.total_lines))}</td>
               <td>${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td>${escapeHtml(formatMoney(item.total_net_value))}</td>
@@ -347,7 +526,7 @@ function renderStats(data) {
                   class="btn ghost admin-order-select"
                   data-order-id="${escapeHtml(item.order_id)}"
                 >
-                  Προβολή
+                  View
                 </button>
               </td>
             </tr>
@@ -356,11 +535,11 @@ function renderStats(data) {
         .join("")
     : `
         <tr>
-          <td colspan="7" class="admin-table-empty">Δεν υπάρχουν πρόσφατες παραγγελίες.</td>
+          <td colspan="7" class="admin-table-empty">No recent orders found.</td>
         </tr>
       `;
-  renderSelectedOrderDetails();
 
+  renderSelectedOrderDetails();
   els.emptyState.hidden = true;
   els.statsPanel.hidden = false;
 }
@@ -371,14 +550,14 @@ async function refreshSession(options = {}) {
     setAuthenticatedUI(me);
 
     if (!me.authenticated && !options.silent) {
-      setStatus("Συνδεθείτε για να δείτε στατιστικά πελατών.", "info");
+      setStatus("Sign in to view customer stats.", "info");
     }
 
     return me;
   } catch (error) {
     setAuthenticatedUI({ authenticated: false });
     if (!options.silent) {
-      setStatus(`Αδυναμία επικοινωνίας με το backend: ${error.message}`, "error");
+      setStatus(`Backend connection failed: ${error.message}`, "error");
     }
     return { authenticated: false };
   }
@@ -391,7 +570,7 @@ async function handleLogin(event) {
   const username = (els.username.value || "").trim();
   const password = els.password.value || "";
   if (!username || !password) {
-    setStatus("Συμπληρώστε username και password.", "error");
+    setStatus("Fill in username and password.", "error");
     return;
   }
 
@@ -407,9 +586,9 @@ async function handleLogin(event) {
     resetStats();
     els.password.value = "";
     els.customerCode.focus();
-    setStatus("Η σύνδεση ολοκληρώθηκε.", "ok");
+    setStatus("Login completed.", "ok");
   } catch (error) {
-    setStatus(`Αποτυχία σύνδεσης: ${error.message}`, "error");
+    setStatus(`Login failed: ${error.message}`, "error");
   } finally {
     els.loginBtn.disabled = false;
   }
@@ -423,9 +602,9 @@ async function handleLogout() {
     setAuthenticatedUI({ authenticated: false });
     resetStats();
     els.username.focus();
-    setStatus("Η αποσύνδεση ολοκληρώθηκε.", "ok");
+    setStatus("Logged out.", "ok");
   } catch (error) {
-    setStatus(`Αποτυχία αποσύνδεσης: ${error.message}`, "error");
+    setStatus(`Logout failed: ${error.message}`, "error");
   } finally {
     els.logoutBtn.disabled = false;
   }
@@ -437,7 +616,7 @@ async function loadCustomerStats(event) {
 
   const customerCode = (els.customerCode.value || "").trim();
   if (!customerCode) {
-    setStatus("Δώστε κωδικό πελάτη.", "error");
+    setStatus("Enter a customer code.", "error");
     els.customerCode.focus();
     return;
   }
@@ -450,10 +629,10 @@ async function loadCustomerStats(event) {
       { method: "GET" },
     );
     renderStats(payload);
-    setStatus(`Φορτώθηκαν στατιστικά για ${customerCode}.`, "ok");
+    setStatus(`Loaded stats for ${customerCode}.`, "ok");
   } catch (error) {
     resetStats();
-    setStatus(`Αποτυχία φόρτωσης πελάτη: ${error.message}`, "error");
+    setStatus(`Customer lookup failed: ${error.message}`, "error");
   } finally {
     els.loadStatsBtn.disabled = false;
   }
@@ -470,6 +649,7 @@ els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
 els.customerSearchForm?.addEventListener("submit", loadCustomerStats);
 els.clearStatsBtn?.addEventListener("click", clearCustomerStats);
+els.productSalesMetric?.addEventListener("change", renderProductSales);
 els.recentOrdersBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-order-id]");
   if (!button) return;

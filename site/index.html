@@ -20,6 +20,7 @@
     <header>
       <div class="wrap">
         <div class="header-bar">
+          <div class="header-slot" aria-hidden="true"></div>
           <div class="brand">
             <!-- άλλαξε logo path αν έχεις -->
             <img
@@ -29,7 +30,9 @@
               onerror="this.style.display = 'none'"
             />
           </div>
-          <a class="btn ghost admin-link-btn" href="admin.html">Admin</a>
+          <div class="header-actions">
+            <a class="btn ghost admin-link-btn" href="admin.html">Admin</a>
+          </div>
         </div>
       </div>
     </header>
@@ -166,7 +169,7 @@
       </div>
 
       <footer class="site-footer">
-        <div class="wrap foot-inner">
+        <div class="wrap footer-inner">
           <span class="footer-text"
             >© VIOMES • Developed by <strong>VIOMES</strong></span
           >

@@ -19,7 +19,9 @@
     </div>
 
     <header>
-      <div class="wrap admin-topbar">
+      <div class="wrap">
+        <div class="header-bar admin-topbar">
+          <div class="header-slot" aria-hidden="true"></div>
         <div class="brand">
           <img
             class="brand-logo"
@@ -29,11 +31,12 @@
           />
         </div>
 
-        <div class="admin-topbar-actions">
+        <div class="admin-topbar-actions header-actions">
           <a class="btn ghost admin-link-btn" href="index.html">Δημόσια φόρμα</a>
           <button id="logoutBtn" type="button" class="btn ghost" hidden>
             Αποσύνδεση
           </button>
+        </div>
         </div>
       </div>
     </header>
@@ -179,6 +182,111 @@
               </div>
             </section>
 
+            <div class="admin-results-grid admin-results-grid-wide">
+              <section class="panel admin-panel">
+                <div class="panel-head panel-head-inline">
+                  <div>
+                    <h2>Monthly sales</h2>
+                    <p>Revenue and pieces per month for previous year and current year.</p>
+                  </div>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table admin-monthly-table">
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th id="monthlyPrevRevenueHeading">Prev. year revenue</th>
+                        <th id="monthlyPrevPiecesHeading">Prev. year pieces</th>
+                        <th id="monthlyCurrRevenueHeading">Current year revenue</th>
+                        <th id="monthlyCurrPiecesHeading">Current year pieces</th>
+                      </tr>
+                    </thead>
+                    <tbody id="monthlySalesBody">
+                      <tr>
+                        <td colspan="5" class="admin-table-empty">No monthly sales loaded yet.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="panel admin-panel">
+                <div class="panel-head panel-head-inline">
+                  <div>
+                    <h2>Receivables</h2>
+                    <p>Open customer ledger balance per invoiced store.</p>
+                  </div>
+                </div>
+                <div class="admin-stat-grid admin-mini-stat-grid">
+                  <article class="admin-stat-card">
+                    <span class="admin-stat-label">Open balance</span>
+                    <strong id="receivablesOpenValue">-</strong>
+                  </article>
+                  <article class="admin-stat-card">
+                    <span class="admin-stat-label">Overdue balance</span>
+                    <strong id="receivablesOverdueValue">-</strong>
+                  </article>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Document</th>
+                        <th>Date</th>
+                        <th>Due date</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Open</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="receivablesBody">
+                      <tr>
+                        <td colspan="7" class="admin-table-empty">No receivables loaded yet.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+            <section class="panel admin-panel">
+              <div class="panel-head panel-head-inline">
+                <div>
+                  <h2>Sales by product code</h2>
+                  <p>Full product list for the selected store. Switch between revenue and pieces.</p>
+                </div>
+                <div class="admin-inline-controls">
+                  <label class="field admin-compact-field">
+                    <span>Metric</span>
+                    <select id="productSalesMetric">
+                      <option value="revenue">Revenue</option>
+                      <option value="pieces">Pieces</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Code</th>
+                      <th>Description</th>
+                      <th id="productSalesMetricHeading">Revenue</th>
+                      <th>Pieces</th>
+                      <th>Orders</th>
+                      <th>Avg unit price</th>
+                    </tr>
+                  </thead>
+                  <tbody id="productSalesBody">
+                    <tr>
+                      <td colspan="6" class="admin-table-empty">No product sales loaded yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
             <div class="admin-results-grid">
               <section class="panel admin-panel">
                 <div class="panel-head">
@@ -282,7 +390,7 @@
       </div>
 
       <footer class="site-footer">
-        <div class="wrap foot-inner">
+        <div class="wrap footer-inner">
           <span class="footer-text">© VIOMES • Admin tools</span>
         </div>
       </footer>

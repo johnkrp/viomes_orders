@@ -2,6 +2,8 @@ backend/.venv/
 **/__pycache__/
 *.pyc
 backend/app.db
+backend/customers.xlsx
+backend/montly_sales.CSV
 site/node_modules/
 site/*.log
 .DS_Store
