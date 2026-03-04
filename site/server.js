@@ -21,7 +21,7 @@ const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 28
 const PBKDF2_ITERATIONS = 600000;
 
 const DB_PATH = path.join(__dirname, "..", "backend", "app.db");
-const publicDir = __dirname;
+const publicDir = path.join(__dirname, "public");
 
 const app = express();
 let db;
@@ -35,6 +35,7 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(express.static(publicDir));
 app.get("/", (req, res) => res.sendFile(path.join(publicDir, "index.html")));
 
