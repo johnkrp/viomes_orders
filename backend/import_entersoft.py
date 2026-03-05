@@ -1,4 +1,5 @@
 import csv
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -7,8 +8,8 @@ from typing import Optional
 from mysql_db import get_conn, init_schema
 
 BASE_DIR = Path(__file__).resolve().parent
-CUSTOMERS_FILE = BASE_DIR / "customers.csv"
-SALES_FILES = [
+DEFAULT_CUSTOMERS_FILE = BASE_DIR / "customers.csv"
+DEFAULT_SALES_FILES = [
     BASE_DIR / "info_2025.csv",
     BASE_DIR / "info_2026.csv",
 ]
@@ -45,6 +46,31 @@ class ImportStats:
         self.file_name = file_name
         self.rows_in = 0
         self.rows_upserted = 0
+
+
+def resolve_customers_file():
+    value = str(os.environ.get("ENTERSOFT_CUSTOMERS_FILE", "") or "").strip()
+    return Path(value) if value else DEFAULT_CUSTOMERS_FILE
+
+
+def resolve_sales_files():
+    env = os.environ
+    explicit = str(env.get("ENTERSOFT_SALES_FILES", "")).strip()
+    if explicit:
+        files = [Path(part.strip()) for part in explicit.split(",") if part.strip()]
+        if files:
+            return files
+
+    daily = str(env.get("ENTERSOFT_DAILY_INFO_FILE", "")).strip()
+    if daily:
+        return [Path(daily)]
+
+    return list(DEFAULT_SALES_FILES)
+
+
+def should_skip_customers():
+    value = str((os.environ.get("ENTERSOFT_SKIP_CUSTOMERS", "") or "")).strip().lower()
+    return value in {"1", "true", "yes", "y"}
 
 
 def begin_import(cur, dataset: str, file_name: str) -> int:
@@ -93,14 +119,14 @@ def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success",
     )
 
 
-def import_customers(cur) -> ImportStats:
-    stats = ImportStats(dataset="customers", file_name=CUSTOMERS_FILE.name)
-    print(f"[import] customers: starting ({CUSTOMERS_FILE.name})", flush=True)
+def import_customers(cur, customers_file) -> ImportStats:
+    stats = ImportStats(dataset="customers", file_name=customers_file.name)
+    print(f"[import] customers: starting ({customers_file})", flush=True)
     run_id = begin_import(cur, stats.dataset, stats.file_name)
     try:
         execute_step(cur, "truncate imported_customers", "DELETE FROM imported_customers")
 
-        with CUSTOMERS_FILE.open("r", encoding="utf-8-sig", newline="") as f:
+        with customers_file.open("r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f, delimiter="\t")
             for row in reader:
                 stats.rows_in += 1
@@ -152,7 +178,7 @@ def import_customers(cur) -> ImportStats:
                         str(row.get("Κωδικός Πωλητή", "")).strip(),
                         str(row.get("Επων. Πωλητή", "")).strip(),
                         parse_int_flag(row.get("Ανενεργός")),
-                        CUSTOMERS_FILE.name,
+                        customers_file.name,
                     ),
                 )
                 stats.rows_upserted += 1
@@ -192,8 +218,8 @@ def import_customers(cur) -> ImportStats:
         raise
 
 
-def import_sales_lines(cur) -> ImportStats:
-    stats = ImportStats(dataset="sales_lines", file_name=",".join(path.name for path in SALES_FILES))
+def import_sales_lines(cur, sales_files) -> ImportStats:
+    stats = ImportStats(dataset="sales_lines", file_name=",".join(path.name for path in sales_files))
     print(f"[import] sales_lines: starting ({stats.file_name})", flush=True)
     run_id = begin_import(cur, stats.dataset, stats.file_name)
     try:
@@ -202,7 +228,7 @@ def import_sales_lines(cur) -> ImportStats:
         execute_step(cur, "truncate imported_monthly_sales", "DELETE FROM imported_monthly_sales")
         execute_step(cur, "truncate imported_product_sales", "DELETE FROM imported_product_sales")
 
-        for sales_file in SALES_FILES:
+        for sales_file in sales_files:
             print(f"[import] sales_lines: reading {sales_file.name}", flush=True)
             with sales_file.open("r", encoding="utf-8-sig", newline="") as f:
                 reader = csv.DictReader(f, delimiter="\t")
@@ -347,10 +373,35 @@ def main() -> None:
     cur = conn.cursor()
     configure_session(cur)
     print(f"[import] session lock wait timeout set to {LOCK_WAIT_TIMEOUT_SECONDS}s", flush=True)
+    customers_file = resolve_customers_file()
+    sales_files = resolve_sales_files()
+    skip_customers = should_skip_customers()
+
+    if not sales_files:
+        raise RuntimeError("No sales files configured. Set ENTERSOFT_SALES_FILES or ENTERSOFT_DAILY_INFO_FILE.")
+
+    for sales_file in sales_files:
+        if not sales_file.exists():
+            raise FileNotFoundError(f"Sales file not found: {sales_file}")
+
+    if not skip_customers and not customers_file.exists():
+        raise FileNotFoundError(
+            f"Customers file not found: {customers_file}. "
+            "Provide ENTERSOFT_CUSTOMERS_FILE or set ENTERSOFT_SKIP_CUSTOMERS=1."
+        )
+
+    print(f"[import] using sales files: {', '.join(str(p) for p in sales_files)}", flush=True)
+    if skip_customers:
+        print("[import] skipping customers import (ENTERSOFT_SKIP_CUSTOMERS=1)", flush=True)
+    else:
+        print(f"[import] using customers file: {customers_file}", flush=True)
 
     try:
-        customer_stats = import_customers(cur)
-        sales_stats = import_sales_lines(cur)
+        if skip_customers:
+            customer_stats = ImportStats(dataset="customers", file_name=str(customers_file))
+        else:
+            customer_stats = import_customers(cur, customers_file)
+        sales_stats = import_sales_lines(cur, sales_files)
         conn.commit()
         print(
             f"Imported customers={customer_stats.rows_upserted}, "

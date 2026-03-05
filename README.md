@@ -84,6 +84,18 @@ If Python on server is missing `PyMySQL`, auto-install it in the same run:
 npm run import:entersoft -- --python-install-deps=1 --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+Single daily file mode (skip customer master refresh):
+
+```powershell
+npm run import:entersoft -- --skip-customers=1 --daily-info-file=/absolute/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
+You can also pass multiple sales files:
+
+```powershell
+npm run import:entersoft -- --sales-files=/path/info_2025.csv,/path/info_2026.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
 Import command failsafe timeout:
 
 - default: `1800` seconds
