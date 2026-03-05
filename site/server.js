@@ -4,10 +4,10 @@ import ExcelJS from "exceljs";
 import express from "express";
 import crypto from "node:crypto";
 import path from "node:path";
-import sqlite3 from "sqlite3";
 import { fileURLToPath } from "node:url";
-import { open } from "sqlite";
 import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
+import { openDatabase } from "./lib/db/client.js";
+import { initDatabaseSchema } from "./lib/db/init-schema.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +25,7 @@ const publicDir = path.join(__dirname, "public");
 
 const app = express();
 let db;
+let dbClient;
 let customerStatsProvider;
 
 app.use(
@@ -68,110 +69,9 @@ function newSessionToken() {
 }
 
 async function initDb() {
-  db = await open({ filename: DB_PATH, driver: sqlite3.Database });
-
-  await db.exec(`
-    PRAGMA foreign_keys = ON;
-
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT UNIQUE NOT NULL,
-      description TEXT NOT NULL,
-      image_url TEXT NOT NULL DEFAULT '',
-      pieces_per_package INTEGER NOT NULL,
-      volume_liters REAL NOT NULL DEFAULT 0,
-      color TEXT NOT NULL DEFAULT 'N/A',
-      description_norm TEXT NOT NULL DEFAULT '',
-      color_norm TEXT NOT NULL DEFAULT ''
-    );
-
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name TEXT NOT NULL,
-      customer_email TEXT,
-      customer_code TEXT,
-      notes TEXT,
-      total_qty_pieces INTEGER NOT NULL DEFAULT 0,
-      total_net_value REAL NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS order_lines (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_id INTEGER NOT NULL,
-      product_id INTEGER NOT NULL,
-      qty_pieces INTEGER NOT NULL CHECK(qty_pieces > 0),
-      unit_price REAL NOT NULL DEFAULT 0,
-      discount_pct REAL NOT NULL DEFAULT 0,
-      line_net_value REAL NOT NULL DEFAULT 0,
-      FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE,
-      FOREIGN KEY(product_id) REFERENCES products(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS customers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
-      email TEXT,
-      source TEXT NOT NULL DEFAULT 'local'
-    );
-
-    CREATE TABLE IF NOT EXISTS customer_receivables (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_code TEXT NOT NULL,
-      document_no TEXT NOT NULL,
-      document_date TEXT NOT NULL,
-      due_date TEXT NOT NULL,
-      amount_total REAL NOT NULL DEFAULT 0,
-      amount_paid REAL NOT NULL DEFAULT 0,
-      open_balance REAL NOT NULL DEFAULT 0,
-      status TEXT NOT NULL DEFAULT 'open',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(customer_code, document_no),
-      FOREIGN KEY(customer_code) REFERENCES customers(code) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS admin_users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS admin_sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      admin_user_id INTEGER NOT NULL,
-      token TEXT NOT NULL UNIQUE,
-      expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(admin_user_id) REFERENCES admin_users(id) ON DELETE CASCADE
-    );
-  `);
-
-  const orderColumns = await db.all(`PRAGMA table_info(orders)`);
-  const orderLineColumns = await db.all(`PRAGMA table_info(order_lines)`);
-  const hasOrderColumn = (name) => orderColumns.some((column) => column.name === name);
-  const hasOrderLineColumn = (name) => orderLineColumns.some((column) => column.name === name);
-
-  if (!hasOrderColumn("customer_code")) {
-    await db.exec(`ALTER TABLE orders ADD COLUMN customer_code TEXT`);
-  }
-  if (!hasOrderColumn("total_qty_pieces")) {
-    await db.exec(`ALTER TABLE orders ADD COLUMN total_qty_pieces INTEGER NOT NULL DEFAULT 0`);
-  }
-  if (!hasOrderColumn("total_net_value")) {
-    await db.exec(`ALTER TABLE orders ADD COLUMN total_net_value REAL NOT NULL DEFAULT 0`);
-  }
-  if (!hasOrderLineColumn("unit_price")) {
-    await db.exec(`ALTER TABLE order_lines ADD COLUMN unit_price REAL NOT NULL DEFAULT 0`);
-  }
-  if (!hasOrderLineColumn("discount_pct")) {
-    await db.exec(`ALTER TABLE order_lines ADD COLUMN discount_pct REAL NOT NULL DEFAULT 0`);
-  }
-  if (!hasOrderLineColumn("line_net_value")) {
-    await db.exec(`ALTER TABLE order_lines ADD COLUMN line_net_value REAL NOT NULL DEFAULT 0`);
-  }
+  dbClient = await openDatabase({ env: process.env, sqlitePath: DB_PATH });
+  db = dbClient;
+  await initDatabaseSchema({ db, kind: dbClient.kind });
 
   const admin = await db.get(
     `SELECT id, username, password_hash FROM admin_users WHERE username = ?`,
@@ -188,7 +88,11 @@ async function initDb() {
     );
   }
 
-  customerStatsProvider = createCustomerStatsProvider({ db, env: process.env });
+  customerStatsProvider = createCustomerStatsProvider({
+    db,
+    sqlDialect: dbClient.kind,
+    env: process.env,
+  });
 }
 
 async function requireAdmin(req, res, next) {
@@ -226,7 +130,12 @@ async function requireAdmin(req, res, next) {
 }
 
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, app: APP_NAME, customer_stats_provider: customerStatsProvider?.name || null });
+  res.json({
+    ok: true,
+    app: APP_NAME,
+    db_client: dbClient?.kind || null,
+    customer_stats_provider: customerStatsProvider?.name || null,
+  });
 });
 
 app.get("/api/catalog", async (req, res) => {
@@ -458,7 +367,7 @@ initDb()
     app.listen(PORT, () => {
       console.log(`${APP_NAME} listening on :${PORT}`);
       console.log(`Static root: ${publicDir}`);
-      console.log(`Database: ${DB_PATH}`);
+      console.log(`Database (${dbClient?.kind || "unknown"}): ${dbClient?.description || "n/a"}`);
       console.log(`Customer stats provider: ${customerStatsProvider?.name || "n/a"}`);
     });
   })

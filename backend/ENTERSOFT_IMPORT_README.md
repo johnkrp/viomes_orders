@@ -11,6 +11,19 @@ The current import path is:
 
 This is the active non-API integration approach for customer analytics.
 
+## Storage Target
+
+`import_entersoft.py` currently imports into SQLite (`backend/app.db`).
+
+If runtime DB is MariaDB/MySQL (`DB_CLIENT=mysql` in `site/server.js`), move imported data with:
+
+```powershell
+cd site
+npm run migrate:sqlite-to-db
+```
+
+This copies imported tables (and the rest of app tables) from SQLite into the active MySQL DB.
+
 ## Files Used
 
 Current expected files:
@@ -355,4 +368,3 @@ can all become misleading.
    - top 20 items by highest average price
    - rows with zero quantity but non-zero revenue
    - rows with negative revenue
-

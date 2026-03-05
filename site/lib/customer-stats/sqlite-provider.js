@@ -32,11 +32,15 @@ function mergeMonthlyRows(rows) {
 }
 
 async function hasImportedData(db) {
-  const row = await db.get(`SELECT COUNT(*) AS n FROM imported_sales_lines`);
-  return asInteger(row?.n) > 0;
+  try {
+    const row = await db.get(`SELECT COUNT(*) AS n FROM imported_sales_lines`);
+    return asInteger(row?.n) > 0;
+  } catch {
+    return false;
+  }
 }
 
-export function createSqliteCustomerStatsProvider({ db }) {
+export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" }) {
   if (!db) {
     throw new Error("SQLite customer stats provider requires a database connection.");
   }
@@ -182,16 +186,20 @@ export function createSqliteCustomerStatsProvider({ db }) {
         const currentYear = now.getUTCFullYear();
         const previousYear = currentYear - 1;
 
+        const castInt = sqlDialect === "mysql" ? "UNSIGNED" : "INTEGER";
+        const monthExpr = `CAST(SUBSTR(o.created_at, 6, 2) AS ${castInt})`;
+        const yearExpr = `CAST(SUBSTR(o.created_at, 1, 4) AS ${castInt})`;
+
         const monthlyCurrent = await db.all(
           `
             SELECT
-              CAST(strftime('%m', o.created_at) AS INTEGER) AS month,
+              ${monthExpr} AS month,
               COALESCE(SUM(o.total_net_value), 0) AS revenue,
               COALESCE(SUM(o.total_qty_pieces), 0) AS pieces
             FROM orders o
             WHERE o.customer_code = ?
-              AND CAST(strftime('%Y', o.created_at) AS INTEGER) = ?
-            GROUP BY CAST(strftime('%m', o.created_at) AS INTEGER)
+              AND ${yearExpr} = ?
+            GROUP BY ${monthExpr}
             ORDER BY month ASC
           `,
           [code, currentYear],
@@ -200,13 +208,13 @@ export function createSqliteCustomerStatsProvider({ db }) {
         const monthlyPrevious = await db.all(
           `
             SELECT
-              CAST(strftime('%m', o.created_at) AS INTEGER) AS month,
+              ${monthExpr} AS month,
               COALESCE(SUM(o.total_net_value), 0) AS revenue,
               COALESCE(SUM(o.total_qty_pieces), 0) AS pieces
             FROM orders o
             WHERE o.customer_code = ?
-              AND CAST(strftime('%Y', o.created_at) AS INTEGER) = ?
-            GROUP BY CAST(strftime('%m', o.created_at) AS INTEGER)
+              AND ${yearExpr} = ?
+            GROUP BY ${monthExpr}
             ORDER BY month ASC
           `,
           [code, previousYear],

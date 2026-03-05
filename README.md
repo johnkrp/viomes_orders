@@ -15,7 +15,9 @@ The Node backend currently provides:
 - admin auth routes with cookie sessions
 - protected admin customer stats endpoint
 - detailed customer analytics, revenue metrics, and order drill-down data
-- SQLite access through `backend/app.db`
+- DB access through:
+  - SQLite (`backend/app.db`) by default
+  - MariaDB/MySQL via Plesk Databases when `DB_CLIENT=mysql`
 
 Current admin login defaults are for local development only:
 
@@ -32,6 +34,24 @@ From `site/`:
 npm install
 npm run start
 ```
+
+## Database client switch (SQLite or MariaDB)
+
+Default mode:
+
+- `DB_CLIENT=sqlite`
+
+MariaDB/MySQL mode:
+
+- `DB_CLIENT=mysql`
+- `MYSQL_HOST=127.0.0.1`
+- `MYSQL_PORT=3306`
+- `MYSQL_DATABASE=...`
+- `MYSQL_USER=...`
+- `MYSQL_PASSWORD=...`
+
+The app keeps the same routes, including `GET /api/admin/customers/:code/stats`.
+On startup, it auto-creates required tables for the selected DB client.
 
 ## Seed demo customer stats
 
@@ -62,6 +82,25 @@ Current files:
 Detailed mapping, table behavior, and known limitations are documented in:
 
 - [backend/ENTERSOFT_IMPORT_README.md](/d:/Desktop/programming/viomes/order_form/backend/ENTERSOFT_IMPORT_README.md)
+
+## Migrate existing SQLite data into MariaDB
+
+After you create the DB/user in Plesk and set MySQL env vars:
+
+```powershell
+cd site
+npm run migrate:sqlite-to-db
+```
+
+Optional source path override:
+
+- `SOURCE_SQLITE_PATH=D:\path\to\app.db`
+
+Notes:
+
+- Migration copies all tables used by app/admin/imported Entersoft data.
+- Target DB is truncated first.
+- Script requires `DB_CLIENT=mysql`.
 
 ## Next integration step
 
@@ -98,4 +137,9 @@ Supported upstream payload shapes:
 - `entersoft-customer-stats-v1`
   Use this if the upstream returns a more Entersoft-oriented payload and should be mapped by Node before reaching the frontend.
 
-The health endpoint now reports the active provider as `customer_stats_provider` so staging can confirm the switch safely before production rollout.
+The health endpoint now reports:
+
+- `db_client` (sqlite or mysql)
+- `customer_stats_provider`
+
+so staging can confirm the switch safely before production rollout.

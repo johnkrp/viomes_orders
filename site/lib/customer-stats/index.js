@@ -1,13 +1,13 @@
 import { createEntersoftCustomerStatsProvider } from "./entersoft-provider.js";
 import { createSqliteCustomerStatsProvider } from "./sqlite-provider.js";
 
-export function createCustomerStatsProvider({ db, env = process.env } = {}) {
+export function createCustomerStatsProvider({ db, sqlDialect = "sqlite", env = process.env } = {}) {
   const providerName = String(env.CUSTOMER_STATS_PROVIDER || "sqlite")
     .trim()
     .toLowerCase();
 
   if (providerName === "sqlite") {
-    return createSqliteCustomerStatsProvider({ db });
+    return createSqliteCustomerStatsProvider({ db, sqlDialect });
   }
 
   if (providerName === "entersoft") {
