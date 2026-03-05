@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 import csv
 import sys
-from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 from mysql_db import get_conn, init_schema
 
@@ -18,18 +16,18 @@ PROGRESS_EVERY_ROWS = 5000
 LOCK_WAIT_TIMEOUT_SECONDS = 5
 
 
-def parse_decimal(value: str | None) -> float:
+def parse_decimal(value):
     text = str(value or "").strip().replace(".", "").replace(",", ".")
     if not text:
         return 0.0
     return float(text)
 
 
-def parse_int_flag(value: str | None) -> int:
+def parse_int_flag(value):
     return 1 if str(value or "").strip() in {"1", "true", "True"} else 0
 
 
-def parse_date(value: str | None) -> str:
+def parse_date(value):
     text = str(value or "").strip()
     if not text:
         return ""
@@ -41,16 +39,16 @@ def parse_date(value: str | None) -> str:
     raise ValueError(f"Unsupported date format: {text}")
 
 
-@dataclass
 class ImportStats:
-    dataset: str
-    file_name: str
-    rows_in: int = 0
-    rows_upserted: int = 0
+    def __init__(self, dataset, file_name):
+        self.dataset = dataset
+        self.file_name = file_name
+        self.rows_in = 0
+        self.rows_upserted = 0
 
 
 def begin_import(cur, dataset: str, file_name: str) -> int:
-    started_at = datetime.now(UTC).isoformat()
+    started_at = datetime.now(timezone.utc).isoformat()
     cur.execute(
         """
         INSERT INTO import_runs(dataset, file_name, status, started_at)
@@ -83,8 +81,8 @@ def execute_step(cur, label: str, sql: str, params=None) -> None:
         raise
 
 
-def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success", error_text: str | None = None) -> None:
-    finished_at = datetime.now(UTC).isoformat()
+def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success", error_text: Optional[str] = None) -> None:
+    finished_at = datetime.now(timezone.utc).isoformat()
     cur.execute(
         """
         UPDATE import_runs
