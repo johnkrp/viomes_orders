@@ -107,6 +107,25 @@ The SQLite -> MySQL migration command already supports explicit args the same wa
 npm run migrate:sqlite-to-db -- --target=mysql --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+## Plesk Nightly Task
+
+Script added:
+
+- `site/scripts/nightly-import.sh`
+
+In Plesk `Scheduled Tasks` use:
+
+- Task type: `Run a command`
+- Command:
+
+```bash
+/bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/nightly-import.sh
+```
+
+The script logs to:
+
+- `/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/logs/nightly-import-YYYY-MM-DD.log`
+
 Current files:
 
 - `backend/customers.csv`
