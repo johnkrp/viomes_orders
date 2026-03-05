@@ -19,8 +19,6 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "change-me-now";
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "viomes_admin_session";
 const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 28800);
 const PBKDF2_ITERATIONS = 600000;
-
-const DB_PATH = path.join(__dirname, "..", "backend", "app.db");
 const publicDir = path.join(__dirname, "public");
 
 const app = express();
@@ -69,7 +67,7 @@ function newSessionToken() {
 }
 
 async function initDb() {
-  dbClient = await openDatabase({ env: process.env, sqlitePath: DB_PATH });
+  dbClient = await openDatabase({ env: process.env });
   db = dbClient;
   await initDatabaseSchema({ db, kind: dbClient.kind });
 

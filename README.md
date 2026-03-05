@@ -3,7 +3,7 @@
 This project now uses:
 
 - `site/` for the public static frontend and the active Node.js backend
-- `backend/` as the shared SQLite/demo-data source and reference Python prototype
+- `backend/` for file import scripts (Entersoft CSVs -> MySQL)
 
 The active production path is now the Node.js app in `site/server.js`, which is a better fit for Plesk deployment.
 
@@ -15,9 +15,7 @@ The Node backend currently provides:
 - admin auth routes with cookie sessions
 - protected admin customer stats endpoint
 - detailed customer analytics, revenue metrics, and order drill-down data
-- DB access through:
-  - SQLite (`backend/app.db`) by default
-  - MariaDB/MySQL via Plesk Databases when `DB_CLIENT=mysql`
+- MariaDB/MySQL as the only runtime DB client
 
 Current admin login defaults are for local development only:
 
@@ -35,13 +33,7 @@ npm install
 npm run start
 ```
 
-## Database client switch (SQLite or MariaDB)
-
-Default mode:
-
-- `DB_CLIENT=sqlite`
-
-MariaDB/MySQL mode:
+## Database setup (MariaDB/MySQL)
 
 - `DB_CLIENT=mysql`
 - `MYSQL_HOST=127.0.0.1`
@@ -51,7 +43,7 @@ MariaDB/MySQL mode:
 - `MYSQL_PASSWORD=...`
 
 The app keeps the same routes, including `GET /api/admin/customers/:code/stats`.
-On startup, it auto-creates required tables for the selected DB client.
+On startup, it auto-creates required tables in MySQL.
 
 ## Seed demo customer stats
 
@@ -67,7 +59,7 @@ This creates demo customers and linked orders so `admin.html` can show real data
 
 The current real-data path is file-based.
 
-Entersoft exports are placed in `backend/` and imported into `backend/app.db` by:
+Entersoft exports are placed in `backend/` and imported directly into MySQL by:
 
 ```powershell
 python backend\import_entersoft.py
@@ -83,34 +75,9 @@ Detailed mapping, table behavior, and known limitations are documented in:
 
 - [backend/ENTERSOFT_IMPORT_README.md](/d:/Desktop/programming/viomes/order_form/backend/ENTERSOFT_IMPORT_README.md)
 
-## Migrate existing SQLite data into MariaDB
-
-After you create the DB/user in Plesk and set MySQL env vars:
-
-```powershell
-cd site
-npm run migrate:sqlite-to-db
-```
-
-If your command runner does not inherit app env vars, pass them explicitly:
-
-```powershell
-npm run migrate:sqlite-to-db -- --target=mysql --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
-```
-
-Optional source path override:
-
-- `SOURCE_SQLITE_PATH=D:\path\to\app.db`
-
-Notes:
-
-- Migration copies all tables used by app/admin/imported Entersoft data.
-- Target DB is truncated first.
-- Script requires `DB_CLIENT=mysql`.
-
 ## Next integration step
 
-Replace the local SQLite-backed customer stats implementation with an Entersoft-backed adapter while keeping the same JSON contract exposed by `site/server.js`.
+Replace the local SQL-backed customer stats implementation with an Entersoft-backed adapter while keeping the same JSON contract exposed by `site/server.js`.
 
 ## Customer stats provider switch
 
@@ -118,7 +85,7 @@ The admin endpoint `GET /api/admin/customers/:code/stats` now uses a provider la
 
 Default:
 
-- `CUSTOMER_STATS_PROVIDER=sqlite`
+- `CUSTOMER_STATS_PROVIDER=sqlite` (local SQL provider name)
 
 Entersoft handoff mode:
 
@@ -145,7 +112,7 @@ Supported upstream payload shapes:
 
 The health endpoint now reports:
 
-- `db_client` (sqlite or mysql)
+- `db_client` (`mysql`)
 - `customer_stats_provider`
 
 so staging can confirm the switch safely before production rollout.

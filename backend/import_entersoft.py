@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from db import get_conn, init_schema
+from mysql_db import get_conn, init_schema
 
 BASE_DIR = Path(__file__).resolve().parent
 CUSTOMERS_FILE = BASE_DIR / "customers.csv"
@@ -19,7 +19,7 @@ SALES_FILES = [
 def parse_decimal(value: str | None) -> float:
     text = str(value or "").strip().replace(".", "").replace(",", ".")
     if not text:
-      return 0.0
+        return 0.0
     return float(text)
 
 
@@ -30,12 +30,12 @@ def parse_int_flag(value: str | None) -> int:
 def parse_date(value: str | None) -> str:
     text = str(value or "").strip()
     if not text:
-      return ""
+        return ""
     for fmt in ("%d/%m/%Y", "%d/%m/%y"):
-      try:
-        return datetime.strptime(text, fmt).date().isoformat()
-      except ValueError:
-        continue
+        try:
+            return datetime.strptime(text, fmt).date().isoformat()
+        except ValueError:
+            continue
     raise ValueError(f"Unsupported date format: {text}")
 
 
@@ -52,7 +52,7 @@ def begin_import(cur, dataset: str, file_name: str) -> int:
     cur.execute(
         """
         INSERT INTO import_runs(dataset, file_name, status, started_at)
-        VALUES (?, ?, 'running', ?)
+        VALUES (%s, %s, 'running', %s)
         """,
         (dataset, file_name, started_at),
     )
@@ -64,8 +64,8 @@ def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success",
     cur.execute(
         """
         UPDATE import_runs
-        SET status = ?, finished_at = ?, rows_in = ?, rows_upserted = ?, error_text = ?
-        WHERE id = ?
+        SET status = %s, finished_at = %s, rows_in = %s, rows_upserted = %s, error_text = %s
+        WHERE id = %s
         """,
         (status, finished_at, stats.rows_in, stats.rows_upserted, error_text, run_id),
     )
@@ -87,13 +87,29 @@ def import_customers(cur) -> ImportStats:
                     continue
                 cur.execute(
                     """
-                    INSERT OR REPLACE INTO imported_customers(
+                    INSERT INTO imported_customers(
                       customer_code, customer_name, delivery_code, delivery_description,
                       address_1, postal_code, city, region, country, phone,
                       pallet_info, delivery_method, salesperson_code, salesperson_name,
                       is_inactive, source_file
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                      customer_name = VALUES(customer_name),
+                      delivery_code = VALUES(delivery_code),
+                      delivery_description = VALUES(delivery_description),
+                      address_1 = VALUES(address_1),
+                      postal_code = VALUES(postal_code),
+                      city = VALUES(city),
+                      region = VALUES(region),
+                      country = VALUES(country),
+                      phone = VALUES(phone),
+                      pallet_info = VALUES(pallet_info),
+                      delivery_method = VALUES(delivery_method),
+                      salesperson_code = VALUES(salesperson_code),
+                      salesperson_name = VALUES(salesperson_name),
+                      is_inactive = VALUES(is_inactive),
+                      source_file = VALUES(source_file)
                     """,
                     (
                         customer_code,
@@ -122,6 +138,10 @@ def import_customers(cur) -> ImportStats:
             INSERT INTO customers(code, name, email, source)
             SELECT customer_code, customer_name, NULL, 'entersoft_import'
             FROM imported_customers
+            ON DUPLICATE KEY UPDATE
+              name = VALUES(name),
+              email = VALUES(email),
+              source = VALUES(source)
             """
         )
         finish_import(cur, run_id, stats)
@@ -154,13 +174,13 @@ def import_sales_lines(cur) -> ImportStats:
                     order_dt = datetime.fromisoformat(order_date)
                     cur.execute(
                         """
-                        INSERT OR IGNORE INTO imported_sales_lines(
+                        INSERT IGNORE INTO imported_sales_lines(
                           source_file, order_date, order_year, order_month, document_no, document_type,
                           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
                           customer_code, customer_name, delivery_code, delivery_description, account_code,
                           account_description, branch_code, branch_description, note_1
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """,
                         (
                             sales_file.name,

@@ -6,23 +6,22 @@ The current import path is:
 
 1. Entersoft exports flat text files into `backend/`
 2. `backend/import_entersoft.py` reads those files
-3. the importer normalizes them into SQLite tables inside `backend/app.db`
+3. the importer normalizes them into MySQL/MariaDB tables
 4. the Node admin API reads those imported tables through `site/lib/customer-stats/sqlite-provider.js`
 
 This is the active non-API integration approach for customer analytics.
 
 ## Storage Target
 
-`import_entersoft.py` currently imports into SQLite (`backend/app.db`).
+`import_entersoft.py` now imports directly into MySQL/MariaDB.
 
-If runtime DB is MariaDB/MySQL (`DB_CLIENT=mysql` in `site/server.js`), move imported data with:
+Required environment variables before running the importer:
 
-```powershell
-cd site
-npm run migrate:sqlite-to-db
-```
-
-This copies imported tables (and the rest of app tables) from SQLite into the active MySQL DB.
+- `MYSQL_HOST` (default `127.0.0.1`)
+- `MYSQL_PORT` (default `3306`)
+- `MYSQL_DATABASE`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
 
 ## Files Used
 
@@ -273,8 +272,15 @@ Check row counts:
 
 ```powershell
 @'
-import sqlite3
-conn = sqlite3.connect(r'backend\app.db')
+import os
+import pymysql
+conn = pymysql.connect(
+    host=os.getenv("MYSQL_HOST", "127.0.0.1"),
+    port=int(os.getenv("MYSQL_PORT", "3306")),
+    user=os.environ["MYSQL_USER"],
+    password=os.getenv("MYSQL_PASSWORD", ""),
+    database=os.environ["MYSQL_DATABASE"],
+)
 cur = conn.cursor()
 for table in [
     'imported_customers',
@@ -291,12 +297,21 @@ Check one known customer:
 
 ```powershell
 @'
-import sqlite3
-conn = sqlite3.connect(r'backend\app.db')
+import os
+import pymysql
+conn = pymysql.connect(
+    host=os.getenv("MYSQL_HOST", "127.0.0.1"),
+    port=int(os.getenv("MYSQL_PORT", "3306")),
+    user=os.environ["MYSQL_USER"],
+    password=os.getenv("MYSQL_PASSWORD", ""),
+    database=os.environ["MYSQL_DATABASE"],
+)
 cur = conn.cursor()
 code = '177.5.013'
-print('orders', cur.execute("select count(*) from imported_orders where customer_code = ?", (code,)).fetchone()[0])
-print('lines', cur.execute("select count(*) from imported_sales_lines where customer_code = ?", (code,)).fetchone()[0])
+cur.execute("select count(*) from imported_orders where customer_code = %s", (code,))
+print('orders', cur.fetchone()[0])
+cur.execute("select count(*) from imported_sales_lines where customer_code = %s", (code,))
+print('lines', cur.fetchone()[0])
 '@ | python -
 ```
 
