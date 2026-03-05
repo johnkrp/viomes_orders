@@ -214,7 +214,7 @@ def import_sales_lines(cur) -> ImportStats:
                     order_date = parse_date(row.get("Ημ/νία "))
                     if not (customer_code and document_no and item_code and order_date):
                         continue
-                    order_dt = datetime.fromisoformat(order_date)
+                    order_dt = datetime.strptime(order_date, "%Y-%m-%d")
                     execute_step(
                         cur,
                         "insert imported_sales_lines row",
