@@ -11,8 +11,31 @@ const timeoutSeconds = Math.max(
 );
 const timeoutMs = timeoutSeconds * 1000;
 
+function parseArgs(argv) {
+  const args = {};
+  for (const token of argv) {
+    if (!token.startsWith("--")) continue;
+    const [rawKey, ...rest] = token.slice(2).split("=");
+    const key = rawKey.trim();
+    const value = rest.join("=").trim();
+    if (!key) continue;
+    args[key] = value || "true";
+  }
+  return args;
+}
+
+const cli = parseArgs(process.argv.slice(2));
+const effectiveEnv = {
+  ...process.env,
+  MYSQL_HOST: cli["mysql-host"] || process.env.MYSQL_HOST,
+  MYSQL_PORT: cli["mysql-port"] || process.env.MYSQL_PORT,
+  MYSQL_DATABASE: cli["mysql-database"] || process.env.MYSQL_DATABASE,
+  MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
+  MYSQL_PASSWORD: cli["mysql-password"] || process.env.MYSQL_PASSWORD,
+};
+
 const requiredEnv = ["MYSQL_DATABASE", "MYSQL_USER"];
-const missing = requiredEnv.filter((key) => !String(process.env[key] || "").trim());
+const missing = requiredEnv.filter((key) => !String(effectiveEnv[key] || "").trim());
 if (missing.length) {
   console.error(
     `Missing required environment variables: ${missing.join(", ")}. ` +
@@ -25,7 +48,7 @@ function runPython(executable) {
   console.log(`[import] launching ${executable} with timeout=${timeoutSeconds}s`);
   return spawnSync(executable, ["-u", importerPath], {
     stdio: "inherit",
-    env: process.env,
+    env: effectiveEnv,
     timeout: timeoutMs,
     killSignal: "SIGTERM",
   });

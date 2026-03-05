@@ -72,10 +72,22 @@ cd site
 npm run import:entersoft
 ```
 
+If Plesk npm runner does not inherit app env vars, pass DB args explicitly:
+
+```powershell
+npm run import:entersoft -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
 Import command failsafe timeout:
 
 - default: `1800` seconds
 - override with `ENTERSOFT_IMPORT_TIMEOUT_SECONDS` (or `IMPORT_TIMEOUT_SECONDS`)
+
+The SQLite -> MySQL migration command already supports explicit args the same way:
+
+```powershell
+npm run migrate:sqlite-to-db -- --target=mysql --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
 
 Current files:
 
