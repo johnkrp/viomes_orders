@@ -72,6 +72,11 @@ cd site
 npm run import:entersoft
 ```
 
+Import command failsafe timeout:
+
+- default: `1800` seconds
+- override with `ENTERSOFT_IMPORT_TIMEOUT_SECONDS` (or `IMPORT_TIMEOUT_SECONDS`)
+
 Current files:
 
 - `backend/customers.csv`
