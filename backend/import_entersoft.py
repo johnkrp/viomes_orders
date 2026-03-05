@@ -14,6 +14,8 @@ SALES_FILES = [
     BASE_DIR / "info_2025.csv",
     BASE_DIR / "info_2026.csv",
 ]
+PROGRESS_EVERY_ROWS = 5000
+LOCK_WAIT_TIMEOUT_SECONDS = 5
 
 
 def parse_decimal(value: str | None) -> float:
@@ -59,6 +61,28 @@ def begin_import(cur, dataset: str, file_name: str) -> int:
     return cur.lastrowid
 
 
+def configure_session(cur) -> None:
+    # Fail fast if a table lock/metadata lock blocks import writes.
+    cur.execute(f"SET SESSION innodb_lock_wait_timeout = {LOCK_WAIT_TIMEOUT_SECONDS}")
+
+
+def execute_step(cur, label: str, sql: str, params=None) -> None:
+    try:
+        if params is None:
+            cur.execute(sql)
+        else:
+            cur.execute(sql, params)
+    except Exception as exc:
+        message = str(exc).lower()
+        if "lock wait timeout" in message:
+            print(
+                f"[import] lock timeout during '{label}'. "
+                "Another session is locking tables. Stop Node app, kill long Sleep localhost DB sessions, retry.",
+                flush=True,
+            )
+        raise
+
+
 def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success", error_text: str | None = None) -> None:
     finished_at = datetime.now(UTC).isoformat()
     cur.execute(
@@ -73,9 +97,10 @@ def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success",
 
 def import_customers(cur) -> ImportStats:
     stats = ImportStats(dataset="customers", file_name=CUSTOMERS_FILE.name)
+    print(f"[import] customers: starting ({CUSTOMERS_FILE.name})", flush=True)
     run_id = begin_import(cur, stats.dataset, stats.file_name)
     try:
-        cur.execute("DELETE FROM imported_customers")
+        execute_step(cur, "truncate imported_customers", "DELETE FROM imported_customers")
 
         with CUSTOMERS_FILE.open("r", encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f, delimiter="\t")
@@ -85,7 +110,9 @@ def import_customers(cur) -> ImportStats:
                 customer_name = str(row.get("Επων. Πελάτη", "")).strip()
                 if not customer_code or not customer_name:
                     continue
-                cur.execute(
+                execute_step(
+                    cur,
+                    "upsert imported_customers row",
                     """
                     INSERT INTO imported_customers(
                       customer_code, customer_name, delivery_code, delivery_description,
@@ -131,9 +158,20 @@ def import_customers(cur) -> ImportStats:
                     ),
                 )
                 stats.rows_upserted += 1
+                if stats.rows_in % PROGRESS_EVERY_ROWS == 0:
+                    print(
+                        f"[import] customers: rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
+                        flush=True,
+                    )
 
-        cur.execute("DELETE FROM customers WHERE source = 'entersoft_import'")
-        cur.execute(
+        execute_step(
+            cur,
+            "delete mirrored customers",
+            "DELETE FROM customers WHERE source = 'entersoft_import'",
+        )
+        execute_step(
+            cur,
+            "mirror imported customers",
             """
             INSERT INTO customers(code, name, email, source)
             SELECT customer_code, customer_name, NULL, 'entersoft_import'
@@ -145,22 +183,29 @@ def import_customers(cur) -> ImportStats:
             """
         )
         finish_import(cur, run_id, stats)
+        print(
+            f"[import] customers: completed rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
+            flush=True,
+        )
         return stats
     except Exception as exc:
         finish_import(cur, run_id, stats, status="failed", error_text=str(exc))
+        print(f"[import] customers: failed ({exc})", flush=True)
         raise
 
 
 def import_sales_lines(cur) -> ImportStats:
     stats = ImportStats(dataset="sales_lines", file_name=",".join(path.name for path in SALES_FILES))
+    print(f"[import] sales_lines: starting ({stats.file_name})", flush=True)
     run_id = begin_import(cur, stats.dataset, stats.file_name)
     try:
-        cur.execute("DELETE FROM imported_sales_lines")
-        cur.execute("DELETE FROM imported_orders")
-        cur.execute("DELETE FROM imported_monthly_sales")
-        cur.execute("DELETE FROM imported_product_sales")
+        execute_step(cur, "truncate imported_sales_lines", "DELETE FROM imported_sales_lines")
+        execute_step(cur, "truncate imported_orders", "DELETE FROM imported_orders")
+        execute_step(cur, "truncate imported_monthly_sales", "DELETE FROM imported_monthly_sales")
+        execute_step(cur, "truncate imported_product_sales", "DELETE FROM imported_product_sales")
 
         for sales_file in SALES_FILES:
+            print(f"[import] sales_lines: reading {sales_file.name}", flush=True)
             with sales_file.open("r", encoding="utf-8-sig", newline="") as f:
                 reader = csv.DictReader(f, delimiter="\t")
                 for row in reader:
@@ -172,7 +217,9 @@ def import_sales_lines(cur) -> ImportStats:
                     if not (customer_code and document_no and item_code and order_date):
                         continue
                     order_dt = datetime.fromisoformat(order_date)
-                    cur.execute(
+                    execute_step(
+                        cur,
+                        "insert imported_sales_lines row",
                         """
                         INSERT IGNORE INTO imported_sales_lines(
                           source_file, order_date, order_year, order_month, document_no, document_type,
@@ -208,8 +255,19 @@ def import_sales_lines(cur) -> ImportStats:
                         ),
                     )
                     stats.rows_upserted += cur.rowcount
+                    if stats.rows_in % PROGRESS_EVERY_ROWS == 0:
+                        print(
+                            f"[import] sales_lines: rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
+                            flush=True,
+                        )
 
-        cur.execute(
+            print(
+                f"[import] sales_lines: finished {sales_file.name} (rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted})",
+                flush=True,
+            )
+        execute_step(
+            cur,
+            "build imported_orders",
             """
             INSERT INTO imported_orders(
               order_id, customer_code, customer_name, created_at, total_lines, total_pieces,
@@ -234,7 +292,9 @@ def import_sales_lines(cur) -> ImportStats:
             """
         )
 
-        cur.execute(
+        execute_step(
+            cur,
+            "build imported_monthly_sales",
             """
             INSERT INTO imported_monthly_sales(customer_code, order_year, order_month, revenue, pieces)
             SELECT
@@ -248,7 +308,9 @@ def import_sales_lines(cur) -> ImportStats:
             """
         )
 
-        cur.execute(
+        execute_step(
+            cur,
+            "build imported_product_sales",
             """
             INSERT INTO imported_product_sales(
               customer_code, item_code, item_description, revenue, pieces, orders, avg_unit_price
@@ -270,9 +332,14 @@ def import_sales_lines(cur) -> ImportStats:
         )
 
         finish_import(cur, run_id, stats)
+        print(
+            f"[import] sales_lines: completed rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
+            flush=True,
+        )
         return stats
     except Exception as exc:
         finish_import(cur, run_id, stats, status="failed", error_text=str(exc))
+        print(f"[import] sales_lines: failed ({exc})", flush=True)
         raise
 
 
@@ -280,6 +347,8 @@ def main() -> None:
     init_schema()
     conn = get_conn()
     cur = conn.cursor()
+    configure_session(cur)
+    print(f"[import] session lock wait timeout set to {LOCK_WAIT_TIMEOUT_SECONDS}s", flush=True)
 
     try:
         customer_stats = import_customers(cur)

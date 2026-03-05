@@ -65,6 +65,13 @@ Entersoft exports are placed in `backend/` and imported directly into MySQL by:
 python backend\import_entersoft.py
 ```
 
+If your hosting panel only allows npm commands (Plesk Node.js runner), use:
+
+```powershell
+cd site
+npm run import:entersoft
+```
+
 Current files:
 
 - `backend/customers.csv`
