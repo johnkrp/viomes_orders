@@ -54,10 +54,33 @@ function runPython(executable) {
   });
 }
 
+function installDeps(executable) {
+  console.log(`[import] installing PyMySQL with ${executable} -m pip install --user PyMySQL`);
+  return spawnSync(executable, ["-m", "pip", "install", "--user", "PyMySQL"], {
+    stdio: "inherit",
+    env: effectiveEnv,
+    timeout: timeoutMs,
+    killSignal: "SIGTERM",
+  });
+}
+
 const attempts = ["python3", "python"];
 let lastError = null;
 
 for (const exe of attempts) {
+  if (cli["python-install-deps"] === "1" || cli["install-pymysql"] === "1") {
+    const depResult = installDeps(exe);
+    if (depResult.error?.code === "ETIMEDOUT") {
+      console.error(
+        `[import] dependency install timed out after ${timeoutSeconds}s and was terminated.`,
+      );
+      process.exit(124);
+    }
+    if (!depResult.error && typeof depResult.status === "number" && depResult.status !== 0) {
+      process.exit(depResult.status);
+    }
+  }
+
   const result = runPython(exe);
   if (!result.error && result.status === 0) {
     process.exit(0);

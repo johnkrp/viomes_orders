@@ -78,6 +78,12 @@ If Plesk npm runner does not inherit app env vars, pass DB args explicitly:
 npm run import:entersoft -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+If Python on server is missing `PyMySQL`, auto-install it in the same run:
+
+```powershell
+npm run import:entersoft -- --python-install-deps=1 --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
 Import command failsafe timeout:
 
 - default: `1800` seconds
