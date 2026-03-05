@@ -92,6 +92,12 @@ cd site
 npm run migrate:sqlite-to-db
 ```
 
+If your command runner does not inherit app env vars, pass them explicitly:
+
+```powershell
+npm run migrate:sqlite-to-db -- --target=mysql --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
 Optional source path override:
 
 - `SOURCE_SQLITE_PATH=D:\path\to\app.db`

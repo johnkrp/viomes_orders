@@ -25,6 +25,19 @@ const TABLES = [
   "admin_sessions",
 ];
 
+function parseArgs(argv) {
+  const args = {};
+  for (const token of argv) {
+    if (!token.startsWith("--")) continue;
+    const [rawKey, ...rest] = token.slice(2).split("=");
+    const key = rawKey.trim();
+    const value = rest.join("=").trim();
+    if (!key) continue;
+    args[key] = value || "true";
+  }
+  return args;
+}
+
 function quoteIdentifier(identifier) {
   return `\`${String(identifier).replaceAll("`", "``")}\``;
 }
@@ -45,12 +58,25 @@ async function insertRows(targetDb, table, rows) {
 }
 
 async function main() {
-  const sqlitePath = process.env.SOURCE_SQLITE_PATH || defaultSqlitePath;
+  const cli = parseArgs(process.argv.slice(2));
+  const sqlitePath = cli["source-sqlite-path"] || process.env.SOURCE_SQLITE_PATH || defaultSqlitePath;
+  const effectiveEnv = {
+    ...process.env,
+    DB_CLIENT: cli.target || process.env.DB_CLIENT,
+    MYSQL_HOST: cli["mysql-host"] || process.env.MYSQL_HOST,
+    MYSQL_PORT: cli["mysql-port"] || process.env.MYSQL_PORT,
+    MYSQL_DATABASE: cli["mysql-database"] || process.env.MYSQL_DATABASE,
+    MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
+    MYSQL_PASSWORD: cli["mysql-password"] || process.env.MYSQL_PASSWORD,
+  };
+
   const sourceDb = await open({ filename: sqlitePath, driver: sqlite3.Database });
-  const targetDb = await openDatabase({ env: process.env, sqlitePath });
+  const targetDb = await openDatabase({ env: effectiveEnv, sqlitePath });
 
   if (targetDb.kind !== "mysql") {
-    throw new Error("This migration script requires DB_CLIENT=mysql for the target database.");
+    throw new Error(
+      "This migration script requires MySQL target. Use DB_CLIENT=mysql or pass --target=mysql.",
+    );
   }
 
   try {
