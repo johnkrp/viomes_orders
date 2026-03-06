@@ -222,6 +222,15 @@ async function main() {
   const db = await openDatabase({ env });
 
   try {
+    try {
+      await db.run("SET SESSION max_statement_time = 0");
+      console.log("[dedupe] session max_statement_time disabled");
+    } catch (error) {
+      console.log(
+        `[dedupe] could not disable max_statement_time for this session: ${error.message || String(error)}`,
+      );
+    }
+
     await db.run("START TRANSACTION");
 
     const preview = await db.get(PREVIEW_DUPLICATES_SQL);
