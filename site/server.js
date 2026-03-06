@@ -15,9 +15,19 @@ const __dirname = path.dirname(__filename);
 const APP_NAME = "VIOMES Order Form API";
 const PORT = Number(process.env.PORT || 3001);
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "change-me-now";
+const DEFAULT_ADMIN_PASSWORD = "change-me-now";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD;
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "viomes_admin_session";
 const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 28800);
+const NODE_ENV = String(process.env.NODE_ENV || "development").trim().toLowerCase();
+const SYNC_ADMIN_PASSWORD_ON_STARTUP = String(process.env.SYNC_ADMIN_PASSWORD_ON_STARTUP || "0")
+  .trim()
+  .toLowerCase();
+const COOKIE_SECURE_MODE = String(
+  process.env.COOKIE_SECURE_MODE || (NODE_ENV === "production" ? "auto" : "off"),
+)
+  .trim()
+  .toLowerCase();
 const PBKDF2_ITERATIONS = 600000;
 const publicDir = path.join(__dirname, "public");
 
@@ -66,7 +76,38 @@ function newSessionToken() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
+function validateRuntimeConfig() {
+  if (!["off", "on", "auto"].includes(COOKIE_SECURE_MODE)) {
+    throw new Error(
+      `Unsupported COOKIE_SECURE_MODE "${COOKIE_SECURE_MODE}". Expected "off", "on", or "auto".`,
+    );
+  }
+
+  if (!["0", "1", "true", "false"].includes(SYNC_ADMIN_PASSWORD_ON_STARTUP)) {
+    throw new Error(
+      `Unsupported SYNC_ADMIN_PASSWORD_ON_STARTUP "${SYNC_ADMIN_PASSWORD_ON_STARTUP}". Expected 0/1/true/false.`,
+    );
+  }
+
+  if (NODE_ENV === "production" && ADMIN_PASSWORD === DEFAULT_ADMIN_PASSWORD) {
+    throw new Error(
+      "Refusing to start in production with the default admin password. Set ADMIN_PASSWORD.",
+    );
+  }
+}
+
+function shouldUseSecureCookie(req) {
+  if (COOKIE_SECURE_MODE === "off") return false;
+  if (COOKIE_SECURE_MODE === "on") return true;
+  return req.secure || String(req.headers["x-forwarded-proto"] || "").includes("https");
+}
+
+function shouldSyncAdminPasswordOnStartup() {
+  return SYNC_ADMIN_PASSWORD_ON_STARTUP === "1" || SYNC_ADMIN_PASSWORD_ON_STARTUP === "true";
+}
+
 async function initDb() {
+  validateRuntimeConfig();
   dbClient = await openDatabase({ env: process.env });
   db = dbClient;
   await initDatabaseSchema({ db, kind: dbClient.kind });
@@ -84,6 +125,16 @@ async function initDb() {
       `,
       [ADMIN_USERNAME, hashPassword(ADMIN_PASSWORD)],
     );
+  } else if (shouldSyncAdminPasswordOnStartup() && !verifyPassword(ADMIN_PASSWORD, admin.password_hash)) {
+    await db.run(
+      `
+        UPDATE admin_users
+        SET password_hash = ?
+        WHERE id = ?
+      `,
+      [hashPassword(ADMIN_PASSWORD), admin.id],
+    );
+    console.log(`Admin password synchronized for user "${ADMIN_USERNAME}" during startup.`);
   }
 
   customerStatsProvider = createCustomerStatsProvider({
@@ -239,7 +290,7 @@ app.post("/api/admin/login", async (req, res) => {
       httpOnly: true,
       sameSite: "lax",
       maxAge: SESSION_MAX_AGE_SECONDS * 1000,
-      secure: false,
+      secure: shouldUseSecureCookie(req),
     });
     res.json({ ok: true, username: admin.username, authenticated: true });
   } catch (error) {
