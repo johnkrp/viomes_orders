@@ -22,6 +22,49 @@ async function ensureColumn(db, kind, table, column, ddl) {
   await db.run(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
 }
 
+async function hasIndex(db, kind, table, indexName) {
+  if (kind === "mysql") {
+    const row = await db.get(
+      `
+        SELECT COUNT(*) AS n
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+          AND index_name = ?
+      `,
+      [table, indexName],
+    );
+    return Number(row?.n || 0) > 0;
+  }
+
+  const rows = await db.all(`PRAGMA index_list(${table})`);
+  return rows.some((row) => row.name === indexName);
+}
+
+async function ensureIndex(db, kind, table, indexName, ddl) {
+  if (await hasIndex(db, kind, table, indexName)) return;
+  await db.run(`CREATE INDEX ${indexName} ON ${table} ${ddl}`);
+}
+
+async function mysqlColumnType(db, table, column) {
+  const row = await db.get(
+    `
+      SELECT column_type
+      FROM information_schema.columns
+      WHERE table_schema = DATABASE()
+        AND table_name = ?
+        AND column_name = ?
+    `,
+    [table, column],
+  );
+  return String(row?.column_type || "").trim().toLowerCase();
+}
+
+async function ensureMysqlColumnType(db, table, column, ddl) {
+  if ((await mysqlColumnType(db, table, column)) === ddl.toLowerCase()) return;
+  await db.run(`ALTER TABLE ${table} MODIFY COLUMN ${column} ${ddl}`);
+}
+
 async function initSqliteSchema(db) {
   await db.exec(`PRAGMA foreign_keys = ON;`);
 
@@ -141,6 +184,7 @@ async function initSqliteSchema(db) {
     `
       CREATE TABLE IF NOT EXISTS imported_orders (
         order_id TEXT PRIMARY KEY,
+        document_no TEXT NOT NULL DEFAULT '',
         customer_code TEXT NOT NULL,
         customer_name TEXT NOT NULL,
         created_at TEXT NOT NULL,
@@ -336,7 +380,8 @@ async function initMysqlSchema(db) {
     `,
     `
       CREATE TABLE IF NOT EXISTS imported_orders (
-        order_id VARCHAR(128) PRIMARY KEY,
+        order_id VARCHAR(300) PRIMARY KEY,
+        document_no VARCHAR(128) NOT NULL,
         customer_code VARCHAR(128) NOT NULL,
         customer_name VARCHAR(255) NOT NULL,
         created_at VARCHAR(64) NOT NULL,
@@ -459,5 +504,29 @@ export async function initDatabaseSchema({ db, kind }) {
     "order_lines",
     "line_net_value",
     `line_net_value ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureIndex(
+    db,
+    kind,
+    "imported_sales_lines",
+    "idx_imported_sales_line_lookup",
+    "(order_date, document_no, item_code, customer_code, delivery_code)",
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_orders",
+    "document_no",
+    `document_no ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"} NOT NULL DEFAULT ''`,
+  );
+  if (kind === "mysql") {
+    await ensureMysqlColumnType(db, "imported_orders", "order_id", "VARCHAR(300) NOT NULL");
+  }
+  await ensureIndex(
+    db,
+    kind,
+    "imported_orders",
+    "idx_imported_orders_customer_document_date",
+    "(customer_code, document_no, created_at)",
   );
 }

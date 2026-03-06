@@ -158,6 +158,79 @@ def rebuild_customers_from_sales(cur) -> None:
     )
 
 
+def rebuild_sales_aggregates(cur) -> None:
+    execute_step(cur, "truncate imported_orders", "DELETE FROM imported_orders")
+    execute_step(cur, "truncate imported_monthly_sales", "DELETE FROM imported_monthly_sales")
+    execute_step(cur, "truncate imported_product_sales", "DELETE FROM imported_product_sales")
+
+    execute_step(
+        cur,
+        "build imported_orders",
+        """
+        INSERT INTO imported_orders(
+          order_id, document_no, customer_code, customer_name, created_at, total_lines, total_pieces,
+          total_net_value, average_discount_pct, document_type, delivery_code,
+          delivery_description, source_file
+        )
+        SELECT
+          CONCAT(customer_code, '::', order_date, '::', document_no) AS order_id,
+          document_no,
+          customer_code,
+          MAX(customer_name),
+          order_date,
+          COUNT(*) AS total_lines,
+          COALESCE(SUM(qty_base), 0) AS total_pieces,
+          COALESCE(SUM(net_value), 0) AS total_net_value,
+          0 AS average_discount_pct,
+          MAX(document_type),
+          MAX(delivery_code),
+          MAX(delivery_description),
+          MAX(source_file)
+        FROM imported_sales_lines
+        GROUP BY document_no, customer_code, order_date
+        """
+    )
+
+    execute_step(
+        cur,
+        "build imported_monthly_sales",
+        """
+        INSERT INTO imported_monthly_sales(customer_code, order_year, order_month, revenue, pieces)
+        SELECT
+          customer_code,
+          order_year,
+          order_month,
+          COALESCE(SUM(net_value), 0) AS revenue,
+          COALESCE(SUM(qty_base), 0) AS pieces
+        FROM imported_sales_lines
+        GROUP BY customer_code, order_year, order_month
+        """
+    )
+
+    execute_step(
+        cur,
+        "build imported_product_sales",
+        """
+        INSERT INTO imported_product_sales(
+          customer_code, item_code, item_description, revenue, pieces, orders, avg_unit_price
+        )
+        SELECT
+          customer_code,
+          item_code,
+          MAX(item_description),
+          COALESCE(SUM(net_value), 0) AS revenue,
+          COALESCE(SUM(qty_base), 0) AS pieces,
+          COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+          CASE
+            WHEN COALESCE(SUM(qty_base), 0) > 0 THEN COALESCE(SUM(net_value), 0) / SUM(qty_base)
+            ELSE 0
+          END AS avg_unit_price
+        FROM imported_sales_lines
+        GROUP BY customer_code, item_code
+        """
+    )
+
+
 def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
     stats = ImportStats(dataset="sales_lines", file_name=",".join(path.name for path in sales_files))
     print(f"[import] sales_lines: starting ({stats.file_name})", flush=True)
@@ -165,9 +238,6 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
     try:
         if import_mode == "full_refresh":
             execute_step(cur, "truncate imported_sales_lines", "DELETE FROM imported_sales_lines")
-        execute_step(cur, "truncate imported_orders", "DELETE FROM imported_orders")
-        execute_step(cur, "truncate imported_monthly_sales", "DELETE FROM imported_monthly_sales")
-        execute_step(cur, "truncate imported_product_sales", "DELETE FROM imported_product_sales")
 
         for sales_file in sales_files:
             print(f"[import] sales_lines: reading {sales_file.name}", flush=True)
@@ -181,18 +251,59 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                     order_date = parse_date(row.get("Ημ/νία "))
                     if not (customer_code and document_no and item_code and order_date):
                         continue
+
                     order_dt = datetime.strptime(order_date, "%Y-%m-%d")
+                    document_type = str(row.get("Τύπος Παραστατικών", "")).strip()
+                    item_description = str(row.get("Περιγραφή", "")).strip()
+                    unit_code = str(row.get("ΜΜ", "")).strip()
+                    qty = parse_decimal(row.get("Ποσότητα"))
+                    qty_base = parse_decimal(row.get("Ποσότητα σε βασική ΜΜ"))
+                    unit_price = parse_decimal(row.get("Τιμή"))
+                    net_value = parse_decimal(row.get("Καθαρή  αξία "))
+                    customer_name = str(row.get("Επωνυμία/Ονοματεπώνυμο", "")).strip()
+                    delivery_code = str(row.get("Κωδικός1", "")).strip()
+                    delivery_description = str(row.get("Περιγραφή1", "")).strip()
+                    account_code = str(row.get("Κωδ. ΑΧ ", "")).strip()
+                    account_description = str(row.get("Περ. ΑΧ", "")).strip()
+                    branch_code = str(row.get("Κωδ.υποκ.", "")).strip()
+                    branch_description = str(row.get("Περ.υποκ.", "")).strip()
+                    note_1 = str(row.get("Σχόλιο 1", "")).strip()
+
                     execute_step(
                         cur,
                         "insert imported_sales_lines row",
                         """
-                        INSERT IGNORE INTO imported_sales_lines(
+                        INSERT INTO imported_sales_lines(
                           source_file, order_date, order_year, order_month, document_no, document_type,
                           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
                           customer_code, customer_name, delivery_code, delivery_description, account_code,
                           account_description, branch_code, branch_description, note_1
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        FROM DUAL
+                        WHERE NOT EXISTS (
+                          SELECT 1
+                          FROM imported_sales_lines existing
+                          WHERE existing.order_date = %s
+                            AND existing.document_no = %s
+                            AND existing.document_type = %s
+                            AND existing.item_code = %s
+                            AND existing.item_description = %s
+                            AND existing.unit_code = %s
+                            AND existing.qty = %s
+                            AND existing.qty_base = %s
+                            AND existing.unit_price = %s
+                            AND existing.net_value = %s
+                            AND existing.customer_code = %s
+                            AND existing.customer_name = %s
+                            AND existing.delivery_code = %s
+                            AND existing.delivery_description = %s
+                            AND existing.account_code = %s
+                            AND existing.account_description = %s
+                            AND existing.branch_code = %s
+                            AND existing.branch_description = %s
+                            AND existing.note_1 = %s
+                        )
                         """,
                         (
                             sales_file.name,
@@ -200,23 +311,42 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             order_dt.year,
                             order_dt.month,
                             document_no,
-                            str(row.get("Τύπος Παραστατικών", "")).strip(),
+                            document_type,
                             item_code,
-                            str(row.get("Περιγραφή", "")).strip(),
-                            str(row.get("ΜΜ", "")).strip(),
-                            parse_decimal(row.get("Ποσότητα")),
-                            parse_decimal(row.get("Ποσότητα σε βασική ΜΜ")),
-                            parse_decimal(row.get("Τιμή")),
-                            parse_decimal(row.get("Καθαρή  αξία ")),
+                            item_description,
+                            unit_code,
+                            qty,
+                            qty_base,
+                            unit_price,
+                            net_value,
                             customer_code,
-                            str(row.get("Επωνυμία/Ονοματεπώνυμο", "")).strip(),
-                            str(row.get("Κωδικός1", "")).strip(),
-                            str(row.get("Περιγραφή1", "")).strip(),
-                            str(row.get("Κωδ. ΑΧ ", "")).strip(),
-                            str(row.get("Περ. ΑΧ", "")).strip(),
-                            str(row.get("Κωδ.υποκ.", "")).strip(),
-                            str(row.get("Περ.υποκ.", "")).strip(),
-                            str(row.get("Σχόλιο 1", "")).strip(),
+                            customer_name,
+                            delivery_code,
+                            delivery_description,
+                            account_code,
+                            account_description,
+                            branch_code,
+                            branch_description,
+                            note_1,
+                            order_date,
+                            document_no,
+                            document_type,
+                            item_code,
+                            item_description,
+                            unit_code,
+                            qty,
+                            qty_base,
+                            unit_price,
+                            net_value,
+                            customer_code,
+                            customer_name,
+                            delivery_code,
+                            delivery_description,
+                            account_code,
+                            account_description,
+                            branch_code,
+                            branch_description,
+                            note_1,
                         ),
                     )
                     stats.rows_upserted += cur.rowcount
@@ -233,72 +363,7 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
 
         rebuild_customers_from_sales(cur)
         print("[import] customers: rebuilt from sales files", flush=True)
-
-        execute_step(
-            cur,
-            "build imported_orders",
-            """
-            INSERT INTO imported_orders(
-              order_id, customer_code, customer_name, created_at, total_lines, total_pieces,
-              total_net_value, average_discount_pct, document_type, delivery_code,
-              delivery_description, source_file
-            )
-            SELECT
-              document_no,
-              customer_code,
-              MAX(customer_name),
-              order_date,
-              COUNT(*) AS total_lines,
-              COALESCE(SUM(qty_base), 0) AS total_pieces,
-              COALESCE(SUM(net_value), 0) AS total_net_value,
-              0 AS average_discount_pct,
-              MAX(document_type),
-              MAX(delivery_code),
-              MAX(delivery_description),
-              MAX(source_file)
-            FROM imported_sales_lines
-            GROUP BY document_no, customer_code, order_date
-            """
-        )
-
-        execute_step(
-            cur,
-            "build imported_monthly_sales",
-            """
-            INSERT INTO imported_monthly_sales(customer_code, order_year, order_month, revenue, pieces)
-            SELECT
-              customer_code,
-              order_year,
-              order_month,
-              COALESCE(SUM(net_value), 0) AS revenue,
-              COALESCE(SUM(qty_base), 0) AS pieces
-            FROM imported_sales_lines
-            GROUP BY customer_code, order_year, order_month
-            """
-        )
-
-        execute_step(
-            cur,
-            "build imported_product_sales",
-            """
-            INSERT INTO imported_product_sales(
-              customer_code, item_code, item_description, revenue, pieces, orders, avg_unit_price
-            )
-            SELECT
-              customer_code,
-              item_code,
-              MAX(item_description),
-              COALESCE(SUM(net_value), 0) AS revenue,
-              COALESCE(SUM(qty_base), 0) AS pieces,
-              COUNT(DISTINCT document_no) AS orders,
-              CASE
-                WHEN COALESCE(SUM(qty_base), 0) > 0 THEN COALESCE(SUM(net_value), 0) / SUM(qty_base)
-                ELSE 0
-              END AS avg_unit_price
-            FROM imported_sales_lines
-            GROUP BY customer_code, item_code
-            """
-        )
+        rebuild_sales_aggregates(cur)
 
         finish_import(cur, run_id, stats)
         print(

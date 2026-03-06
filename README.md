@@ -92,7 +92,7 @@ npm run import:entersoft -- --daily-info-file=/absolute/path/daily_info.csv --my
 
 Import mode:
 
-- default: `incremental` (keeps history in `imported_sales_lines`, ignores exact duplicates)
+- default: `incremental` (keeps history in `imported_sales_lines`, skips duplicate logical sales lines even if the source filename changes)
 - optional full refresh: `--mode=full_refresh`
 
 You can also pass multiple sales files:
@@ -119,6 +119,15 @@ Run reset + import in one command:
 ```powershell
 npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2025.CSV,/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
+
+Cleanup historical duplicates already present in import history:
+
+```powershell
+cd site
+npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
+Use `dedupe:sales` if bad history is already in `imported_sales_lines`. Use `full_refresh` if you want to rebuild from canonical yearly files.
 
 ## Plesk Nightly Task
 

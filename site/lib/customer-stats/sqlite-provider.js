@@ -3,7 +3,6 @@ import {
   asMoney,
   buildAverageDaysBetweenOrders,
   buildDaysSinceLastOrder,
-  buildRevenueSince,
   createCustomerNotFoundError,
   ensureCustomerCode,
   productStatRow,
@@ -31,6 +30,35 @@ function mergeMonthlyRows(rows) {
   return buckets;
 }
 
+function buildCutoffDateString(now, days) {
+  const cutoff = new Date(now.getTime() - days * 86400000);
+  return cutoff.toISOString().slice(0, 10);
+}
+
+async function loadRevenueWindows(db, table, customerCodeColumn, dateColumn, customerCode, now) {
+  const cutoff3m = buildCutoffDateString(now, 90);
+  const cutoff6m = buildCutoffDateString(now, 180);
+  const cutoff12m = buildCutoffDateString(now, 365);
+
+  const row = await db.get(
+    `
+      SELECT
+        COALESCE(SUM(CASE WHEN SUBSTR(${dateColumn}, 1, 10) >= ? THEN total_net_value ELSE 0 END), 0) AS revenue_3m,
+        COALESCE(SUM(CASE WHEN SUBSTR(${dateColumn}, 1, 10) >= ? THEN total_net_value ELSE 0 END), 0) AS revenue_6m,
+        COALESCE(SUM(CASE WHEN SUBSTR(${dateColumn}, 1, 10) >= ? THEN total_net_value ELSE 0 END), 0) AS revenue_12m
+      FROM ${table}
+      WHERE ${customerCodeColumn} = ?
+    `,
+    [cutoff3m, cutoff6m, cutoff12m, customerCode],
+  );
+
+  return {
+    revenue_3m: asMoney(row?.revenue_3m),
+    revenue_6m: asMoney(row?.revenue_6m),
+    revenue_12m: asMoney(row?.revenue_12m),
+  };
+}
+
 async function hasImportedData(db) {
   try {
     const row = await db.get(`SELECT COUNT(*) AS n FROM imported_sales_lines`);
@@ -50,6 +78,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
     async getCustomerStats(customerCode) {
       const code = ensureCustomerCode(customerCode);
       const useImportedData = await hasImportedData(db);
+      const now = new Date();
 
       if (!useImportedData) {
         const customer = await db.get(
@@ -78,6 +107,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           `,
           [code],
         );
+        const revenueWindows = await loadRevenueWindows(db, "orders", "customer_code", "created_at", code, now);
 
         const productQuery = `
           SELECT
@@ -182,7 +212,6 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           });
         }
 
-        const now = new Date();
         const currentYear = now.getUTCFullYear();
         const previousYear = currentYear - 1;
 
@@ -234,9 +263,9 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             total_orders: totalOrders,
             total_pieces: asInteger(summary.total_pieces),
             total_revenue: totalRevenue,
-            revenue_3m: buildRevenueSince(recentOrders, now, 90),
-            revenue_6m: buildRevenueSince(recentOrders, now, 180),
-            revenue_12m: buildRevenueSince(recentOrders, now, 365),
+            revenue_3m: revenueWindows.revenue_3m,
+            revenue_6m: revenueWindows.revenue_6m,
+            revenue_12m: revenueWindows.revenue_12m,
             average_order_value: totalOrders ? asMoney(totalRevenue / totalOrders) : 0,
             average_days_between_orders: buildAverageDaysBetweenOrders(recentOrders),
             days_since_last_order: buildDaysSinceLastOrder(summary.last_order_date, now),
@@ -307,6 +336,14 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         `,
         [code],
       );
+      const revenueWindows = await loadRevenueWindows(
+        db,
+        "imported_orders",
+        "customer_code",
+        "created_at",
+        code,
+        now,
+      );
 
       const allProductSales = await db.all(
         `
@@ -352,6 +389,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         `
           SELECT
             order_id,
+            document_no,
             created_at,
             total_lines,
             total_pieces,
@@ -369,6 +407,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         `
           SELECT
             order_id,
+            document_no,
             created_at,
             total_lines,
             total_pieces,
@@ -396,9 +435,10 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             FROM imported_sales_lines
             WHERE customer_code = ?
               AND document_no = ?
+              AND order_date = ?
             ORDER BY item_code ASC
           `,
-          [code, order.order_id],
+          [code, order.document_no, order.created_at],
         );
 
         detailedOrders.push({
@@ -420,7 +460,6 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         });
       }
 
-      const now = new Date();
       const currentYear = now.getUTCFullYear();
       const previousYear = currentYear - 1;
 
@@ -466,9 +505,9 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           total_orders: totalOrders,
           total_pieces: asInteger(summary.total_pieces),
           total_revenue: totalRevenue,
-          revenue_3m: buildRevenueSince(recentOrders, now, 90),
-          revenue_6m: buildRevenueSince(recentOrders, now, 180),
-          revenue_12m: buildRevenueSince(recentOrders, now, 365),
+          revenue_3m: revenueWindows.revenue_3m,
+          revenue_6m: revenueWindows.revenue_6m,
+          revenue_12m: revenueWindows.revenue_12m,
           average_order_value: totalOrders ? asMoney(totalRevenue / totalOrders) : 0,
           average_days_between_orders: buildAverageDaysBetweenOrders(recentOrders),
           days_since_last_order: buildDaysSinceLastOrder(summary.last_order_date, now),

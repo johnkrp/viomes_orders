@@ -19,12 +19,24 @@ Operational scripts used by Plesk/local maintenance.
 - `reset-and-reload-sales.js`
   - Pipeline: reset then run sales import.
 
+- `dedupe-imported-sales.js`
+  - Removes historical duplicate logical sales lines from `imported_sales_lines`.
+  - Rebuilds imported aggregates and mirrored customers afterwards.
+
 ## Import mode
 
 - default: `incremental`
 - optional: `full_refresh`
 
-In incremental mode, history is preserved in `imported_sales_lines` and exact duplicates are skipped by DB unique key.
+In incremental mode, history is preserved in `imported_sales_lines` and duplicate logical sales lines are skipped even if the source filename changes.
+
+If bad history already exists in `imported_sales_lines`, run:
+
+```powershell
+npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
+Use `full_refresh` instead when you want to rebuild from canonical yearly files.
 
 ## Typical Plesk command
 

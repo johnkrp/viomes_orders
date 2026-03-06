@@ -21,6 +21,16 @@ def _ensure_column(cur: sqlite3.Cursor, table: str, column: str, ddl: str) -> No
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
 
 
+def _has_index(cur: sqlite3.Cursor, table: str, index_name: str) -> bool:
+    rows = cur.execute(f"PRAGMA index_list({table})").fetchall()
+    return any(row["name"] == index_name for row in rows)
+
+
+def _ensure_index(cur: sqlite3.Cursor, table: str, index_name: str, ddl: str) -> None:
+    if not _has_index(cur, table, index_name):
+        cur.execute(f"CREATE INDEX {index_name} ON {table} {ddl}")
+
+
 def init_schema() -> None:
     conn = get_conn()
     cur = conn.cursor()
@@ -152,6 +162,7 @@ def init_schema() -> None:
     cur.execute("""
     CREATE TABLE IF NOT EXISTS imported_orders (
       order_id TEXT PRIMARY KEY,
+      document_no TEXT NOT NULL DEFAULT '',
       customer_code TEXT NOT NULL,
       customer_name TEXT NOT NULL,
       created_at TEXT NOT NULL,
@@ -232,6 +243,19 @@ def init_schema() -> None:
     _ensure_column(cur, "order_lines", "unit_price", "unit_price REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "order_lines", "discount_pct", "discount_pct REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "order_lines", "line_net_value", "line_net_value REAL NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_orders", "document_no", "document_no TEXT NOT NULL DEFAULT ''")
+    _ensure_index(
+        cur,
+        "imported_sales_lines",
+        "idx_imported_sales_line_lookup",
+        "(order_date, document_no, item_code, customer_code, delivery_code)",
+    )
+    _ensure_index(
+        cur,
+        "imported_orders",
+        "idx_imported_orders_customer_document_date",
+        "(customer_code, document_no, created_at)",
+    )
 
     conn.commit()
     conn.close()

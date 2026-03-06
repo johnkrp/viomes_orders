@@ -8,6 +8,7 @@
     "dev": "node server.js",
     "migrate:sqlite-to-db": "node scripts/migrate-sqlite-to-db.js",
     "import:entersoft": "node scripts/run-entersoft-import.js",
+    "dedupe:sales": "node scripts/dedupe-imported-sales.js",
     "reset:business-data": "node scripts/reset-business-data.js",
     "reload:sales": "node scripts/reset-and-reload-sales.js"
   },

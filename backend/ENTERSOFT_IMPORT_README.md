@@ -91,6 +91,13 @@ Force full refresh mode (clears `imported_sales_lines` first):
 npm run import:entersoft -- --mode=full_refresh --sales-files=/abs/path/2025.CSV,/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+Cleanup historical duplicates already stored in `imported_sales_lines`:
+
+```powershell
+cd site
+npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
 ## Validation Queries
 
 ```sql
@@ -100,11 +107,48 @@ SELECT COUNT(*) FROM imported_monthly_sales;
 SELECT COUNT(*) FROM imported_product_sales;
 SELECT COUNT(*) FROM imported_customers;
 SELECT COUNT(*) FROM customers WHERE source = 'entersoft_import';
+
+SELECT
+  COUNT(*) AS duplicate_groups,
+  COALESCE(SUM(group_size - 1), 0) AS duplicate_rows
+FROM (
+  SELECT COUNT(*) AS group_size
+  FROM imported_sales_lines
+  GROUP BY
+    order_date,
+    document_no,
+    document_type,
+    item_code,
+    item_description,
+    unit_code,
+    qty,
+    qty_base,
+    unit_price,
+    net_value,
+    customer_code,
+    customer_name,
+    delivery_code,
+    delivery_description,
+    account_code,
+    account_description,
+    branch_code,
+    branch_description,
+    note_1
+  HAVING COUNT(*) > 1
+) duplicate_groups;
+
+SELECT document_no, customer_code, created_at, COUNT(*)
+FROM imported_orders
+GROUP BY document_no, customer_code, created_at
+HAVING COUNT(*) > 1;
 ```
 
 ## Notes
 
 - Receivables are not imported yet.
-- Incremental mode appends new sales rows with `INSERT IGNORE` and prevents exact duplicates via the unique key.
+- Incremental mode now skips duplicate logical sales lines even if the source filename changes.
+- Existing historical duplicates already present in `imported_sales_lines` are not removed automatically by an incremental run; use `npm run dedupe:sales` or `full_refresh` if cleanup is needed.
+- `dedupe:sales` preserves the earliest `imported_sales_lines.id` per logical sales line, deletes the rest, and then rebuilds all derived import tables plus mirrored customers.
+- `imported_orders.order_id` is now a synthetic value: `{customer_code}::{order_date}::{document_no}`.
 - `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, and `imported_customers` are rebuilt from the full `imported_sales_lines` history on each run.
 - If import blocks on locks, stop Node app and retry.

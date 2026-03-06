@@ -50,6 +50,48 @@ def _ensure_column(cur, table: str, column: str, ddl: str) -> None:
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
 
 
+def _has_index(cur, table: str, index_name: str) -> bool:
+    cur.execute(
+        """
+        SELECT COUNT(*) AS n
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = %s
+          AND index_name = %s
+        """,
+        (table, index_name),
+    )
+    row = cur.fetchone() or {}
+    return int(row.get("n", 0)) > 0
+
+
+def _ensure_index(cur, table: str, index_name: str, ddl: str) -> None:
+    if not _has_index(cur, table, index_name):
+        cur.execute(f"CREATE INDEX {index_name} ON {table} {ddl}")
+
+
+def _column_definition(cur, table: str, column: str) -> str:
+    cur.execute(
+        """
+        SELECT column_type
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name = %s
+          AND column_name = %s
+        """,
+        (table, column),
+    )
+    row = cur.fetchone() or {}
+    return str(row.get("column_type", "")).lower()
+
+
+def _ensure_column_type(cur, table: str, column: str, ddl: str) -> None:
+    definition = _column_definition(cur, table, column)
+    if definition == ddl.lower():
+        return
+    cur.execute(f"ALTER TABLE {table} MODIFY COLUMN {column} {ddl}")
+
+
 def init_schema() -> None:
     conn = get_conn()
     cur = conn.cursor()
@@ -117,7 +159,8 @@ def init_schema() -> None:
         """,
         """
         CREATE TABLE IF NOT EXISTS imported_orders (
-          order_id VARCHAR(128) PRIMARY KEY,
+          order_id VARCHAR(300) PRIMARY KEY,
+          document_no VARCHAR(128) NOT NULL,
           customer_code VARCHAR(128) NOT NULL,
           customer_name VARCHAR(255) NOT NULL,
           created_at VARCHAR(64) NOT NULL,
@@ -173,6 +216,20 @@ def init_schema() -> None:
         cur.execute(sql)
 
     _ensure_column(cur, "customers", "source", "source VARCHAR(64) NOT NULL DEFAULT 'local'")
+    _ensure_column(cur, "imported_orders", "document_no", "document_no VARCHAR(128) NOT NULL DEFAULT ''")
+    _ensure_column_type(cur, "imported_orders", "order_id", "VARCHAR(300) NOT NULL")
+    _ensure_index(
+        cur,
+        "imported_sales_lines",
+        "idx_imported_sales_line_lookup",
+        "(order_date, document_no, item_code, customer_code, delivery_code)",
+    )
+    _ensure_index(
+        cur,
+        "imported_orders",
+        "idx_imported_orders_customer_document_date",
+        "(customer_code, document_no, created_at)",
+    )
 
     conn.commit()
     conn.close()
