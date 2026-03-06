@@ -32,6 +32,7 @@ const effectiveEnv = {
   MYSQL_DATABASE: cli["mysql-database"] || process.env.MYSQL_DATABASE,
   MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
   MYSQL_PASSWORD: cli["mysql-password"] || process.env.MYSQL_PASSWORD,
+  ENTERSOFT_IMPORT_MODE: cli.mode || process.env.ENTERSOFT_IMPORT_MODE,
   ENTERSOFT_SALES_FILES: cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
   ENTERSOFT_DAILY_INFO_FILE: cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
 };

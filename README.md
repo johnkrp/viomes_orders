@@ -90,6 +90,11 @@ Single daily file mode:
 npm run import:entersoft -- --daily-info-file=/absolute/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+Import mode:
+
+- default: `incremental` (keeps history in `imported_sales_lines`, ignores exact duplicates)
+- optional full refresh: `--mode=full_refresh`
+
 You can also pass multiple sales files:
 
 ```powershell
@@ -136,7 +141,7 @@ The script logs to:
 
 Current files:
 
-- sales file(s) only, e.g. `backend/2025.CSV`, `backend/2026.CSV`, or a single `backend/daily_info.csv`
+- sales file(s) only, e.g. `backend/2025.CSV`, `backend/2026.CSV`, or a single `backend/today.csv`
 
 `customers` / `imported_customers` are now rebuilt directly from sales lines during import (no mandatory `customers.csv` input).
 

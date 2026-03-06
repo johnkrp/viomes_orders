@@ -7,6 +7,7 @@ The importer is now sales-file-only.
 - No `customers.csv` input is required.
 - Customers are rebuilt from imported sales lines.
 - Target runtime DB is MySQL/MariaDB.
+- Default mode is incremental (`ENTERSOFT_IMPORT_MODE=incremental`).
 
 ## Input Files
 
@@ -84,6 +85,12 @@ With daily file:
 npm run import:entersoft -- --daily-info-file=/abs/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+Force full refresh mode (clears `imported_sales_lines` first):
+
+```powershell
+npm run import:entersoft -- --mode=full_refresh --sales-files=/abs/path/2025.CSV,/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
 ## Validation Queries
 
 ```sql
@@ -98,5 +105,6 @@ SELECT COUNT(*) FROM customers WHERE source = 'entersoft_import';
 ## Notes
 
 - Receivables are not imported yet.
-- Import writes are full refresh for imported tables.
+- Incremental mode appends new sales rows with `INSERT IGNORE` and prevents exact duplicates via the unique key.
+- `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, and `imported_customers` are rebuilt from the full `imported_sales_lines` history on each run.
 - If import blocks on locks, stop Node app and retry.

@@ -5,7 +5,7 @@ set -euo pipefail
 # Run with: /bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/nightly-import.sh
 
 APP_ROOT="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site"
-DAILY_INFO_FILE="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/daily_info.csv"
+DAILY_INFO_FILE="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/today.csv"
 LOCK_FILE="/tmp/viomes-nightly-import.lock"
 LOG_DIR="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/logs"
 IMPORT_RUNNER_JS="$APP_ROOT/scripts/run-entersoft-import.js"
@@ -41,6 +41,7 @@ fi
 cd "$APP_ROOT"
 
 IMPORT_ARGS=(
+  --mode=incremental
   --python-install-deps=1
   --daily-info-file="$DAILY_INFO_FILE"
   --mysql-host="$MYSQL_HOST"

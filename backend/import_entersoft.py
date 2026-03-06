@@ -14,6 +14,7 @@ DEFAULT_SALES_FILES = [
 ]
 PROGRESS_EVERY_ROWS = 5000
 LOCK_WAIT_TIMEOUT_SECONDS = 5
+VALID_IMPORT_MODES = {"incremental", "full_refresh"}
 
 
 def parse_decimal(value):
@@ -56,6 +57,16 @@ def resolve_sales_files():
         return [Path(daily)]
 
     return list(DEFAULT_SALES_FILES)
+
+
+def resolve_import_mode() -> str:
+    mode = str(os.getenv("ENTERSOFT_IMPORT_MODE", "incremental")).strip().lower()
+    if mode not in VALID_IMPORT_MODES:
+        raise RuntimeError(
+            f"Unsupported ENTERSOFT_IMPORT_MODE='{mode}'. "
+            f"Allowed values: {', '.join(sorted(VALID_IMPORT_MODES))}"
+        )
+    return mode
 
 
 def begin_import(cur, dataset: str, file_name: str) -> int:
@@ -147,12 +158,13 @@ def rebuild_customers_from_sales(cur) -> None:
     )
 
 
-def import_sales_lines(cur, sales_files) -> ImportStats:
+def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
     stats = ImportStats(dataset="sales_lines", file_name=",".join(path.name for path in sales_files))
     print(f"[import] sales_lines: starting ({stats.file_name})", flush=True)
     run_id = begin_import(cur, stats.dataset, stats.file_name)
     try:
-        execute_step(cur, "truncate imported_sales_lines", "DELETE FROM imported_sales_lines")
+        if import_mode == "full_refresh":
+            execute_step(cur, "truncate imported_sales_lines", "DELETE FROM imported_sales_lines")
         execute_step(cur, "truncate imported_orders", "DELETE FROM imported_orders")
         execute_step(cur, "truncate imported_monthly_sales", "DELETE FROM imported_monthly_sales")
         execute_step(cur, "truncate imported_product_sales", "DELETE FROM imported_product_sales")
@@ -306,6 +318,8 @@ def main() -> None:
     cur = conn.cursor()
     configure_session(cur)
     print(f"[import] session lock wait timeout set to {LOCK_WAIT_TIMEOUT_SECONDS}s", flush=True)
+    import_mode = resolve_import_mode()
+    print(f"[import] mode: {import_mode}", flush=True)
     sales_files = resolve_sales_files()
 
     if not sales_files:
@@ -318,7 +332,7 @@ def main() -> None:
     print(f"[import] using sales files: {', '.join(str(p) for p in sales_files)}", flush=True)
 
     try:
-        sales_stats = import_sales_lines(cur, sales_files)
+        sales_stats = import_sales_lines(cur, sales_files, import_mode)
         conn.commit()
         print(f"Imported sales_lines={sales_stats.rows_upserted}")
     except Exception:
