@@ -93,19 +93,13 @@ npm run import:entersoft -- --daily-info-file=/absolute/path/daily_info.csv --my
 You can also pass multiple sales files:
 
 ```powershell
-npm run import:entersoft -- --sales-files=/path/info_2025.csv,/path/info_2026.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+npm run import:entersoft -- --sales-files=/path/2025.CSV,/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
 Import command failsafe timeout:
 
 - default: `1800` seconds
 - override with `ENTERSOFT_IMPORT_TIMEOUT_SECONDS` (or `IMPORT_TIMEOUT_SECONDS`)
-
-The SQLite -> MySQL migration command already supports explicit args the same way:
-
-```powershell
-npm run migrate:sqlite-to-db -- --target=mysql --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
-```
 
 ## Full Reset + Reload (new yearly files)
 
@@ -142,7 +136,7 @@ The script logs to:
 
 Current files:
 
-- sales file(s) only, e.g. `backend/info_2025.csv`, `backend/info_2026.csv`, or a single `backend/daily_info.csv`
+- sales file(s) only, e.g. `backend/2025.CSV`, `backend/2026.CSV`, or a single `backend/daily_info.csv`
 
 `customers` / `imported_customers` are now rebuilt directly from sales lines during import (no mandatory `customers.csv` input).
 

@@ -9,8 +9,8 @@ from mysql_db import get_conn, init_schema
 
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_SALES_FILES = [
-    BASE_DIR / "info_2025.csv",
-    BASE_DIR / "info_2026.csv",
+    BASE_DIR / "2025.CSV",
+    BASE_DIR / "2026.CSV",
 ]
 PROGRESS_EVERY_ROWS = 5000
 LOCK_WAIT_TIMEOUT_SECONDS = 5
@@ -21,10 +21,6 @@ def parse_decimal(value):
     if not text:
         return 0.0
     return float(text)
-
-
-def parse_int_flag(value):
-    return 1 if str(value or "").strip() in {"1", "true", "True"} else 0
 
 
 def parse_date(value):
@@ -106,105 +102,6 @@ def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success",
         """,
         (status, finished_at, stats.rows_in, stats.rows_upserted, error_text, run_id),
     )
-
-
-def import_customers(cur, customers_file) -> ImportStats:
-    stats = ImportStats(dataset="customers", file_name=customers_file.name)
-    print(f"[import] customers: starting ({customers_file})", flush=True)
-    run_id = begin_import(cur, stats.dataset, stats.file_name)
-    try:
-        execute_step(cur, "truncate imported_customers", "DELETE FROM imported_customers")
-
-        with customers_file.open("r", encoding="utf-8-sig", newline="") as f:
-            reader = csv.DictReader(f, delimiter="\t")
-            for row in reader:
-                stats.rows_in += 1
-                customer_code = str(row.get("Κωδικός Πελάτη", "")).strip()
-                customer_name = str(row.get("Επων. Πελάτη", "")).strip()
-                if not customer_code or not customer_name:
-                    continue
-                execute_step(
-                    cur,
-                    "upsert imported_customers row",
-                    """
-                    INSERT INTO imported_customers(
-                      customer_code, customer_name, delivery_code, delivery_description,
-                      address_1, postal_code, city, region, country, phone,
-                      pallet_info, delivery_method, salesperson_code, salesperson_name,
-                      is_inactive, source_file
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE
-                      customer_name = VALUES(customer_name),
-                      delivery_code = VALUES(delivery_code),
-                      delivery_description = VALUES(delivery_description),
-                      address_1 = VALUES(address_1),
-                      postal_code = VALUES(postal_code),
-                      city = VALUES(city),
-                      region = VALUES(region),
-                      country = VALUES(country),
-                      phone = VALUES(phone),
-                      pallet_info = VALUES(pallet_info),
-                      delivery_method = VALUES(delivery_method),
-                      salesperson_code = VALUES(salesperson_code),
-                      salesperson_name = VALUES(salesperson_name),
-                      is_inactive = VALUES(is_inactive),
-                      source_file = VALUES(source_file)
-                    """,
-                    (
-                        customer_code,
-                        customer_name,
-                        str(row.get("Κωδικός", "")).strip(),
-                        str(row.get("Περιγραφή", "")).strip(),
-                        str(row.get("Δ/νση 1", "")).strip(),
-                        str(row.get("Ταχ.Κώδικας", "")).strip(),
-                        str(row.get("Πόλη", "")).strip(),
-                        str(row.get("Περιοχή", "")).strip(),
-                        str(row.get("Χώρα", "")).strip(),
-                        str(row.get("Τηλέφωνο 1", "")).strip(),
-                        str(row.get("Παλέτες", "")).strip(),
-                        str(row.get("Τρόπος Παράδοσης", "")).strip(),
-                        str(row.get("Κωδικός Πωλητή", "")).strip(),
-                        str(row.get("Επων. Πωλητή", "")).strip(),
-                        parse_int_flag(row.get("Ανενεργός")),
-                        customers_file.name,
-                    ),
-                )
-                stats.rows_upserted += 1
-                if stats.rows_in % PROGRESS_EVERY_ROWS == 0:
-                    print(
-                        f"[import] customers: rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
-                        flush=True,
-                    )
-
-        execute_step(
-            cur,
-            "delete mirrored customers",
-            "DELETE FROM customers WHERE source = 'entersoft_import'",
-        )
-        execute_step(
-            cur,
-            "mirror imported customers",
-            """
-            INSERT INTO customers(code, name, email, source)
-            SELECT customer_code, customer_name, NULL, 'entersoft_import'
-            FROM imported_customers
-            ON DUPLICATE KEY UPDATE
-              name = VALUES(name),
-              email = VALUES(email),
-              source = VALUES(source)
-            """
-        )
-        finish_import(cur, run_id, stats)
-        print(
-            f"[import] customers: completed rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
-            flush=True,
-        )
-        return stats
-    except Exception as exc:
-        finish_import(cur, run_id, stats, status="failed", error_text=str(exc))
-        print(f"[import] customers: failed ({exc})", flush=True)
-        raise
 
 
 def rebuild_customers_from_sales(cur) -> None:

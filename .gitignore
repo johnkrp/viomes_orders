@@ -7,7 +7,15 @@ backend/montly_sales.CSV
 backend/customers.csv
 backend/info_2025.csv
 backend/info_2026.csv
+backend/2025.CSV
+backend/2026.CSV
+backend/daily_info.csv
+backend/today.csv
 site/node_modules/
 site/*.log
+automation/
+automation/windows/*.txt
+automation/windows/*.bat
+automation/windows/*.log
 .DS_Store
 Thumbs.db
