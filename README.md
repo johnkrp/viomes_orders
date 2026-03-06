@@ -84,10 +84,10 @@ If Python on server is missing `PyMySQL`, auto-install it in the same run:
 npm run import:entersoft -- --python-install-deps=1 --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
-Single daily file mode (skip customer master refresh):
+Single daily file mode:
 
 ```powershell
-npm run import:entersoft -- --skip-customers=1 --daily-info-file=/absolute/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+npm run import:entersoft -- --daily-info-file=/absolute/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
 You can also pass multiple sales files:
@@ -105,6 +105,20 @@ The SQLite -> MySQL migration command already supports explicit args the same wa
 
 ```powershell
 npm run migrate:sqlite-to-db -- --target=mysql --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
+## Full Reset + Reload (new yearly files)
+
+Reset business/import tables (keeps `admin_users` and `admin_sessions`):
+
+```powershell
+npm run reset:business-data -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
+Run reset + import in one command:
+
+```powershell
+npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2025.CSV,/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
 ## Plesk Nightly Task
@@ -128,9 +142,9 @@ The script logs to:
 
 Current files:
 
-- `backend/customers.csv`
-- `backend/info_2025.csv`
-- `backend/info_2026.csv`
+- sales file(s) only, e.g. `backend/info_2025.csv`, `backend/info_2026.csv`, or a single `backend/daily_info.csv`
+
+`customers` / `imported_customers` are now rebuilt directly from sales lines during import (no mandatory `customers.csv` input).
 
 Detailed mapping, table behavior, and known limitations are documented in:
 

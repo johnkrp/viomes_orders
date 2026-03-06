@@ -8,7 +8,6 @@ from typing import Optional
 from mysql_db import get_conn, init_schema
 
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_CUSTOMERS_FILE = BASE_DIR / "customers.csv"
 DEFAULT_SALES_FILES = [
     BASE_DIR / "info_2025.csv",
     BASE_DIR / "info_2026.csv",
@@ -48,11 +47,6 @@ class ImportStats:
         self.rows_upserted = 0
 
 
-def resolve_customers_file():
-    value = str(os.environ.get("ENTERSOFT_CUSTOMERS_FILE", "") or "").strip()
-    return Path(value) if value else DEFAULT_CUSTOMERS_FILE
-
-
 def resolve_sales_files():
     env = os.environ
     explicit = str(env.get("ENTERSOFT_SALES_FILES", "")).strip()
@@ -66,11 +60,6 @@ def resolve_sales_files():
         return [Path(daily)]
 
     return list(DEFAULT_SALES_FILES)
-
-
-def should_skip_customers():
-    value = str((os.environ.get("ENTERSOFT_SKIP_CUSTOMERS", "") or "")).strip().lower()
-    return value in {"1", "true", "yes", "y"}
 
 
 def begin_import(cur, dataset: str, file_name: str) -> int:
@@ -218,6 +207,49 @@ def import_customers(cur, customers_file) -> ImportStats:
         raise
 
 
+def rebuild_customers_from_sales(cur) -> None:
+    execute_step(cur, "truncate imported_customers", "DELETE FROM imported_customers")
+    execute_step(
+        cur,
+        "rebuild imported_customers from sales",
+        """
+        INSERT INTO imported_customers(
+          customer_code,
+          customer_name,
+          delivery_code,
+          delivery_description,
+          source_file
+        )
+        SELECT
+          customer_code,
+          COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
+          MAX(delivery_code) AS delivery_code,
+          MAX(delivery_description) AS delivery_description,
+          MAX(source_file) AS source_file
+        FROM imported_sales_lines
+        GROUP BY customer_code
+        """,
+    )
+    execute_step(
+        cur,
+        "delete mirrored customers",
+        "DELETE FROM customers WHERE source = 'entersoft_import'",
+    )
+    execute_step(
+        cur,
+        "mirror imported customers",
+        """
+        INSERT INTO customers(code, name, email, source)
+        SELECT customer_code, customer_name, NULL, 'entersoft_import'
+        FROM imported_customers
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name),
+          email = VALUES(email),
+          source = VALUES(source)
+        """,
+    )
+
+
 def import_sales_lines(cur, sales_files) -> ImportStats:
     stats = ImportStats(dataset="sales_lines", file_name=",".join(path.name for path in sales_files))
     print(f"[import] sales_lines: starting ({stats.file_name})", flush=True)
@@ -289,6 +321,10 @@ def import_sales_lines(cur, sales_files) -> ImportStats:
                 f"[import] sales_lines: finished {sales_file.name} (rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted})",
                 flush=True,
             )
+
+        rebuild_customers_from_sales(cur)
+        print("[import] customers: rebuilt from sales files", flush=True)
+
         execute_step(
             cur,
             "build imported_orders",
@@ -373,9 +409,7 @@ def main() -> None:
     cur = conn.cursor()
     configure_session(cur)
     print(f"[import] session lock wait timeout set to {LOCK_WAIT_TIMEOUT_SECONDS}s", flush=True)
-    customers_file = resolve_customers_file()
     sales_files = resolve_sales_files()
-    skip_customers = should_skip_customers()
 
     if not sales_files:
         raise RuntimeError("No sales files configured. Set ENTERSOFT_SALES_FILES or ENTERSOFT_DAILY_INFO_FILE.")
@@ -384,29 +418,12 @@ def main() -> None:
         if not sales_file.exists():
             raise FileNotFoundError(f"Sales file not found: {sales_file}")
 
-    if not skip_customers and not customers_file.exists():
-        raise FileNotFoundError(
-            f"Customers file not found: {customers_file}. "
-            "Provide ENTERSOFT_CUSTOMERS_FILE or set ENTERSOFT_SKIP_CUSTOMERS=1."
-        )
-
     print(f"[import] using sales files: {', '.join(str(p) for p in sales_files)}", flush=True)
-    if skip_customers:
-        print("[import] skipping customers import (ENTERSOFT_SKIP_CUSTOMERS=1)", flush=True)
-    else:
-        print(f"[import] using customers file: {customers_file}", flush=True)
 
     try:
-        if skip_customers:
-            customer_stats = ImportStats(dataset="customers", file_name=str(customers_file))
-        else:
-            customer_stats = import_customers(cur, customers_file)
         sales_stats = import_sales_lines(cur, sales_files)
         conn.commit()
-        print(
-            f"Imported customers={customer_stats.rows_upserted}, "
-            f"sales_lines={sales_stats.rows_upserted}"
-        )
+        print(f"Imported sales_lines={sales_stats.rows_upserted}")
     except Exception:
         conn.rollback()
         raise

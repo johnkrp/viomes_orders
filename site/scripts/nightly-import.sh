@@ -42,7 +42,6 @@ cd "$APP_ROOT"
 
 IMPORT_ARGS=(
   --python-install-deps=1
-  --skip-customers=1
   --daily-info-file="$DAILY_INFO_FILE"
   --mysql-host="$MYSQL_HOST"
   --mysql-port="$MYSQL_PORT"

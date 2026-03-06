@@ -2,6 +2,16 @@
 
 This document explains how the current Entersoft file-based import works.
 
+## Important Update
+
+Current importer mode is sales-file-driven:
+
+- customer master is rebuilt from sales lines (`imported_sales_lines`)
+- `customers.csv` is no longer required for regular imports
+- you can import from one or more sales files via:
+  - `ENTERSOFT_SALES_FILES=/path/a.csv,/path/b.csv`
+  - or `ENTERSOFT_DAILY_INFO_FILE=/path/daily_info.csv`
+
 The current import path is:
 
 1. Entersoft exports flat text files into `backend/`
