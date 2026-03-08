@@ -84,6 +84,11 @@ def begin_import(cur, dataset: str, file_name: str) -> int:
 def configure_session(cur) -> None:
     # Fail fast if a table lock/metadata lock blocks import writes.
     cur.execute(f"SET SESSION innodb_lock_wait_timeout = {LOCK_WAIT_TIMEOUT_SECONDS}")
+    try:
+        cur.execute("SET SESSION max_statement_time = 0")
+        print("[import] session max_statement_time disabled", flush=True)
+    except Exception as exc:
+        print(f"[import] could not disable session max_statement_time: {exc}", flush=True)
 
 
 def execute_step(cur, label: str, sql: str, params=None) -> None:
