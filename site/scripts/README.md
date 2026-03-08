@@ -16,10 +16,12 @@ Operational scripts used by Plesk/local maintenance.
   - Plesk scheduled-task entrypoint.
   - Reads `backend/today.csv`.
   - Runs importer with `--mode=incremental`.
+  - Exports `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
 
 - `manual-reload-sales.sh`
   - Server-side wrapper for a clean rebuild from canonical yearly sales files.
   - Creates a timestamped log file and runs integrity checks after the reload.
+  - Exports `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
 
 - `reset-business-data.js`
   - Clears business/import tables while keeping admin tables.
@@ -38,6 +40,9 @@ Operational scripts used by Plesk/local maintenance.
 
 In incremental mode, history is preserved in `imported_sales_lines` and duplicate logical sales lines are skipped even if the source filename changes.
 
+The daily file does not need to contain only one day.
+It may contain several recent days or overlap with yearly files as long as overlapping rows are logically identical.
+
 If bad history already exists in `imported_sales_lines`, run:
 
 ```powershell
@@ -51,6 +56,13 @@ npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mys
 ```
 
 Use `full_refresh` instead when you want to rebuild from canonical yearly files.
+
+## Operational Notes
+
+- Long imports should be run through these shell scripts, SSH, or Plesk Scheduled Tasks, not interactive web requests.
+- A `504` in the Plesk web UI usually means the request path timed out, not that the DB necessarily failed.
+- The importer uses a single transaction. If it fails before commit, other sessions may still show `0` rows and the final state may remain empty after rollback.
+- `manual-reload-sales.sh` is the preferred script for a clean rebuild because it creates a timestamped log file and then runs integrity checks.
 
 ## Typical Plesk command
 

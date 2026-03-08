@@ -85,6 +85,9 @@ With daily file:
 npm run import:entersoft -- --daily-info-file=/abs/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+This daily file does not need to contain only "today".
+It may contain several recent days or overlap with the canonical yearly file(s); the importer is designed to skip duplicate logical sales lines when the row content matches.
+
 Force full refresh mode (clears `imported_sales_lines` first):
 
 ```powershell
@@ -96,6 +99,13 @@ Cleanup historical duplicates already stored in `imported_sales_lines`:
 ```powershell
 cd site
 npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
+
+Run integrity checks after reload/import:
+
+```powershell
+cd site
+npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
 ## Validation Queries
@@ -152,3 +162,12 @@ HAVING COUNT(*) > 1;
 - `imported_orders.order_id` is now a synthetic value: `{customer_code}::{order_date}::{document_no}`.
 - `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, and `imported_customers` are rebuilt from the full `imported_sales_lines` history on each run.
 - If import blocks on locks, stop Node app and retry.
+
+## Troubleshooting
+
+- The importer uses a single transaction. If any late step fails, everything rolls back and counts may stay at `0`.
+- If `reset-business-data` succeeded but the later import failed, business/import tables remain empty until a successful import or reload completes.
+- `Query execution was interrupted (max_statement_time exceeded)` means MySQL killed a long-running statement in the current session. The importer now attempts to disable `max_statement_time` for its own session before heavy rebuild queries.
+- `Lock wait timeout exceeded` means another session is holding locks on the same tables. Stop the Node app and any overlapping maintenance/import tasks, then retry.
+- `timed out after 1800s and was terminated` comes from the Node wrapper, not MySQL. Shell wrappers now export `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
+- A `504` error from the Plesk web UI usually indicates the web request timed out. Run long imports through shell scripts, SSH, or Scheduled Tasks and inspect the log file instead of relying on the web request response.

@@ -103,8 +103,14 @@ npm run import:entersoft -- --sales-files=/path/2025.CSV,/path/2026.CSV --mysql-
 
 Import command failsafe timeout:
 
-- default: `1800` seconds
+- wrapper default: `1800` seconds
 - override with `ENTERSOFT_IMPORT_TIMEOUT_SECONDS` (or `IMPORT_TIMEOUT_SECONDS`)
+
+Server-side shell wrappers currently export:
+
+- `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200`
+
+to avoid long imports being killed after only 30 minutes.
 
 ## Full Reset + Reload (new yearly files)
 
@@ -120,6 +126,12 @@ Run reset + import in one command:
 npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2025.CSV,/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
+Manual full rebuild script with logging and post-check:
+
+```bash
+/bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/manual-reload-sales.sh
+```
+
 Cleanup historical duplicates already present in import history:
 
 ```powershell
@@ -128,6 +140,13 @@ npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-databas
 ```
 
 Use `dedupe:sales` if bad history is already in `imported_sales_lines`. Use `full_refresh` if you want to rebuild from canonical yearly files.
+
+Integrity check command:
+
+```powershell
+cd site
+npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+```
 
 ## Plesk Nightly Task
 
@@ -154,9 +173,20 @@ Current files:
 
 `customers` / `imported_customers` are now rebuilt directly from sales lines during import (no mandatory `customers.csv` input).
 
+`today.csv` does not need to contain only one day.
+It can contain multiple recent days or overlap with the yearly file(s); the importer now skips duplicate logical sales lines when the row content matches.
+
 Detailed mapping, table behavior, and known limitations are documented in:
 
 - [backend/ENTERSOFT_IMPORT_README.md](/d:/Desktop/programming/viomes/order_form/backend/ENTERSOFT_IMPORT_README.md)
+
+## Import Operations Notes
+
+- Use `npm run import:entersoft` when adding newer monthly/daily data to existing history.
+- Use `npm run reload:sales` or `manual-reload-sales.sh` only when you want to clear business/import tables and rebuild from canonical files.
+- The importer runs inside a single DB transaction. If it fails before commit, imported tables remain unchanged or appear empty after a reset+reload attempt.
+- A `504` from the Plesk web UI usually means the request path timed out; it does not prove the importer logic is wrong. Long imports should be run through shell scripts, SSH, or Scheduled Tasks, not interactive web requests.
+- If a reset succeeded and the later import failed, `admin_users`, `admin_sessions`, and `products` remain, but import/business tables stay empty until a successful reload.
 
 ## Next integration step
 
