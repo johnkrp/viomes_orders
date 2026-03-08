@@ -273,7 +273,7 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                         cur,
                         "insert imported_sales_lines row",
                         """
-                        INSERT INTO imported_sales_lines(
+                        INSERT IGNORE INTO imported_sales_lines(
                           source_file, order_date, order_year, order_month, document_no, document_type,
                           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
                           customer_code, customer_name, delivery_code, delivery_description, account_code,
