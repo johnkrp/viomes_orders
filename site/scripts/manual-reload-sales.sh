@@ -22,14 +22,16 @@ MYSQL_PASSWORD="${MYSQL_PASSWORD:-Yudd042&}"
 
 # Plesk scheduled tasks may have minimal PATH.
 export PATH="/opt/plesk/node/24/bin:/opt/plesk/node/22/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+export ENTERSOFT_IMPORT_TIMEOUT_SECONDS="${ENTERSOFT_IMPORT_TIMEOUT_SECONDS:-7200}"
 
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/manual-reload-sales-$(date +%F-%H%M%S).log"
-exec > >(tee -a "$LOG_FILE") 2>&1
+exec >>"$LOG_FILE" 2>&1
 
 echo "[$(date -Is)] manual reload started"
 echo "[$(date -Is)] log file: $LOG_FILE"
 echo "[$(date -Is)] sales files: $SALES_FILES"
+echo "[$(date -Is)] import timeout seconds: $ENTERSOFT_IMPORT_TIMEOUT_SECONDS"
 
 IFS=',' read -r -a SALES_FILE_LIST <<< "$SALES_FILES"
 for sales_file in "${SALES_FILE_LIST[@]}"; do

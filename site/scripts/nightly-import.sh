@@ -19,12 +19,14 @@ MYSQL_PASSWORD="Yudd042&"
 
 # Plesk scheduled tasks may have minimal PATH.
 export PATH="/opt/plesk/node/24/bin:/opt/plesk/node/22/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+export ENTERSOFT_IMPORT_TIMEOUT_SECONDS="${ENTERSOFT_IMPORT_TIMEOUT_SECONDS:-7200}"
 
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/nightly-import-$(date +%F).log"
 exec >>"$LOG_FILE" 2>&1
 
 echo "[$(date -Is)] nightly import started"
+echo "[$(date -Is)] import timeout seconds: $ENTERSOFT_IMPORT_TIMEOUT_SECONDS"
 
 if [[ ! -f "$DAILY_INFO_FILE" ]]; then
   echo "[$(date -Is)] missing input file: $DAILY_INFO_FILE"
