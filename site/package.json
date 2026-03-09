@@ -8,6 +8,7 @@
     "dev": "node server.js",
     "test": "node --test \"tests/*.test.js\"",
     "import:entersoft": "node scripts/run-entersoft-import.js",
+    "admin:create-user": "node scripts/create-admin-user.js",
     "check:import-integrity": "node scripts/check-import-integrity.js",
     "dedupe:sales": "node scripts/dedupe-imported-sales.js",
     "reset:business-data": "node scripts/reset-business-data.js",

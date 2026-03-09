@@ -2,9 +2,9 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import ExcelJS from "exceljs";
 import express from "express";
-import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { hashPassword, newSessionToken, verifyPassword } from "./lib/admin-auth.js";
 import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
 import { openDatabase } from "./lib/db/client.js";
 import { initDatabaseSchema } from "./lib/db/init-schema.js";
@@ -36,7 +36,6 @@ const COOKIE_SECURE_MODE = String(
 )
   .trim()
   .toLowerCase();
-const PBKDF2_ITERATIONS = 600000;
 const publicDir = path.join(__dirname, "public");
 
 const app = express();
@@ -63,25 +62,6 @@ function normGr(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-}
-
-function hashPassword(password, salt) {
-  const effectiveSalt = salt || crypto.randomBytes(16).toString("hex");
-  const digest = crypto
-    .pbkdf2Sync(password, effectiveSalt, PBKDF2_ITERATIONS, 32, "sha256")
-    .toString("hex");
-  return `${effectiveSalt}$${digest}`;
-}
-
-function verifyPassword(password, storedHash) {
-  if (!storedHash || !storedHash.includes("$")) return false;
-  const [salt, digest] = storedHash.split("$", 2);
-  const computed = hashPassword(password, salt).split("$", 2)[1];
-  return crypto.timingSafeEqual(Buffer.from(digest, "utf8"), Buffer.from(computed, "utf8"));
-}
-
-function newSessionToken() {
-  return crypto.randomBytes(32).toString("base64url");
 }
 
 function shouldUseSecureCookie(req) {

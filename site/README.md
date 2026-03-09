@@ -42,6 +42,19 @@ Health check:
 
 - `GET /api/admin/customers/:code/stats` (must remain stable)
 
+## Admin users
+
+Create or update admin portal credentials with:
+
+```bash
+npm run admin:create-user -- --username=USERNAME --password=PASSWORD
+```
+
+Optional:
+
+- `--active=0` creates or updates the user as inactive
+- rerunning the command for the same username resets the password and active flag
+
 ## Schema and provider notes
 
 - Runtime schema authority lives in `lib/db/init-schema.js`.

@@ -34,15 +34,11 @@ const PRODUCT_SALES_PAGE_SIZE = 10;
 let currentDetailedOrders = [];
 let currentProductSales = [];
 let currentSearchResults = [];
-let currentSuggestionResults = [];
 let selectedOrderId = null;
 let currentProductSalesPage = 1;
 let currentCustomerCode = null;
 let currentBranchCode = "";
 let currentAvailableBranches = [];
-let activeSuggestionIndex = -1;
-let searchDebounceTimer = null;
-let latestSearchRequestId = 0;
 
 const els = {
   adminStatus: document.getElementById("adminStatus"),
@@ -64,8 +60,6 @@ const els = {
   branchDescriptionQuery: document.getElementById("branchDescriptionQuery"),
   searchCustomersBtn: document.getElementById("searchCustomersBtn"),
   clearStatsBtn: document.getElementById("clearStatsBtn"),
-  searchSuggestionsPanel: document.getElementById("searchSuggestionsPanel"),
-  searchSuggestionsList: document.getElementById("searchSuggestionsList"),
   searchResultsPanel: document.getElementById("searchResultsPanel"),
   searchResultsBody: document.getElementById("searchResultsBody"),
   branchSelectorPanel: document.getElementById("branchSelectorPanel"),
@@ -248,14 +242,7 @@ function resetSearchResults() {
 }
 
 function resetSearchSuggestions() {
-  currentSuggestionResults = [];
-  activeSuggestionIndex = -1;
-  if (searchDebounceTimer) {
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = null;
-  }
-  if (els.searchSuggestionsPanel) els.searchSuggestionsPanel.hidden = true;
-  if (els.searchSuggestionsList) els.searchSuggestionsList.innerHTML = "";
+  return;
 }
 
 function setSearchPanelCollapsed(collapsed) {
@@ -357,101 +344,27 @@ function fillSearchFieldsFromItem(item) {
   if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = item?.branch_description || "";
 }
 
-function renderSearchSuggestions(items) {
-  currentSuggestionResults = Array.isArray(items) ? items.slice(0, 6) : [];
-  activeSuggestionIndex = currentSuggestionResults.length ? 0 : -1;
-
-  if (!els.searchSuggestionsPanel || !els.searchSuggestionsList) return;
-
-  if (!currentSuggestionResults.length) {
-    els.searchSuggestionsPanel.hidden = true;
-    els.searchSuggestionsList.innerHTML = "";
-    return;
-  }
-
-  els.searchSuggestionsPanel.hidden = false;
-  els.searchSuggestionsList.innerHTML = currentSuggestionResults
-    .map((item, index) => {
-      const metaParts = [item.code];
-      if (item.branch_code) metaParts.push(`Υποκ.: ${item.branch_code}`);
-      if (item.branch_description) metaParts.push(item.branch_description);
-      return `
-        <button
-          type="button"
-          class="admin-search-suggestion${index === activeSuggestionIndex ? " is-active" : ""}"
-          data-suggestion-index="${index}"
-          data-customer-code="${escapeHtml(item.code)}"
-        >
-          <strong>${escapeHtml(item.name)}</strong>
-          <span class="admin-search-suggestion-meta">${escapeHtml(metaParts.join(" | "))}</span>
-        </button>
-      `;
-    })
-    .join("");
-}
-
-function updateSuggestionSelection() {
-  if (!els.searchSuggestionsList) return;
-  els.searchSuggestionsList.querySelectorAll("[data-suggestion-index]").forEach((node) => {
-    node.classList.toggle(
-      "is-active",
-      Number(node.getAttribute("data-suggestion-index")) === activeSuggestionIndex,
-    );
-  });
-}
-
 async function performCustomerSearch(filters, options = {}) {
   const {
     limit = 20,
     renderTable = true,
-    renderSuggestions = false,
     silent = false,
   } = options;
 
   if (!hasCustomerSearchFilters(filters)) {
     if (renderTable) resetSearchResults();
-    if (renderSuggestions) resetSearchSuggestions();
     return { items: [], total: 0, filters };
   }
 
-  const requestId = ++latestSearchRequestId;
   const params = buildCustomerSearchParams(filters);
   params.set("limit", String(limit));
   const payload = await apiFetch(`/api/admin/customers/search?${params.toString()}`, { method: "GET" });
 
-  if (requestId !== latestSearchRequestId) {
-    return payload;
-  }
-
   if (renderTable) renderSearchResults(payload.items, payload.filters);
-  if (renderSuggestions) renderSearchSuggestions(payload.items);
   if (!silent) {
     setStatus(`Βρέθηκαν ${payload.total} αποτελέσματα.`, "ok");
   }
   return payload;
-}
-
-function scheduleAutocompleteSearch() {
-  const filters = getCustomerSearchFilters();
-  if (!hasCustomerSearchFilters(filters)) {
-    resetSearchSuggestions();
-    return;
-  }
-
-  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(async () => {
-    searchDebounceTimer = null;
-    try {
-      await performCustomerSearch(filters, {
-        limit: 6,
-        renderTable: false,
-        renderSuggestions: true,
-        silent: true,
-      });
-    } catch {
-      resetSearchSuggestions();
-    }
-  }, 220);
 }
 
 function resetMonthlySales() {
@@ -1094,13 +1007,6 @@ function clearCustomerStats() {
   focusPrimarySearchField();
 }
 
-async function selectSuggestion(index) {
-  const item = currentSuggestionResults[index];
-  if (!item) return;
-  fillSearchFieldsFromItem(item);
-  await fetchCustomerStats(item.code);
-}
-
 function handleBranchSelectionChange() {
   if (!currentCustomerCode) return;
   const branchCode = els.branchSelector?.value || "";
@@ -1155,35 +1061,6 @@ function expandSearchPanel() {
   focusPrimarySearchField();
 }
 
-function handleSearchFieldKeydown(event) {
-  if (!currentSuggestionResults.length) return;
-
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    activeSuggestionIndex = Math.min(activeSuggestionIndex + 1, currentSuggestionResults.length - 1);
-    updateSuggestionSelection();
-    return;
-  }
-
-  if (event.key === "ArrowUp") {
-    event.preventDefault();
-    activeSuggestionIndex = Math.max(activeSuggestionIndex - 1, 0);
-    updateSuggestionSelection();
-    return;
-  }
-
-  if (event.key === "Escape") {
-    event.preventDefault();
-    resetSearchSuggestions();
-    return;
-  }
-
-  if (event.key === "Enter" && activeSuggestionIndex >= 0) {
-    event.preventDefault();
-    selectSuggestion(activeSuggestionIndex);
-  }
-}
-
 els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
 els.customerSearchForm?.addEventListener("submit", searchCustomers);
@@ -1192,20 +1069,6 @@ els.expandSearchPanelBtn?.addEventListener("click", expandSearchPanel);
 els.branchSelector?.addEventListener("change", handleBranchSelectionChange);
 els.branchSelectorSearch?.addEventListener("input", handleBranchSearchInput);
 els.branchSelectorSearch?.addEventListener("keydown", handleBranchSearchKeydown);
-[
-  els.customerNameQuery,
-  els.customerCodeQuery,
-  els.branchCodeQuery,
-  els.branchDescriptionQuery,
-].forEach((field) => {
-  field?.addEventListener("input", scheduleAutocompleteSearch);
-  field?.addEventListener("keydown", handleSearchFieldKeydown);
-});
-els.searchSuggestionsList?.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-suggestion-index]");
-  if (!button) return;
-  selectSuggestion(Number(button.getAttribute("data-suggestion-index")));
-});
 els.searchResultsBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-customer-code]");
   if (!button) return;
