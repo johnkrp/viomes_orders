@@ -149,6 +149,9 @@ test("imported-data provider builds the customer stats contract from imported ta
 
   assert.equal(payload.customer.code, "C001");
   assert.equal(payload.customer.name, "Alpha Store");
+  assert.equal(payload.customer.aggregation_level, "customer");
+  assert.equal(payload.customer.branch_code, null);
+  assert.equal(payload.customer.branch_description, null);
   assert.equal(payload.summary.total_orders, 2);
   assert.equal(payload.summary.total_pieces, 15);
   assert.equal(payload.summary.total_revenue, 245.6);

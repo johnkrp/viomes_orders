@@ -213,6 +213,9 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     const payload = await provider.getCustomerStats("C001");
 
     assert.equal(payload.customer.code, "C001");
+    assert.equal(payload.customer.aggregation_level, "customer");
+    assert.equal(payload.customer.branch_code, null);
+    assert.equal(payload.customer.branch_description, null);
     assert.equal(payload.summary.total_orders, 2);
     assert.equal(payload.summary.total_revenue, 245.6);
     assert.equal(payload.summary.average_order_value, 122.8);

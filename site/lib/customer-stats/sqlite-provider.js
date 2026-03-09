@@ -358,8 +358,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             NULL AS email,
             MAX(delivery_code) AS delivery_code,
             MAX(delivery_description) AS delivery_description,
-            MAX(branch_code) AS branch_code,
-            MAX(branch_description) AS branch_description
+            ${selectedBranchCode ? "MAX(branch_code)" : "NULL"} AS branch_code,
+            ${selectedBranchCode ? "MAX(branch_description)" : "NULL"} AS branch_description
           FROM imported_sales_lines
           WHERE customer_code = ?${branchFilter.clause}
           GROUP BY customer_code

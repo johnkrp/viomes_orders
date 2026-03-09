@@ -143,7 +143,7 @@
               </label>
 
               <label class="field field-grow">
-                <span>Περιγραφή Υποκ.</span>
+                <span>Τοποθεσία / Διεύθυνση</span>
                 <input
                   id="branchDescriptionQuery"
                   type="search"
@@ -151,7 +151,7 @@
                   autocapitalize="off"
                   autocorrect="off"
                   spellcheck="false"
-                  placeholder="Αναζήτηση με περιγραφή υποκαταστήματος"
+                  placeholder="Αναζήτηση με τοποθεσία ή διεύθυνση υποκαταστήματος"
                 />
               </label>
 
@@ -173,7 +173,7 @@
                       <th>Κωδικός</th>
                       <th>Επωνυμία</th>
                       <th>Κωδ. υποκ.</th>
-                      <th>Περιγραφή υποκ.</th>
+                      <th>Τοποθεσία / Διεύθυνση</th>
                       <th>Ενέργεια</th>
                     </tr>
                   </thead>
@@ -266,10 +266,10 @@
                     <thead>
                       <tr>
                         <th>Μήνας</th>
-                        <th id="monthlyYearOneHeading">2024</th>
-                        <th id="monthlyYearTwoHeading">2025</th>
-                        <th id="monthlyYearThreeHeading">2026</th>
-                        <th class="admin-monthly-total-heading">Γενικό σύνολο</th>
+                        <th id="monthlyYearOneHeading" class="admin-table-number">2024</th>
+                        <th id="monthlyYearTwoHeading" class="admin-table-number">2025</th>
+                        <th id="monthlyYearThreeHeading" class="admin-table-number">2026</th>
+                        <th class="admin-table-number admin-monthly-total-heading">Γενικό σύνολο</th>
                       </tr>
                     </thead>
                     <tbody id="monthlySalesBody">
@@ -280,10 +280,10 @@
                     <tfoot id="monthlySalesFoot">
                       <tr>
                         <td>Σύνολο</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
+                        <td class="admin-table-number">-</td>
+                        <td class="admin-table-number">-</td>
+                        <td class="admin-table-number">-</td>
+                        <td class="admin-table-number admin-monthly-total-cell">-</td>
                       </tr>
                     </tfoot>
                   </table>

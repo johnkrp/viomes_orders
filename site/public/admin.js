@@ -404,10 +404,10 @@ function resetMonthlySales() {
     els.monthlySalesFoot.innerHTML = `
       <tr>
         <td>Σύνολο</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
+        <td class="admin-table-number">-</td>
+        <td class="admin-table-number">-</td>
+        <td class="admin-table-number">-</td>
+        <td class="admin-table-number admin-monthly-total-cell">-</td>
       </tr>
     `;
   }
@@ -493,6 +493,12 @@ function renderBranchSelector(customerCode, branches = [], selectedBranchCode = 
     }),
   ].join("");
   els.branchSelector.value = selectedBranchCode || "";
+}
+
+function formatAggregationLevelLabel(level) {
+  if (level === "branch") return "υποκατάστημα";
+  if (level === "customer") return "πελάτης";
+  return level || "";
 }
 
 function renderSearchResults(items, filters = {}) {
@@ -773,7 +779,7 @@ function renderStats(data) {
     metaParts.push(customer.branch_description);
   }
   if (customer.aggregation_level) {
-    metaParts.push(`επίπεδο: ${customer.aggregation_level}`);
+    metaParts.push(`επίπεδο: ${formatAggregationLevelLabel(customer.aggregation_level)}`);
   }
   if (customer.chain_name) {
     metaParts.push(`αλυσίδα: ${customer.chain_name}`);
