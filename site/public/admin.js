@@ -34,8 +34,12 @@ const PRODUCT_SALES_PAGE_SIZE = 10;
 let currentDetailedOrders = [];
 let currentProductSales = [];
 let currentSearchResults = [];
+let currentSuggestionResults = [];
 let selectedOrderId = null;
 let currentProductSalesPage = 1;
+let activeSuggestionIndex = -1;
+let searchDebounceTimer = null;
+let latestSearchRequestId = 0;
 
 const els = {
   adminStatus: document.getElementById("adminStatus"),
@@ -54,6 +58,8 @@ const els = {
   branchDescriptionQuery: document.getElementById("branchDescriptionQuery"),
   searchCustomersBtn: document.getElementById("searchCustomersBtn"),
   clearStatsBtn: document.getElementById("clearStatsBtn"),
+  searchSuggestionsPanel: document.getElementById("searchSuggestionsPanel"),
+  searchSuggestionsList: document.getElementById("searchSuggestionsList"),
   searchResultsPanel: document.getElementById("searchResultsPanel"),
   searchResultsBody: document.getElementById("searchResultsBody"),
   emptyState: document.getElementById("emptyState"),
@@ -232,6 +238,17 @@ function resetSearchResults() {
   }
 }
 
+function resetSearchSuggestions() {
+  currentSuggestionResults = [];
+  activeSuggestionIndex = -1;
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = null;
+  }
+  if (els.searchSuggestionsPanel) els.searchSuggestionsPanel.hidden = true;
+  if (els.searchSuggestionsList) els.searchSuggestionsList.innerHTML = "";
+}
+
 function getCustomerSearchFilters() {
   return {
     customer_name: (els.customerNameQuery?.value || "").trim(),
@@ -253,10 +270,115 @@ function buildCustomerSearchParams(filters) {
   return params;
 }
 
+function fillSearchFieldsFromItem(item) {
+  if (els.customerNameQuery) els.customerNameQuery.value = item?.name || "";
+  if (els.customerCodeQuery) els.customerCodeQuery.value = item?.code || "";
+  if (els.branchCodeQuery) els.branchCodeQuery.value = item?.branch_code || "";
+  if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = item?.branch_description || "";
+}
+
+function renderSearchSuggestions(items) {
+  currentSuggestionResults = Array.isArray(items) ? items.slice(0, 6) : [];
+  activeSuggestionIndex = currentSuggestionResults.length ? 0 : -1;
+
+  if (!els.searchSuggestionsPanel || !els.searchSuggestionsList) return;
+
+  if (!currentSuggestionResults.length) {
+    els.searchSuggestionsPanel.hidden = true;
+    els.searchSuggestionsList.innerHTML = "";
+    return;
+  }
+
+  els.searchSuggestionsPanel.hidden = false;
+  els.searchSuggestionsList.innerHTML = currentSuggestionResults
+    .map((item, index) => {
+      const metaParts = [item.code];
+      if (item.branch_code) metaParts.push(`Υποκ.: ${item.branch_code}`);
+      if (item.branch_description) metaParts.push(item.branch_description);
+      return `
+        <button
+          type="button"
+          class="admin-search-suggestion${index === activeSuggestionIndex ? " is-active" : ""}"
+          data-suggestion-index="${index}"
+          data-customer-code="${escapeHtml(item.code)}"
+        >
+          <strong>${escapeHtml(item.name)}</strong>
+          <span class="admin-search-suggestion-meta">${escapeHtml(metaParts.join(" | "))}</span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function updateSuggestionSelection() {
+  if (!els.searchSuggestionsList) return;
+  els.searchSuggestionsList.querySelectorAll("[data-suggestion-index]").forEach((node) => {
+    node.classList.toggle(
+      "is-active",
+      Number(node.getAttribute("data-suggestion-index")) === activeSuggestionIndex,
+    );
+  });
+}
+
+async function performCustomerSearch(filters, options = {}) {
+  const {
+    limit = 20,
+    renderTable = true,
+    renderSuggestions = false,
+    silent = false,
+  } = options;
+
+  if (!hasCustomerSearchFilters(filters)) {
+    if (renderTable) resetSearchResults();
+    if (renderSuggestions) resetSearchSuggestions();
+    return { items: [], total: 0, filters };
+  }
+
+  const requestId = ++latestSearchRequestId;
+  const params = buildCustomerSearchParams(filters);
+  params.set("limit", String(limit));
+  const payload = await apiFetch(`/api/admin/customers/search?${params.toString()}`, { method: "GET" });
+
+  if (requestId !== latestSearchRequestId) {
+    return payload;
+  }
+
+  if (renderTable) renderSearchResults(payload.items, payload.filters);
+  if (renderSuggestions) renderSearchSuggestions(payload.items);
+  if (!silent) {
+    setStatus(`Βρέθηκαν ${payload.total} αποτελέσματα.`, "ok");
+  }
+  return payload;
+}
+
+function scheduleAutocompleteSearch() {
+  const filters = getCustomerSearchFilters();
+  if (!hasCustomerSearchFilters(filters)) {
+    resetSearchSuggestions();
+    return;
+  }
+
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(async () => {
+    searchDebounceTimer = null;
+    try {
+      await performCustomerSearch(filters, {
+        limit: 6,
+        renderTable: false,
+        renderSuggestions: true,
+        silent: true,
+      });
+    } catch {
+      resetSearchSuggestions();
+    }
+  }, 220);
+}
+
 function resetMonthlySales() {
-  if (els.monthlyYearOneHeading) els.monthlyYearOneHeading.textContent = "Έτος 1";
-  if (els.monthlyYearTwoHeading) els.monthlyYearTwoHeading.textContent = "Έτος 2";
-  if (els.monthlyYearThreeHeading) els.monthlyYearThreeHeading.textContent = "Έτος 3";
+  const currentYear = new Date().getUTCFullYear();
+  if (els.monthlyYearOneHeading) els.monthlyYearOneHeading.textContent = String(currentYear - 2);
+  if (els.monthlyYearTwoHeading) els.monthlyYearTwoHeading.textContent = String(currentYear - 1);
+  if (els.monthlyYearThreeHeading) els.monthlyYearThreeHeading.textContent = String(currentYear);
   if (els.monthlySalesBody) {
     els.monthlySalesBody.innerHTML = `
       <tr>
@@ -746,6 +868,7 @@ async function handleLogin(event) {
     });
 
     setAuthenticatedUI(result);
+    resetSearchSuggestions();
     resetSearchResults();
     resetStats();
     els.password.value = "";
@@ -764,6 +887,7 @@ async function handleLogout() {
   try {
     await apiFetch("/api/admin/logout", { method: "POST" });
     setAuthenticatedUI({ authenticated: false });
+    resetSearchSuggestions();
     resetSearchResults();
     resetStats();
     els.username.focus();
@@ -790,9 +914,13 @@ async function fetchCustomerStats(customerCode) {
       { method: "GET" },
     );
     renderStats(payload);
-    if (els.customerCodeQuery) {
-      els.customerCodeQuery.value = customerCode;
-    }
+    fillSearchFieldsFromItem({
+      code: payload?.customer?.code || customerCode,
+      name: payload?.customer?.name || "",
+      branch_code: payload?.customer?.branch_code || "",
+      branch_description: payload?.customer?.branch_description || "",
+    });
+    resetSearchSuggestions();
     setStatus(`Φορτώθηκαν τα στατιστικά για τον κωδικό ${customerCode}.`, "ok");
   } catch (error) {
     resetStats();
@@ -813,13 +941,13 @@ async function searchCustomers(event) {
 
   els.searchCustomersBtn.disabled = true;
   try {
-    const params = buildCustomerSearchParams(filters);
-    const payload = await apiFetch(
-      `/api/admin/customers/search?${params.toString()}`,
-      { method: "GET" },
-    );
-    renderSearchResults(payload.items, payload.filters);
-    setStatus(`Βρέθηκαν ${payload.total} αποτελέσματα.`, "ok");
+    resetSearchSuggestions();
+    await performCustomerSearch(filters, {
+      limit: 20,
+      renderTable: true,
+      renderSuggestions: false,
+      silent: false,
+    });
   } catch (error) {
     resetSearchResults();
     setStatus(`Η αναζήτηση πελάτη απέτυχε: ${error.message}`, "error");
@@ -833,16 +961,67 @@ function clearCustomerStats() {
   if (els.customerCodeQuery) els.customerCodeQuery.value = "";
   if (els.branchCodeQuery) els.branchCodeQuery.value = "";
   if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = "";
+  resetSearchSuggestions();
   resetSearchResults();
   resetStats();
   setStatus("");
   els.customerNameQuery.focus();
 }
 
+async function selectSuggestion(index) {
+  const item = currentSuggestionResults[index];
+  if (!item) return;
+  fillSearchFieldsFromItem(item);
+  await fetchCustomerStats(item.code);
+}
+
+function handleSearchFieldKeydown(event) {
+  if (!currentSuggestionResults.length) return;
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    activeSuggestionIndex = Math.min(activeSuggestionIndex + 1, currentSuggestionResults.length - 1);
+    updateSuggestionSelection();
+    return;
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    activeSuggestionIndex = Math.max(activeSuggestionIndex - 1, 0);
+    updateSuggestionSelection();
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    resetSearchSuggestions();
+    return;
+  }
+
+  if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+    event.preventDefault();
+    selectSuggestion(activeSuggestionIndex);
+  }
+}
+
 els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
 els.customerSearchForm?.addEventListener("submit", searchCustomers);
 els.clearStatsBtn?.addEventListener("click", clearCustomerStats);
+[
+  els.customerNameQuery,
+  els.customerCodeQuery,
+  els.branchCodeQuery,
+  els.branchDescriptionQuery,
+].forEach((field) => {
+  field?.addEventListener("input", scheduleAutocompleteSearch);
+  field?.addEventListener("keydown", handleSearchFieldKeydown);
+});
+els.searchSuggestionsList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-suggestion-index]");
+  if (!button) return;
+  selectSuggestion(Number(button.getAttribute("data-suggestion-index")));
+});
 els.searchResultsBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-customer-code]");
   if (!button) return;
@@ -879,6 +1058,7 @@ els.recentOrdersBody?.addEventListener("click", (event) => {
 
 resetStats();
 resetSearchResults();
+resetSearchSuggestions();
 refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
     els.customerNameQuery.focus();
