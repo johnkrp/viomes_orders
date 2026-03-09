@@ -32,7 +32,6 @@ export const DUPLICATE_GROUP_BY = `
   account_description,
   branch_code,
   branch_description,
-  postal_code,
   note_1
 `;
 
@@ -207,7 +206,6 @@ export const DELETE_DUPLICATES_SQL = `
    AND keeper.account_description <=> duplicate_row.account_description
    AND keeper.branch_code <=> duplicate_row.branch_code
    AND keeper.branch_description <=> duplicate_row.branch_description
-   AND keeper.postal_code <=> duplicate_row.postal_code
    AND keeper.note_1 <=> duplicate_row.note_1
 `;
 
@@ -226,7 +224,6 @@ export async function rebuildImportedSalesData(db) {
       delivery_description,
       branch_code,
       branch_description,
-      postal_code,
       source_file
     )
     SELECT
@@ -236,7 +233,6 @@ export async function rebuildImportedSalesData(db) {
       MAX(delivery_description) AS delivery_description,
       MAX(branch_code) AS branch_code,
       MAX(branch_description) AS branch_description,
-      MAX(postal_code) AS postal_code,
       MAX(source_file) AS source_file
     FROM imported_sales_lines
     GROUP BY customer_code

@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS imported_customers (
   branch_code VARCHAR(128),
   branch_description VARCHAR(255),
   address_1 VARCHAR(255),
-  postal_code VARCHAR(64),
   city VARCHAR(128),
   region VARCHAR(128),
   country VARCHAR(128),
@@ -43,7 +42,6 @@ CREATE TABLE IF NOT EXISTS imported_sales_lines (
   account_description VARCHAR(255),
   branch_code VARCHAR(128),
   branch_description VARCHAR(255),
-  postal_code VARCHAR(64),
   note_1 VARCHAR(255),
   UNIQUE KEY uq_imported_sales_line(
     source_file, document_no, item_code, customer_code, delivery_code, net_value, qty

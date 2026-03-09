@@ -156,10 +156,10 @@ test("SQLite-backed imported stats integration returns the expected contract", a
           source_file, order_date, order_year, order_month, document_no, document_type,
           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
           customer_code, customer_name, delivery_code, delivery_description, account_code,
-          account_description, branch_code, branch_description, postal_code, note_1
+          account_description, branch_code, branch_description, note_1
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         "2026.CSV",
@@ -183,7 +183,6 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         "Account",
         "B1",
         "Branch 1",
-        "71304",
         "Note",
         "2025.CSV",
         `${previousYear}-12-10`,
@@ -206,7 +205,6 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         "Account",
         "B2",
         "Branch 2",
-        "10431",
         "Note",
       ],
     );
@@ -246,14 +244,6 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(scopedPayload.available_branches[0].branch_code, "B1");
     assert.equal(scopedPayload.summary.total_orders, 1);
     assert.equal(scopedPayload.summary.total_revenue, 175.6);
-
-    const postalScopedPayload = await provider.getCustomerStats("C001", {
-      postalScopeCode: "713",
-    });
-    assert.equal(postalScopedPayload.available_branches.length, 1);
-    assert.equal(postalScopedPayload.available_branches[0].branch_code, "B1");
-    assert.equal(postalScopedPayload.summary.total_orders, 1);
-    assert.equal(postalScopedPayload.summary.total_revenue, 175.6);
   } finally {
     await db.close();
   }
