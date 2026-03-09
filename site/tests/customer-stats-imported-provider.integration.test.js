@@ -158,7 +158,8 @@ test("SQLite-backed imported stats integration returns the expected contract", a
           customer_code, customer_name, delivery_code, delivery_description, account_code,
           account_description, branch_code, branch_description, note_1
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         "2026.CSV",
@@ -181,7 +182,29 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         "A1",
         "Account",
         "B1",
-        "Branch",
+        "Branch 1",
+        "Note",
+        "2025.CSV",
+        `${previousYear}-12-10`,
+        previousYear,
+        12,
+        "INV-1",
+        "TI",
+        "P2",
+        "Second",
+        "PCS",
+        5,
+        5,
+        14,
+        70,
+        "C001",
+        "Alpha Store",
+        "D2",
+        "Second Store",
+        "A1",
+        "Account",
+        "B2",
+        "Branch 2",
         "Note",
       ],
     );
@@ -195,12 +218,19 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.summary.average_order_value, 122.8);
     assert.equal(payload.top_products_by_qty[0].code, "P1");
     assert.equal(payload.top_products_by_value[0].code, "P1");
+    assert.equal(payload.available_branches.length, 2);
     assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
     assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
     assert.equal(payload.monthly_sales.yearly_series.length, 3);
     assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
-    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
+    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 0);
     assert.equal(payload.detailed_orders[0].lines[0].code, "P1");
+
+    const branchPayload = await provider.getCustomerStats("C001", { branchCode: "B1" });
+    assert.equal(branchPayload.customer.aggregation_level, "branch");
+    assert.equal(branchPayload.customer.branch_code, "B1");
+    assert.equal(branchPayload.summary.total_orders, 1);
+    assert.equal(branchPayload.summary.total_revenue, 175.6);
   } finally {
     await db.close();
   }

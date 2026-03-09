@@ -22,6 +22,7 @@ function parseArgs(argv) {
 
 function buildForwardArgs(cli) {
   const flags = [
+    "mode",
     "mysql-host",
     "mysql-port",
     "mysql-database",
@@ -53,7 +54,11 @@ function ensureHasSalesInput(cli) {
 function main() {
   const cli = parseArgs(process.argv.slice(2));
   ensureHasSalesInput(cli);
-  const args = buildForwardArgs(cli);
+  const fullRefreshCli = {
+    ...cli,
+    mode: cli.mode || "full_refresh",
+  };
+  const args = buildForwardArgs(fullRefreshCli);
 
   console.log("[pipeline] step 1/2: reset business data");
   const reset = runNodeScript(resetScript, args);

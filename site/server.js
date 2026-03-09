@@ -390,36 +390,36 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
     if (filters.customer_name) {
       whereParts.push("customer_name LIKE ?");
       whereParams.push(`%${filters.customer_name}%`);
-      exactScoreParts.push("CASE WHEN customer_name = ? THEN 1 ELSE 0 END");
+      exactScoreParts.push("MAX(CASE WHEN customer_name = ? THEN 1 ELSE 0 END)");
       exactScoreParams.push(filters.customer_name);
-      prefixScoreParts.push("CASE WHEN customer_name LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParts.push("MAX(CASE WHEN customer_name LIKE ? THEN 1 ELSE 0 END)");
       prefixScoreParams.push(`${filters.customer_name}%`);
     }
 
     if (filters.customer_code) {
       whereParts.push("customer_code LIKE ?");
       whereParams.push(`%${filters.customer_code}%`);
-      exactScoreParts.push("CASE WHEN customer_code = ? THEN 1 ELSE 0 END");
+      exactScoreParts.push("MAX(CASE WHEN customer_code = ? THEN 1 ELSE 0 END)");
       exactScoreParams.push(filters.customer_code);
-      prefixScoreParts.push("CASE WHEN customer_code LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParts.push("MAX(CASE WHEN customer_code LIKE ? THEN 1 ELSE 0 END)");
       prefixScoreParams.push(`${filters.customer_code}%`);
     }
 
     if (filters.branch_code) {
       whereParts.push("branch_code LIKE ?");
       whereParams.push(`%${filters.branch_code}%`);
-      exactScoreParts.push("CASE WHEN branch_code = ? THEN 1 ELSE 0 END");
+      exactScoreParts.push("MAX(CASE WHEN branch_code = ? THEN 1 ELSE 0 END)");
       exactScoreParams.push(filters.branch_code);
-      prefixScoreParts.push("CASE WHEN branch_code LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParts.push("MAX(CASE WHEN branch_code LIKE ? THEN 1 ELSE 0 END)");
       prefixScoreParams.push(`${filters.branch_code}%`);
     }
 
     if (filters.branch_description) {
       whereParts.push("branch_description LIKE ?");
       whereParams.push(`%${filters.branch_description}%`);
-      exactScoreParts.push("CASE WHEN branch_description = ? THEN 1 ELSE 0 END");
+      exactScoreParts.push("MAX(CASE WHEN branch_description = ? THEN 1 ELSE 0 END)");
       exactScoreParams.push(filters.branch_description);
-      prefixScoreParts.push("CASE WHEN branch_description LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParts.push("MAX(CASE WHEN branch_description LIKE ? THEN 1 ELSE 0 END)");
       prefixScoreParams.push(`${filters.branch_description}%`);
     }
 
@@ -427,15 +427,24 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
       `
         SELECT
           customer_code AS code,
-          customer_name AS name,
-          branch_code,
-          branch_description
-        FROM imported_customers
+          COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS name,
+          CASE
+            WHEN COUNT(DISTINCT CONCAT(COALESCE(branch_code, ''), '||', COALESCE(branch_description, ''))) = 1
+              THEN MAX(branch_code)
+            ELSE ''
+          END AS branch_code,
+          CASE
+            WHEN COUNT(DISTINCT CONCAT(COALESCE(branch_code, ''), '||', COALESCE(branch_description, ''))) = 1
+              THEN MAX(branch_description)
+            ELSE CONCAT(COUNT(DISTINCT CONCAT(COALESCE(branch_code, ''), '||', COALESCE(branch_description, ''))), ' υποκαταστήματα')
+          END AS branch_description
+        FROM imported_sales_lines
         WHERE ${whereParts.join(" AND ")}
+        GROUP BY customer_code
         ORDER BY
           (${exactScoreParts.join(" + ") || "0"}) DESC,
           (${prefixScoreParts.join(" + ") || "0"}) DESC,
-          customer_name,
+          name,
           customer_code
         LIMIT ?
       `,
@@ -460,7 +469,9 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
 
 app.get("/api/admin/customers/:code/stats", requireAdmin, async (req, res) => {
   try {
-    const payload = await customerStatsProvider.getCustomerStats(req.params.code);
+    const payload = await customerStatsProvider.getCustomerStats(req.params.code, {
+      branchCode: String(req.query.branch_code || "").trim() || null,
+    });
     res.json(payload);
   } catch (error) {
     console.error(error);

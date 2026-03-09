@@ -10,7 +10,7 @@ function createImportedDbFixture() {
   return {
     async get(sql, params = []) {
       if (sql.includes("SELECT COUNT(*) AS n FROM imported_sales_lines")) return { n: 3 };
-      if (sql.includes("FROM imported_customers ic")) {
+      if (sql.includes("MAX(delivery_code) AS delivery_code") && sql.includes("FROM imported_sales_lines")) {
         if (params[0] === "MISS") return undefined;
         return {
           code: "C001",
@@ -18,9 +18,11 @@ function createImportedDbFixture() {
           email: null,
           delivery_code: "D1",
           delivery_description: "Main store",
+          branch_code: "B1",
+          branch_description: "Branch 1",
         };
       }
-      if (sql.includes("FROM imported_orders") && sql.includes("COUNT(*) AS total_orders")) {
+      if (sql.includes("COUNT(*) AS total_orders") && sql.includes("FROM (")) {
         return {
           total_orders: 2,
           total_pieces: 15,
@@ -28,7 +30,7 @@ function createImportedDbFixture() {
           last_order_date: `${currentYear}-02-15`,
         };
       }
-      if (sql.includes("AS revenue_3m")) {
+      if (sql.includes("AS revenue_3m") && sql.includes("FROM imported_sales_lines")) {
         return {
           revenue_3m: 200,
           revenue_6m: 245.6,
@@ -39,7 +41,27 @@ function createImportedDbFixture() {
     },
 
     async all(sql, params = []) {
-      if (sql.includes("FROM imported_product_sales")) {
+      if (sql.includes("COUNT(*) AS raw_rows") && sql.includes("GROUP BY COALESCE(branch_code")) {
+        return [
+          {
+            branch_code: "B1",
+            branch_description: "Branch 1",
+            raw_rows: 2,
+            orders: 1,
+            revenue: 175.6,
+            last_order_date: `${currentYear}-02-15`,
+          },
+          {
+            branch_code: "B2",
+            branch_description: "Branch 2",
+            raw_rows: 1,
+            orders: 1,
+            revenue: 70,
+            last_order_date: `${previousYear}-12-10`,
+          },
+        ];
+      }
+      if (sql.includes("GROUP BY item_code")) {
         return [
           {
             code: "P2",
@@ -59,7 +81,7 @@ function createImportedDbFixture() {
           },
         ];
       }
-      if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 10")) {
+      if (sql.includes("GROUP BY customer_code, document_no, order_date") && sql.includes("LIMIT 10")) {
         return [
           {
             order_id: "C001::2026-02-15::INV-2",
@@ -81,7 +103,7 @@ function createImportedDbFixture() {
           },
         ];
       }
-      if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 6")) {
+      if (sql.includes("GROUP BY customer_code, document_no, order_date") && sql.includes("LIMIT 6")) {
         return [
           {
             order_id: "C001::2026-02-15::INV-2",
@@ -94,7 +116,7 @@ function createImportedDbFixture() {
           },
         ];
       }
-      if (sql.includes("FROM imported_sales_lines")) {
+      if (sql.includes("FROM imported_sales_lines") && sql.includes("AND document_no = ?")) {
         return [
           {
             code: "P1",
@@ -106,7 +128,7 @@ function createImportedDbFixture() {
           },
         ];
       }
-      if (sql.includes("FROM imported_monthly_sales")) {
+      if (sql.includes("GROUP BY order_month")) {
         if (params[1] === olderYear) return [{ month: 1, revenue: 25, pieces: 2 }];
         if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
         if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
@@ -137,6 +159,7 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.recent_orders.length, 2);
   assert.equal(payload.detailed_orders.length, 1);
   assert.equal(payload.detailed_orders[0].lines.length, 1);
+  assert.equal(payload.available_branches.length, 2);
   assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
   assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
   assert.equal(payload.monthly_sales.yearly_series.length, 3);

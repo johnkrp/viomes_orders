@@ -199,6 +199,14 @@
                   <h2 id="customerNameHeading">Πελάτης</h2>
                   <p id="customerMeta">-</p>
                 </div>
+                <div id="branchSelectorPanel" class="admin-inline-controls" hidden>
+                  <label class="field admin-compact-field">
+                    <span>Υποκατάστημα</span>
+                    <select id="branchSelector">
+                      <option value="">Όλα τα υποκαταστήματα</option>
+                    </select>
+                  </label>
+                </div>
               </div>
 
               <div class="admin-stat-grid">
@@ -306,9 +314,9 @@
                         <th>Παραστατικό</th>
                         <th>Ημερομηνία</th>
                         <th>Λήξη</th>
-                        <th>Σύνολο</th>
-                        <th>Πληρωμένο</th>
-                        <th>Υπόλοιπο</th>
+                        <th class="admin-table-number">Σύνολο</th>
+                        <th class="admin-table-number">Πληρωμένο</th>
+                        <th class="admin-table-number">Υπόλοιπο</th>
                         <th>Κατάσταση</th>
                       </tr>
                     </thead>
@@ -344,10 +352,10 @@
                     <tr>
                       <th>Κωδικός</th>
                       <th>Περιγραφή</th>
-                      <th id="productSalesMetricHeading">Τζίρος</th>
-                      <th>Τεμάχια</th>
-                      <th>Παραγγελίες</th>
-                      <th>Μ. τιμή μονάδας</th>
+                      <th id="productSalesMetricHeading" class="admin-table-number">Τζίρος</th>
+                      <th class="admin-table-number">Τεμάχια</th>
+                      <th class="admin-table-number">Παραγγελίες</th>
+                      <th class="admin-table-number">Μ. τιμή μονάδας</th>
                     </tr>
                   </thead>
                   <tbody id="productSalesBody">
@@ -378,9 +386,9 @@
                       <tr>
                         <th>Κωδ.</th>
                         <th>Περιγραφή</th>
-                        <th>Τεμάχια</th>
-                        <th>Παραγγελίες</th>
-                        <th>Αξία</th>
+                        <th class="admin-table-number">Τεμάχια</th>
+                        <th class="admin-table-number">Παραγγελίες</th>
+                        <th class="admin-table-number">Αξία</th>
                       </tr>
                     </thead>
                     <tbody id="topProductsQtyBody">
@@ -403,11 +411,11 @@
                   <table class="admin-table">
                     <thead>
                       <tr>
-                        <th>Τεμάχια</th>
+                        <th class="admin-table-number">Τεμάχια</th>
                         <th>Κωδ.</th>
                         <th>Περιγραφή</th>
-                        <th>Αξία</th>
-                        <th>Μ.Τιμή</th>
+                        <th class="admin-table-number">Αξία</th>
+                        <th class="admin-table-number">Μ.Τιμή</th>
                       </tr>
                     </thead>
                     <tbody id="topProductsValueBody">
@@ -433,10 +441,10 @@
                     <tr>
                       <th>ID</th>
                       <th>Ημερομηνία</th>
-                      <th>Γραμμές</th>
-                      <th>Τεμάχια</th>
-                      <th>Αξία</th>
-                      <th>Μ.Έκπτωση</th>
+                      <th class="admin-table-number">Γραμμές</th>
+                      <th class="admin-table-number">Τεμάχια</th>
+                      <th class="admin-table-number">Αξία</th>
+                      <th class="admin-table-number">Μ.Έκπτωση</th>
                       <th>Ενέργεια</th>
                     </tr>
                   </thead>

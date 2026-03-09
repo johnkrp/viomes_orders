@@ -37,6 +37,8 @@ let currentSearchResults = [];
 let currentSuggestionResults = [];
 let selectedOrderId = null;
 let currentProductSalesPage = 1;
+let currentCustomerCode = null;
+let currentBranchCode = "";
 let activeSuggestionIndex = -1;
 let searchDebounceTimer = null;
 let latestSearchRequestId = 0;
@@ -62,6 +64,8 @@ const els = {
   searchSuggestionsList: document.getElementById("searchSuggestionsList"),
   searchResultsPanel: document.getElementById("searchResultsPanel"),
   searchResultsBody: document.getElementById("searchResultsBody"),
+  branchSelectorPanel: document.getElementById("branchSelectorPanel"),
+  branchSelector: document.getElementById("branchSelector"),
   emptyState: document.getElementById("emptyState"),
   statsPanel: document.getElementById("statsPanel"),
   customerNameHeading: document.getElementById("customerNameHeading"),
@@ -249,6 +253,16 @@ function resetSearchSuggestions() {
   if (els.searchSuggestionsList) els.searchSuggestionsList.innerHTML = "";
 }
 
+function resetBranchSelector() {
+  currentCustomerCode = null;
+  currentBranchCode = "";
+  if (els.branchSelectorPanel) els.branchSelectorPanel.hidden = true;
+  if (els.branchSelector) {
+    els.branchSelector.innerHTML = `<option value="">Όλα τα υποκαταστήματα</option>`;
+    els.branchSelector.value = "";
+  }
+}
+
 function getCustomerSearchFilters() {
   return {
     customer_name: (els.customerNameQuery?.value || "").trim(),
@@ -412,6 +426,7 @@ function resetReceivables() {
 }
 
 function resetStats() {
+  resetBranchSelector();
   els.customerNameHeading.textContent = "Πελάτης";
   els.customerMeta.textContent = "-";
   els.totalOrdersValue.textContent = "0";
@@ -451,6 +466,33 @@ function resetStats() {
   `;
   els.emptyState.hidden = false;
   els.statsPanel.hidden = true;
+}
+
+function renderBranchSelector(customerCode, branches = [], selectedBranchCode = "") {
+  currentCustomerCode = customerCode || null;
+  currentBranchCode = selectedBranchCode || "";
+
+  if (!els.branchSelectorPanel || !els.branchSelector) return;
+
+  const items = Array.isArray(branches) ? branches : [];
+  if (!customerCode || items.length <= 1) {
+    els.branchSelectorPanel.hidden = true;
+    els.branchSelector.innerHTML = `<option value="">Όλα τα υποκαταστήματα</option>`;
+    els.branchSelector.value = "";
+    return;
+  }
+
+  els.branchSelectorPanel.hidden = false;
+  els.branchSelector.innerHTML = [
+    `<option value="">Όλα τα υποκαταστήματα</option>`,
+    ...items.map((branch) => {
+      const code = branch.branch_code || "";
+      const description = branch.branch_description || "";
+      const label = [code, description].filter(Boolean).join(" | ") || "Χωρίς στοιχεία υποκαταστήματος";
+      return `<option value="${escapeHtml(code)}">${escapeHtml(label)}</option>`;
+    }),
+  ].join("");
+  els.branchSelector.value = selectedBranchCode || "";
 }
 
 function renderSearchResults(items, filters = {}) {
@@ -713,6 +755,7 @@ function renderStats(data) {
   const monthlySales = data?.monthly_sales || {};
   const productSales = data?.product_sales || {};
   const receivables = data?.receivables || {};
+  const availableBranches = Array.isArray(data?.available_branches) ? data.available_branches : [];
   const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const recentOrders = Array.isArray(data?.recent_orders) ? data.recent_orders : [];
@@ -748,6 +791,7 @@ function renderStats(data) {
   els.revenue6mValue.textContent = formatMoney(summary.revenue_6m);
   els.revenue12mValue.textContent = formatMoney(summary.revenue_12m);
   els.lastOrderDateValue.textContent = formatDateTime(summary.last_order_date);
+  renderBranchSelector(customer.code, availableBranches, customer.branch_code || "");
 
   renderMonthlySales(monthlySales);
   renderReceivables(receivables);
@@ -899,7 +943,7 @@ async function handleLogout() {
   }
 }
 
-async function fetchCustomerStats(customerCode) {
+async function fetchCustomerStats(customerCode, branchCode = "") {
   setStatus("");
 
   if (!customerCode) {
@@ -909,8 +953,10 @@ async function fetchCustomerStats(customerCode) {
   }
 
   try {
+    const params = new URLSearchParams();
+    if (branchCode) params.set("branch_code", branchCode);
     const payload = await apiFetch(
-      `/api/admin/customers/${encodeURIComponent(customerCode)}/stats`,
+      `/api/admin/customers/${encodeURIComponent(customerCode)}/stats${params.toString() ? `?${params.toString()}` : ""}`,
       { method: "GET" },
     );
     renderStats(payload);
@@ -920,8 +966,13 @@ async function fetchCustomerStats(customerCode) {
       branch_code: payload?.customer?.branch_code || "",
       branch_description: payload?.customer?.branch_description || "",
     });
+    currentCustomerCode = payload?.customer?.code || customerCode;
+    currentBranchCode = payload?.customer?.branch_code || branchCode || "";
     resetSearchSuggestions();
-    setStatus(`Φορτώθηκαν τα στατιστικά για τον κωδικό ${customerCode}.`, "ok");
+    setStatus(
+      `Φορτώθηκαν τα στατιστικά για τον κωδικό ${customerCode}${currentBranchCode ? ` / υποκ. ${currentBranchCode}` : ""}.`,
+      "ok",
+    );
   } catch (error) {
     resetStats();
     setStatus(`Η φόρτωση στατιστικών απέτυχε: ${error.message}`, "error");
@@ -975,6 +1026,12 @@ async function selectSuggestion(index) {
   await fetchCustomerStats(item.code);
 }
 
+function handleBranchSelectionChange() {
+  if (!currentCustomerCode) return;
+  const branchCode = els.branchSelector?.value || "";
+  fetchCustomerStats(currentCustomerCode, branchCode);
+}
+
 function handleSearchFieldKeydown(event) {
   if (!currentSuggestionResults.length) return;
 
@@ -1008,6 +1065,7 @@ els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
 els.customerSearchForm?.addEventListener("submit", searchCustomers);
 els.clearStatsBtn?.addEventListener("click", clearCustomerStats);
+els.branchSelector?.addEventListener("change", handleBranchSelectionChange);
 [
   els.customerNameQuery,
   els.customerCodeQuery,

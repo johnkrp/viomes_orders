@@ -33,6 +33,7 @@ Operational scripts used by Plesk/local maintenance.
 
 - `reset-and-reload-sales.js`
   - Pipeline: reset then run sales import.
+  - Forces `--mode=full_refresh` unless explicitly overridden.
 
 - `dedupe-imported-sales.js`
   - Removes historical duplicate logical sales lines from `imported_sales_lines`.
@@ -61,6 +62,8 @@ npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mys
 ```
 
 Use `full_refresh` instead when you want to rebuild from canonical yearly files.
+
+`npm run reload:sales -- ...` now does this automatically and records the run as `full_refresh` in `import_runs`.
 
 ## Operational Notes
 

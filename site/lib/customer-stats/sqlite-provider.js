@@ -80,6 +80,37 @@ async function hasImportedData(db) {
   }
 }
 
+function buildImportedBranchClause(branchCode, alias = "") {
+  const prefix = alias ? `${alias}.` : "";
+  if (!String(branchCode || "").trim()) {
+    return { clause: "", params: [] };
+  }
+  return {
+    clause: ` AND ${prefix}branch_code = ?`,
+    params: [String(branchCode).trim()],
+  };
+}
+
+async function loadImportedCustomerBranches(db, customerCode) {
+  return db.all(
+    `
+      SELECT
+        COALESCE(branch_code, '') AS branch_code,
+        COALESCE(branch_description, '') AS branch_description,
+        COUNT(*) AS raw_rows,
+        COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+        COALESCE(SUM(net_value), 0) AS revenue,
+        MAX(order_date) AS last_order_date
+      FROM imported_sales_lines
+      WHERE customer_code = ?
+        AND (COALESCE(branch_code, '') <> '' OR COALESCE(branch_description, '') <> '')
+      GROUP BY COALESCE(branch_code, ''), COALESCE(branch_description, '')
+      ORDER BY branch_description ASC, branch_code ASC
+    `,
+    [customerCode],
+  );
+}
+
 export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" }) {
   if (!db) {
     throw new Error("SQLite customer stats provider requires a database connection.");
@@ -89,8 +120,9 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
     name: "sqlite",
     mode: "sql-backed",
     projection_strategy: "projection-first",
-    async getCustomerStats(customerCode) {
+    async getCustomerStats(customerCode, options = {}) {
       const code = ensureCustomerCode(customerCode);
+      const selectedBranchCode = String(options?.branchCode || "").trim() || null;
       const useImportedData = await hasImportedData(db);
       const now = new Date();
 
@@ -315,20 +347,24 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         };
       }
 
+      const availableBranches = await loadImportedCustomerBranches(db, code);
+      const branchFilter = buildImportedBranchClause(selectedBranchCode);
+
       const customer = await db.get(
         `
           SELECT
-            ic.customer_code AS code,
-            ic.customer_name AS name,
+            customer_code AS code,
+            COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS name,
             NULL AS email,
-            ic.delivery_code,
-            ic.delivery_description,
-            ic.branch_code,
-            ic.branch_description
-          FROM imported_customers ic
-          WHERE ic.customer_code = ?
+            MAX(delivery_code) AS delivery_code,
+            MAX(delivery_description) AS delivery_description,
+            MAX(branch_code) AS branch_code,
+            MAX(branch_description) AS branch_description
+          FROM imported_sales_lines
+          WHERE customer_code = ?${branchFilter.clause}
+          GROUP BY customer_code
         `,
-        [code],
+        [code, ...branchFilter.params],
       );
 
       if (!customer) {
@@ -339,37 +375,58 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         `
           SELECT
             COUNT(*) AS total_orders,
-            COALESCE(SUM(total_pieces), 0) AS total_pieces,
-            COALESCE(SUM(total_net_value), 0) AS total_revenue,
+            COALESCE(SUM(order_totals.total_pieces), 0) AS total_pieces,
+            COALESCE(SUM(order_totals.total_net_value), 0) AS total_revenue,
             MAX(created_at) AS last_order_date
-          FROM imported_orders
-          WHERE customer_code = ?
+          FROM (
+            SELECT
+              document_no,
+              order_date AS created_at,
+              COALESCE(SUM(qty_base), 0) AS total_pieces,
+              COALESCE(SUM(net_value), 0) AS total_net_value
+            FROM imported_sales_lines
+            WHERE customer_code = ?${branchFilter.clause}
+            GROUP BY document_no, order_date
+          ) order_totals
         `,
-        [code],
+        [code, ...branchFilter.params],
       );
-      const revenueWindows = await loadRevenueWindows(
-        db,
-        "imported_orders",
-        "customer_code",
-        "created_at",
-        code,
-        now,
+      const revenueWindows = await db.get(
+        `
+          SELECT
+            COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_3m,
+            COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_6m,
+            COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_12m
+          FROM imported_sales_lines
+          WHERE customer_code = ?${branchFilter.clause}
+        `,
+        [
+          buildCutoffDateString(now, 90),
+          buildCutoffDateString(now, 180),
+          buildCutoffDateString(now, 365),
+          code,
+          ...branchFilter.params,
+        ],
       );
 
       const allProductSales = await db.all(
         `
           SELECT
             item_code AS code,
-            item_description AS description,
-            pieces,
-            orders,
-            revenue,
-            avg_unit_price
-          FROM imported_product_sales
-          WHERE customer_code = ?
+            MAX(item_description) AS description,
+            COALESCE(SUM(qty_base), 0) AS pieces,
+            COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+            COALESCE(SUM(net_value), 0) AS revenue,
+            CASE
+              WHEN COALESCE(SUM(qty_base), 0) > 0 THEN COALESCE(SUM(net_value), 0) / SUM(qty_base)
+              ELSE 0
+            END AS avg_unit_price
+          FROM imported_sales_lines
+          WHERE customer_code = ?${branchFilter.clause}
+          GROUP BY item_code
           ORDER BY item_code ASC
         `,
-        [code],
+        [code, ...branchFilter.params],
       );
 
       const topProductsByQty = [...allProductSales]
@@ -399,37 +456,39 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
       const recentOrders = await db.all(
         `
           SELECT
-            order_id,
+            CONCAT(customer_code, '::', order_date, '::', document_no) AS order_id,
             document_no,
-            created_at,
-            total_lines,
-            total_pieces,
-            total_net_value,
-            average_discount_pct
-          FROM imported_orders
-          WHERE customer_code = ?
-          ORDER BY created_at DESC, order_id DESC
+            order_date AS created_at,
+            COUNT(*) AS total_lines,
+            COALESCE(SUM(qty_base), 0) AS total_pieces,
+            COALESCE(SUM(net_value), 0) AS total_net_value,
+            0 AS average_discount_pct
+          FROM imported_sales_lines
+          WHERE customer_code = ?${branchFilter.clause}
+          GROUP BY customer_code, document_no, order_date
+          ORDER BY order_date DESC, document_no DESC
           LIMIT 10
         `,
-        [code],
+        [code, ...branchFilter.params],
       );
 
       const detailedOrderHeaders = await db.all(
         `
           SELECT
-            order_id,
+            CONCAT(customer_code, '::', order_date, '::', document_no) AS order_id,
             document_no,
-            created_at,
-            total_lines,
-            total_pieces,
-            total_net_value,
-            average_discount_pct
-          FROM imported_orders
-          WHERE customer_code = ?
-          ORDER BY created_at DESC, order_id DESC
+            order_date AS created_at,
+            COUNT(*) AS total_lines,
+            COALESCE(SUM(qty_base), 0) AS total_pieces,
+            COALESCE(SUM(net_value), 0) AS total_net_value,
+            0 AS average_discount_pct
+          FROM imported_sales_lines
+          WHERE customer_code = ?${branchFilter.clause}
+          GROUP BY customer_code, document_no, order_date
+          ORDER BY order_date DESC, document_no DESC
           LIMIT 6
         `,
-        [code],
+        [code, ...branchFilter.params],
       );
 
       const detailedOrders = [];
@@ -445,11 +504,14 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               net_value AS line_net_value
             FROM imported_sales_lines
             WHERE customer_code = ?
+              ${selectedBranchCode ? "AND branch_code = ?" : ""}
               AND document_no = ?
               AND order_date = ?
             ORDER BY item_code ASC
           `,
-          [code, order.document_no, order.created_at],
+          selectedBranchCode
+            ? [code, selectedBranchCode, order.document_no, order.created_at]
+            : [code, order.document_no, order.created_at],
         );
 
         detailedOrders.push({
@@ -478,19 +540,22 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         `
           SELECT
             order_month AS month,
-            revenue,
-            pieces
-          FROM imported_monthly_sales
+            COALESCE(SUM(net_value), 0) AS revenue,
+            COALESCE(SUM(qty_base), 0) AS pieces
+          FROM imported_sales_lines
           WHERE customer_code = ?
-            AND order_year = ?
+            AND order_year = ?${selectedBranchCode ? "\n            AND branch_code = ?" : ""}
+          GROUP BY order_month
           ORDER BY order_month ASC
         `;
-      const monthlyYearlySeries = await loadMonthlyYearlySeries(
-        db,
-        monthlyYearQuery,
-        code,
-        [olderYear, previousYear, currentYear],
-      );
+      const monthlyYearlySeries = [];
+      for (const year of [olderYear, previousYear, currentYear]) {
+        const rows = await db.all(
+          monthlyYearQuery,
+          selectedBranchCode ? [code, year, selectedBranchCode] : [code, year],
+        );
+        monthlyYearlySeries.push({ year, months: mergeMonthlyRows(rows) });
+      }
 
       const totalOrders = asInteger(summary.total_orders);
       const totalRevenue = asMoney(summary.total_revenue);
@@ -500,9 +565,9 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           code: customer.code,
           name: customer.name,
           email: null,
-          aggregation_level: "store",
-          branch_code: customer.branch_code || null,
-          branch_description: customer.branch_description || null,
+          aggregation_level: selectedBranchCode ? "branch" : "customer",
+          branch_code: selectedBranchCode ? customer.branch_code || selectedBranchCode : null,
+          branch_description: selectedBranchCode ? customer.branch_description || null : null,
         },
         summary: {
           total_orders: totalOrders,
@@ -544,6 +609,14 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         },
         top_products_by_qty: topProductsByQty.map(productStatRow),
         top_products_by_value: topProductsByValue.map(productStatRow),
+        available_branches: availableBranches.map((branch) => ({
+          branch_code: branch.branch_code || "",
+          branch_description: branch.branch_description || "",
+          orders: asInteger(branch.orders),
+          revenue: asMoney(branch.revenue),
+          raw_rows: asInteger(branch.raw_rows),
+          last_order_date: branch.last_order_date || null,
+        })),
         recent_orders: recentOrders.map((order) => ({
           order_id: order.order_id,
           created_at: order.created_at,
