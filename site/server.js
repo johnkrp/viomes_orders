@@ -367,15 +367,63 @@ app.post("/api/admin/logout", async (req, res) => {
 
 app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
   try {
-    const q = String(req.query.q || "").trim();
     const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10), 1), 50);
-    if (!q) {
-      res.json({ items: [], total: 0, query: q });
+    const filters = {
+      customer_name: String(req.query.customer_name || "").trim(),
+      customer_code: String(req.query.customer_code || "").trim(),
+      branch_code: String(req.query.branch_code || "").trim(),
+      branch_description: String(req.query.branch_description || "").trim(),
+    };
+
+    if (!Object.values(filters).some(Boolean)) {
+      res.json({ items: [], total: 0, filters });
       return;
     }
 
-    const like = `%${q}%`;
-    const exactCode = await db.all(
+    const whereParts = [];
+    const whereParams = [];
+    const exactScoreParts = [];
+    const exactScoreParams = [];
+    const prefixScoreParts = [];
+    const prefixScoreParams = [];
+
+    if (filters.customer_name) {
+      whereParts.push("customer_name LIKE ?");
+      whereParams.push(`%${filters.customer_name}%`);
+      exactScoreParts.push("CASE WHEN customer_name = ? THEN 1 ELSE 0 END");
+      exactScoreParams.push(filters.customer_name);
+      prefixScoreParts.push("CASE WHEN customer_name LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParams.push(`${filters.customer_name}%`);
+    }
+
+    if (filters.customer_code) {
+      whereParts.push("customer_code LIKE ?");
+      whereParams.push(`%${filters.customer_code}%`);
+      exactScoreParts.push("CASE WHEN customer_code = ? THEN 1 ELSE 0 END");
+      exactScoreParams.push(filters.customer_code);
+      prefixScoreParts.push("CASE WHEN customer_code LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParams.push(`${filters.customer_code}%`);
+    }
+
+    if (filters.branch_code) {
+      whereParts.push("branch_code LIKE ?");
+      whereParams.push(`%${filters.branch_code}%`);
+      exactScoreParts.push("CASE WHEN branch_code = ? THEN 1 ELSE 0 END");
+      exactScoreParams.push(filters.branch_code);
+      prefixScoreParts.push("CASE WHEN branch_code LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParams.push(`${filters.branch_code}%`);
+    }
+
+    if (filters.branch_description) {
+      whereParts.push("branch_description LIKE ?");
+      whereParams.push(`%${filters.branch_description}%`);
+      exactScoreParts.push("CASE WHEN branch_description = ? THEN 1 ELSE 0 END");
+      exactScoreParams.push(filters.branch_description);
+      prefixScoreParts.push("CASE WHEN branch_description LIKE ? THEN 1 ELSE 0 END");
+      prefixScoreParams.push(`${filters.branch_description}%`);
+    }
+
+    const rows = await db.all(
       `
         SELECT
           customer_code AS code,
@@ -383,48 +431,19 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
           branch_code,
           branch_description
         FROM imported_customers
-        WHERE customer_code = ?
-        ORDER BY customer_name, customer_code
+        WHERE ${whereParts.join(" AND ")}
+        ORDER BY
+          (${exactScoreParts.join(" + ") || "0"}) DESC,
+          (${prefixScoreParts.join(" + ") || "0"}) DESC,
+          customer_name,
+          customer_code
         LIMIT ?
       `,
-      [q, limit],
+      [...whereParams, ...exactScoreParams, ...prefixScoreParams, limit],
     );
 
-    const rows = exactCode.length
-      ? exactCode
-      : await db.all(
-          `
-            SELECT
-              customer_code AS code,
-              customer_name AS name,
-              branch_code,
-              branch_description
-            FROM imported_customers
-            WHERE customer_code LIKE ?
-               OR customer_name LIKE ?
-               OR branch_code LIKE ?
-               OR branch_description LIKE ?
-            ORDER BY
-              CASE
-                WHEN customer_name = ? THEN 0
-                WHEN customer_code = ? THEN 1
-                WHEN branch_code = ? THEN 2
-                WHEN branch_description = ? THEN 3
-                WHEN customer_name LIKE ? THEN 4
-                WHEN customer_code LIKE ? THEN 5
-                WHEN branch_code LIKE ? THEN 6
-                WHEN branch_description LIKE ? THEN 7
-                ELSE 8
-              END,
-              customer_name,
-              customer_code
-            LIMIT ?
-          `,
-          [like, like, like, like, q, q, q, q, `${q}%`, `${q}%`, `${q}%`, `${q}%`, limit],
-        );
-
     res.json({
-      query: q,
+      filters,
       total: rows.length,
       items: rows.map((row) => ({
         code: row.code,

@@ -104,16 +104,54 @@
 
             <form id="customerSearchForm" class="admin-searchbar">
               <label class="field field-grow">
-                <span>Αναζήτηση πελάτη</span>
+                <span>Επωνυμία</span>
                 <input
-                  id="customerQuery"
+                  id="customerNameQuery"
                   type="search"
                   autocomplete="off"
                   autocapitalize="off"
                   autocorrect="off"
                   spellcheck="false"
-                  placeholder="Επωνυμία, κωδικός, κωδ. υποκ. ή περιγραφή υποκ."
-                  required
+                  placeholder="Αναζήτηση με επωνυμία πελάτη"
+                />
+              </label>
+
+              <label class="field field-grow">
+                <span>Κωδικός</span>
+                <input
+                  id="customerCodeQuery"
+                  type="search"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  placeholder="Αναζήτηση με κωδικό πελάτη"
+                />
+              </label>
+
+              <label class="field field-grow">
+                <span>Κωδ. Υποκ.</span>
+                <input
+                  id="branchCodeQuery"
+                  type="search"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  placeholder="Αναζήτηση με κωδικό υποκαταστήματος"
+                />
+              </label>
+
+              <label class="field field-grow">
+                <span>Περιγραφή Υποκ.</span>
+                <input
+                  id="branchDescriptionQuery"
+                  type="search"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  placeholder="Αναζήτηση με περιγραφή υποκαταστήματος"
                 />
               </label>
 
@@ -147,7 +185,7 @@
 
           <section id="emptyState" class="panel admin-panel admin-empty-state">
             <h2>Δεν έχει φορτωθεί πελάτης</h2>
-            <p>Αναζητήστε πελάτη με επωνυμία, κωδικό ή στοιχεία υποκαταστήματος και επιλέξτε αποτέλεσμα.</p>
+            <p>Αναζητήστε πελάτη με τα ξεχωριστά πεδία επωνυμίας, κωδικού ή στοιχείων υποκαταστήματος και επιλέξτε αποτέλεσμα.</p>
           </section>
 
           <section id="statsPanel" class="admin-stats-stack" hidden>

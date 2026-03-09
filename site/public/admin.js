@@ -48,7 +48,10 @@ const els = {
   dashboardPanel: document.getElementById("dashboardPanel"),
   sessionInfo: document.getElementById("sessionInfo"),
   customerSearchForm: document.getElementById("customerSearchForm"),
-  customerQuery: document.getElementById("customerQuery"),
+  customerNameQuery: document.getElementById("customerNameQuery"),
+  customerCodeQuery: document.getElementById("customerCodeQuery"),
+  branchCodeQuery: document.getElementById("branchCodeQuery"),
+  branchDescriptionQuery: document.getElementById("branchDescriptionQuery"),
   searchCustomersBtn: document.getElementById("searchCustomersBtn"),
   clearStatsBtn: document.getElementById("clearStatsBtn"),
   searchResultsPanel: document.getElementById("searchResultsPanel"),
@@ -228,6 +231,27 @@ function resetSearchResults() {
   }
 }
 
+function getCustomerSearchFilters() {
+  return {
+    customer_name: (els.customerNameQuery?.value || "").trim(),
+    customer_code: (els.customerCodeQuery?.value || "").trim(),
+    branch_code: (els.branchCodeQuery?.value || "").trim(),
+    branch_description: (els.branchDescriptionQuery?.value || "").trim(),
+  };
+}
+
+function hasCustomerSearchFilters(filters) {
+  return Object.values(filters).some((value) => Boolean(value));
+}
+
+function buildCustomerSearchParams(filters) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  return params;
+}
+
 function resetMonthlySales() {
   if (els.monthlyPrevRevenueHeading) els.monthlyPrevRevenueHeading.textContent = "Προηγ. έτος";
   if (els.monthlyCurrRevenueHeading) els.monthlyCurrRevenueHeading.textContent = "Τρέχον έτος";
@@ -304,10 +328,12 @@ function resetStats() {
   els.statsPanel.hidden = true;
 }
 
-function renderSearchResults(items, query) {
+function renderSearchResults(items, filters = {}) {
   currentSearchResults = Array.isArray(items) ? items : [];
   if (els.searchResultsPanel) els.searchResultsPanel.hidden = false;
   if (!els.searchResultsBody) return;
+
+  const activeFilters = Object.values(filters || {}).filter(Boolean).join(" | ");
 
   els.searchResultsBody.innerHTML = currentSearchResults.length
     ? currentSearchResults
@@ -333,7 +359,7 @@ function renderSearchResults(items, query) {
         .join("")
     : `
         <tr>
-          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν πελάτες για "${escapeHtml(query)}".</td>
+          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν πελάτες${activeFilters ? ` για "${escapeHtml(activeFilters)}"` : ""}.</td>
         </tr>
       `;
 }
@@ -700,7 +726,7 @@ async function handleLogin(event) {
     resetSearchResults();
     resetStats();
     els.password.value = "";
-    els.customerQuery.focus();
+    els.customerNameQuery.focus();
     setStatus("Η σύνδεση ολοκληρώθηκε.", "ok");
   } catch (error) {
     setStatus(`Η σύνδεση απέτυχε: ${error.message}`, "error");
@@ -731,7 +757,7 @@ async function fetchCustomerStats(customerCode) {
 
   if (!customerCode) {
     setStatus("Δώστε κωδικό πελάτη.", "error");
-    els.customerQuery.focus();
+    els.customerCodeQuery.focus();
     return;
   }
 
@@ -741,8 +767,8 @@ async function fetchCustomerStats(customerCode) {
       { method: "GET" },
     );
     renderStats(payload);
-    if (els.customerQuery) {
-      els.customerQuery.value = customerCode;
+    if (els.customerCodeQuery) {
+      els.customerCodeQuery.value = customerCode;
     }
     setStatus(`Φορτώθηκαν τα στατιστικά για τον κωδικό ${customerCode}.`, "ok");
   } catch (error) {
@@ -755,21 +781,22 @@ async function searchCustomers(event) {
   event.preventDefault();
   setStatus("");
 
-  const query = (els.customerQuery.value || "").trim();
-  if (!query) {
-    setStatus("Δώστε επωνυμία, κωδικό ή στοιχεία υποκαταστήματος.", "error");
-    els.customerQuery.focus();
+  const filters = getCustomerSearchFilters();
+  if (!hasCustomerSearchFilters(filters)) {
+    setStatus("Συμπληρώστε τουλάχιστον ένα πεδίο αναζήτησης.", "error");
+    els.customerNameQuery.focus();
     return;
   }
 
   els.searchCustomersBtn.disabled = true;
   try {
+    const params = buildCustomerSearchParams(filters);
     const payload = await apiFetch(
-      `/api/admin/customers/search?q=${encodeURIComponent(query)}`,
+      `/api/admin/customers/search?${params.toString()}`,
       { method: "GET" },
     );
-    renderSearchResults(payload.items, query);
-    setStatus(`Βρέθηκαν ${payload.total} αποτελέσματα για "${query}".`, "ok");
+    renderSearchResults(payload.items, payload.filters);
+    setStatus(`Βρέθηκαν ${payload.total} αποτελέσματα.`, "ok");
   } catch (error) {
     resetSearchResults();
     setStatus(`Η αναζήτηση πελάτη απέτυχε: ${error.message}`, "error");
@@ -779,11 +806,14 @@ async function searchCustomers(event) {
 }
 
 function clearCustomerStats() {
-  els.customerQuery.value = "";
+  if (els.customerNameQuery) els.customerNameQuery.value = "";
+  if (els.customerCodeQuery) els.customerCodeQuery.value = "";
+  if (els.branchCodeQuery) els.branchCodeQuery.value = "";
+  if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = "";
   resetSearchResults();
   resetStats();
   setStatus("");
-  els.customerQuery.focus();
+  els.customerNameQuery.focus();
 }
 
 els.loginForm?.addEventListener("submit", handleLogin);
@@ -828,7 +858,7 @@ resetStats();
 resetSearchResults();
 refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
-    els.customerQuery.focus();
+    els.customerNameQuery.focus();
   } else {
     els.username.focus();
   }
