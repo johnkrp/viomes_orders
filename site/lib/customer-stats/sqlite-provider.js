@@ -75,6 +75,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
 
   return {
     name: "sqlite",
+    mode: "sql-backed",
+    projection_strategy: "projection-first",
     async getCustomerStats(customerCode) {
       const code = ensureCustomerCode(customerCode);
       const useImportedData = await hasImportedData(db);

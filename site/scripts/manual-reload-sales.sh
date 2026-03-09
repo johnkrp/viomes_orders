@@ -14,15 +14,16 @@ LOG_DIR="$APP_ROOT/logs"
 SALES_FILES="${SALES_FILES:-$BACKEND_ROOT/2025.CSV,$BACKEND_ROOT/2026.CSV}"
 
 # DB settings (server-local MySQL)
-MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
-MYSQL_PORT="${MYSQL_PORT:-3306}"
-MYSQL_DATABASE="${MYSQL_DATABASE:-admin_viomes_orders}"
-MYSQL_USER="${MYSQL_USER:-admin_viomes_app}"
-MYSQL_PASSWORD="${MYSQL_PASSWORD:-Yudd042&}"
+MYSQL_HOST="${MYSQL_HOST:?Missing MYSQL_HOST for manual reload}"
+MYSQL_PORT="${MYSQL_PORT:?Missing MYSQL_PORT for manual reload}"
+MYSQL_DATABASE="${MYSQL_DATABASE:?Missing MYSQL_DATABASE for manual reload}"
+MYSQL_USER="${MYSQL_USER:?Missing MYSQL_USER for manual reload}"
+MYSQL_PASSWORD="${MYSQL_PASSWORD:?Missing MYSQL_PASSWORD for manual reload}"
 
 # Plesk scheduled tasks may have minimal PATH.
 export PATH="/opt/plesk/node/24/bin:/opt/plesk/node/22/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 export ENTERSOFT_IMPORT_TIMEOUT_SECONDS="${ENTERSOFT_IMPORT_TIMEOUT_SECONDS:-7200}"
+export IMPORT_TRIGGER_SOURCE="${IMPORT_TRIGGER_SOURCE:-manual_full_reload}"
 
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/manual-reload-sales-$(date +%F-%H%M%S).log"

@@ -157,7 +157,7 @@ As of this setup session:
 
 The important outcome from the MySQL investigation:
 
-- the MCP entry matches the credentials and host values used in [`manual-reload-sales.sh`](/d:/Desktop/programming/viomes/order_form/site/scripts/manual-reload-sales.sh) and [`nightly-import.sh`](/d:/Desktop/programming/viomes/order_form/site/scripts/nightly-import.sh)
+- the MCP entry was intended to match the same host-level MySQL configuration used by the server-side import scripts in [`manual-reload-sales.sh`](/d:/Desktop/programming/viomes/order_form/site/scripts/manual-reload-sales.sh) and [`nightly-import.sh`](/d:/Desktop/programming/viomes/order_form/site/scripts/nightly-import.sh)
 - both scripts are clearly written for the Plesk/Linux server environment, not necessarily for the local Windows machine
 - direct local login attempts against `127.0.0.1` and `localhost` both failed with the same MySQL access-denied error
 - that makes a local/remote DB mismatch the most likely explanation: the stored credentials may be valid on the hosted server DB but not on the current local MySQL instance
@@ -168,9 +168,9 @@ Practical implication:
 
 ## Security Notes
 
-- Sensitive DB credentials appeared in local scripts and in the session while debugging
+- Sensitive DB credentials appeared during prior debugging and should be treated as compromised if still active
 - Those credentials should be rotated if they are still active
-- Do not store raw secrets in repo docs; prefer environment variables or host-level secret configuration
+- Do not store raw secrets in repo docs or shell wrappers; prefer environment variables or host-level secret configuration
 
 ## Browser Notes
 

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Legacy FastAPI auth routes kept for reference only.
+# The active production runtime is the Node app in site/server.js.
+
 from fastapi import APIRouter, Cookie, Response, status
 
 from app.config import settings
@@ -49,4 +52,3 @@ def me(session_token: str | None = Cookie(default=None, alias=settings.session_c
     if not admin:
         return {"ok": True, "username": None, "authenticated": False}
     return {"ok": True, "username": admin["username"], "authenticated": True}
-

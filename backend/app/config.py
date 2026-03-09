@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Legacy FastAPI settings kept for reference only.
+# The active production runtime is the Node app in site/server.js.
+
 import os
 
 
@@ -22,4 +25,3 @@ class Settings:
 
 
 settings = Settings()
-

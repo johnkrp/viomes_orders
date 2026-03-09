@@ -8,15 +8,23 @@ import { fileURLToPath } from "node:url";
 import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
 import { openDatabase } from "./lib/db/client.js";
 import { initDatabaseSchema } from "./lib/db/init-schema.js";
+import {
+  getImportedSalesProjectionHealth,
+  IMPORTED_SALES_ARCHITECTURE,
+  LATEST_IMPORT_RUN_SQL,
+} from "./lib/imported-sales.js";
+import { validateRuntimeConfig } from "./lib/runtime-config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const APP_NAME = "VIOMES Order Form API";
 const PORT = Number(process.env.PORT || 3001);
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const ADMIN_USERNAME_ENV = String(process.env.ADMIN_USERNAME || "").trim();
+const ADMIN_PASSWORD_ENV = String(process.env.ADMIN_PASSWORD || "");
+const ADMIN_USERNAME = ADMIN_USERNAME_ENV || "admin";
 const DEFAULT_ADMIN_PASSWORD = "change-me-now";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD;
+const ADMIN_PASSWORD = ADMIN_PASSWORD_ENV || DEFAULT_ADMIN_PASSWORD;
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "viomes_admin_session";
 const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 28800);
 const NODE_ENV = String(process.env.NODE_ENV || "development").trim().toLowerCase();
@@ -76,26 +84,6 @@ function newSessionToken() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
-function validateRuntimeConfig() {
-  if (!["off", "on", "auto"].includes(COOKIE_SECURE_MODE)) {
-    throw new Error(
-      `Unsupported COOKIE_SECURE_MODE "${COOKIE_SECURE_MODE}". Expected "off", "on", or "auto".`,
-    );
-  }
-
-  if (!["0", "1", "true", "false"].includes(SYNC_ADMIN_PASSWORD_ON_STARTUP)) {
-    throw new Error(
-      `Unsupported SYNC_ADMIN_PASSWORD_ON_STARTUP "${SYNC_ADMIN_PASSWORD_ON_STARTUP}". Expected 0/1/true/false.`,
-    );
-  }
-
-  if (NODE_ENV === "production" && ADMIN_PASSWORD === DEFAULT_ADMIN_PASSWORD) {
-    throw new Error(
-      "Refusing to start in production with the default admin password. Set ADMIN_PASSWORD.",
-    );
-  }
-}
-
 function shouldUseSecureCookie(req) {
   if (COOKIE_SECURE_MODE === "off") return false;
   if (COOKIE_SECURE_MODE === "on") return true;
@@ -107,7 +95,14 @@ function shouldSyncAdminPasswordOnStartup() {
 }
 
 async function initDb() {
-  validateRuntimeConfig();
+  validateRuntimeConfig({
+    cookieSecureMode: COOKIE_SECURE_MODE,
+    syncAdminPasswordOnStartup: SYNC_ADMIN_PASSWORD_ON_STARTUP,
+    nodeEnv: NODE_ENV,
+    adminUsernameEnv: ADMIN_USERNAME_ENV,
+    adminPasswordEnv: ADMIN_PASSWORD_ENV,
+    defaultAdminPassword: DEFAULT_ADMIN_PASSWORD,
+  });
   dbClient = await openDatabase({ env: process.env });
   db = dbClient;
   await initDatabaseSchema({ db, kind: dbClient.kind });
@@ -178,13 +173,38 @@ async function requireAdmin(req, res, next) {
   }
 }
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", async (req, res) => {
+  let latestImportRun = null;
+  try {
+    latestImportRun = await db.get(LATEST_IMPORT_RUN_SQL);
+  } catch {
+    latestImportRun = null;
+  }
+
   res.json({
     ok: true,
     app: APP_NAME,
     db_client: dbClient?.kind || null,
     customer_stats_provider: customerStatsProvider?.name || null,
+    customer_stats_provider_mode: customerStatsProvider?.mode || null,
+    db_architecture: {
+      raw_fact_table: IMPORTED_SALES_ARCHITECTURE.rawFactTable,
+      projection_tables: IMPORTED_SALES_ARCHITECTURE.projectionTables,
+      legacy_dormant_tables: IMPORTED_SALES_ARCHITECTURE.legacyDormantTables,
+      projection_strategy: IMPORTED_SALES_ARCHITECTURE.projectionStrategy,
+    },
+    latest_import_run: latestImportRun,
   });
+});
+
+app.get("/api/admin/import-health", requireAdmin, async (req, res) => {
+  try {
+    const health = await getImportedSalesProjectionHealth(db);
+    res.json(health);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: String(error) });
+  }
 });
 
 app.get("/api/catalog", async (req, res) => {
@@ -355,6 +375,8 @@ app.get("/api/admin/customers/:code/stats", requireAdmin, async (req, res) => {
   }
 });
 
+// Compatibility endpoint retained for manual/server-side export flows.
+// The current public order form uses catalog.json plus client-side XLSX/email draft generation.
 app.post("/api/order/export-xlsx", async (req, res) => {
   try {
     const { customerName, customerEmail, comment, items } = req.body;

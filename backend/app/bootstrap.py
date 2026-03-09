@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Legacy FastAPI bootstrap kept for reference only.
+# The active production runtime is the Node app in site/server.js.
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

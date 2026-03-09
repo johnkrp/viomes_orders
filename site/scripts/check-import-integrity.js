@@ -1,4 +1,8 @@
 import { openDatabase } from "../lib/db/client.js";
+import {
+  DUPLICATE_SAMPLE_SQL,
+  getImportedSalesProjectionHealth,
+} from "../lib/imported-sales.js";
 
 function parseArgs(argv) {
   const args = {};
@@ -24,68 +28,6 @@ function buildEnv(cli) {
     MYSQL_PASSWORD: cli["mysql-password"] || process.env.MYSQL_PASSWORD,
   };
 }
-
-const DUPLICATE_GROUP_BY = `
-  order_date,
-  document_no,
-  document_type,
-  item_code,
-  item_description,
-  unit_code,
-  qty,
-  qty_base,
-  unit_price,
-  net_value,
-  customer_code,
-  customer_name,
-  delivery_code,
-  delivery_description,
-  account_code,
-  account_description,
-  branch_code,
-  branch_description,
-  note_1
-`;
-
-const DUPLICATE_SUMMARY_SQL = `
-  SELECT
-    COUNT(*) AS duplicate_groups,
-    COALESCE(SUM(group_size - 1), 0) AS duplicate_rows
-  FROM (
-    SELECT COUNT(*) AS group_size
-    FROM imported_sales_lines
-    GROUP BY ${DUPLICATE_GROUP_BY}
-    HAVING COUNT(*) > 1
-  ) duplicate_groups
-`;
-
-const DUPLICATE_SAMPLE_SQL = `
-  SELECT
-    order_date,
-    document_no,
-    customer_code,
-    item_code,
-    COUNT(*) AS copies,
-    GROUP_CONCAT(DISTINCT source_file ORDER BY source_file SEPARATOR ', ') AS files
-  FROM imported_sales_lines
-  GROUP BY ${DUPLICATE_GROUP_BY}
-  HAVING COUNT(*) > 1
-  ORDER BY copies DESC, order_date DESC, document_no, item_code
-  LIMIT 10
-`;
-
-const IMPORTED_ORDER_COLLISIONS_SQL = `
-  SELECT
-    document_no,
-    customer_code,
-    created_at,
-    COUNT(*) AS copies
-  FROM imported_orders
-  GROUP BY document_no, customer_code, created_at
-  HAVING COUNT(*) > 1
-  ORDER BY created_at DESC, document_no, customer_code
-  LIMIT 10
-`;
 
 async function main() {
   const cli = parseArgs(process.argv.slice(2));
@@ -118,19 +60,22 @@ async function main() {
       ),
     };
 
-    const duplicateSummary = await db.get(DUPLICATE_SUMMARY_SQL);
+    const health = await getImportedSalesProjectionHealth(db);
     const duplicateSamples = await db.all(DUPLICATE_SAMPLE_SQL);
-    const importedOrderCollisions = await db.all(IMPORTED_ORDER_COLLISIONS_SQL);
 
     console.log("[check] row counts");
     for (const [name, value] of Object.entries(counts)) {
       console.log(`[check] ${name}=${value}`);
     }
 
-    console.log(
-      `[check] duplicate_groups=${Number(duplicateSummary?.duplicate_groups || 0)} ` +
-        `duplicate_rows=${Number(duplicateSummary?.duplicate_rows || 0)}`,
-    );
+    console.log("[check] architecture");
+    console.log(`[check] raw_fact_table=${health.architecture.rawFactTable}`);
+    console.log(`[check] projection_strategy=${health.architecture.projectionStrategy}`);
+
+    console.log("[check] invariants");
+    for (const [name, value] of Object.entries(health.invariants)) {
+      console.log(`[check] ${name}=${value}`);
+    }
 
     if (duplicateSamples.length) {
       console.log("[check] duplicate samples");
@@ -143,20 +88,17 @@ async function main() {
       }
     }
 
-    if (importedOrderCollisions.length) {
-      console.log("[check] imported order collisions");
-      for (const row of importedOrderCollisions) {
-        console.log(
-          `[check] document_no=${row.document_no} customer_code=${row.customer_code} ` +
-            `created_at=${row.created_at} copies=${row.copies}`,
-        );
-      }
+    if (health.latest_import_run) {
+      const run = health.latest_import_run;
+      console.log("[check] latest import run");
+      console.log(
+        `[check] id=${run.id} mode=${run.import_mode} status=${run.status} source_row_count=${run.source_row_count} ` +
+          `rows_upserted=${run.rows_upserted} rows_skipped_duplicate=${run.rows_skipped_duplicate} ` +
+          `rows_rejected=${run.rows_rejected} trigger_source=${run.trigger_source}`,
+      );
     }
 
-    const hasDuplicates = Number(duplicateSummary?.duplicate_groups || 0) > 0;
-    const hasOrderCollisions = importedOrderCollisions.length > 0;
-
-    if (hasDuplicates || hasOrderCollisions) {
+    if (!health.ok) {
       console.error("[check] FAILED import integrity checks");
       process.exit(1);
     }

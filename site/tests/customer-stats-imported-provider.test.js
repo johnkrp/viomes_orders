@@ -1,0 +1,152 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createSqliteCustomerStatsProvider } from "../lib/customer-stats/sqlite-provider.js";
+
+function createImportedDbFixture() {
+  const currentYear = new Date().getUTCFullYear();
+  const previousYear = currentYear - 1;
+
+  return {
+    async get(sql, params = []) {
+      if (sql.includes("SELECT COUNT(*) AS n FROM imported_sales_lines")) return { n: 3 };
+      if (sql.includes("FROM imported_customers ic")) {
+        if (params[0] === "MISS") return undefined;
+        return {
+          code: "C001",
+          name: "Alpha Store",
+          email: null,
+          delivery_code: "D1",
+          delivery_description: "Main store",
+        };
+      }
+      if (sql.includes("FROM imported_orders") && sql.includes("COUNT(*) AS total_orders")) {
+        return {
+          total_orders: 2,
+          total_pieces: 15,
+          total_revenue: 245.6,
+          last_order_date: `${currentYear}-02-15`,
+        };
+      }
+      if (sql.includes("AS revenue_3m")) {
+        return {
+          revenue_3m: 200,
+          revenue_6m: 245.6,
+          revenue_12m: 245.6,
+        };
+      }
+      throw new Error(`Unexpected db.get SQL: ${sql}`);
+    },
+
+    async all(sql, params = []) {
+      if (sql.includes("FROM imported_product_sales")) {
+        return [
+          {
+            code: "P2",
+            description: "Second",
+            pieces: 5,
+            orders: 1,
+            revenue: 70,
+            avg_unit_price: 14,
+          },
+          {
+            code: "P1",
+            description: "First",
+            pieces: 10,
+            orders: 2,
+            revenue: 175.6,
+            avg_unit_price: 17.56,
+          },
+        ];
+      }
+      if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 10")) {
+        return [
+          {
+            order_id: "C001::2026-02-15::INV-2",
+            document_no: "INV-2",
+            created_at: `${currentYear}-02-15`,
+            total_lines: 1,
+            total_pieces: 10,
+            total_net_value: 175.6,
+            average_discount_pct: 0,
+          },
+          {
+            order_id: "C001::2025-12-10::INV-1",
+            document_no: "INV-1",
+            created_at: `${previousYear}-12-10`,
+            total_lines: 2,
+            total_pieces: 5,
+            total_net_value: 70,
+            average_discount_pct: 0,
+          },
+        ];
+      }
+      if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 6")) {
+        return [
+          {
+            order_id: "C001::2026-02-15::INV-2",
+            document_no: "INV-2",
+            created_at: `${currentYear}-02-15`,
+            total_lines: 1,
+            total_pieces: 10,
+            total_net_value: 175.6,
+            average_discount_pct: 0,
+          },
+        ];
+      }
+      if (sql.includes("FROM imported_sales_lines")) {
+        return [
+          {
+            code: "P1",
+            description: "First",
+            qty: 10,
+            unit_price: 17.56,
+            discount_pct: 0,
+            line_net_value: 175.6,
+          },
+        ];
+      }
+      if (sql.includes("FROM imported_monthly_sales")) {
+        if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
+        if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
+      }
+      throw new Error(`Unexpected db.all SQL: ${sql}`);
+    },
+  };
+}
+
+test("imported-data provider builds the customer stats contract from imported tables", async () => {
+  const provider = createSqliteCustomerStatsProvider({
+    db: createImportedDbFixture(),
+    sqlDialect: "mysql",
+  });
+
+  const payload = await provider.getCustomerStats("C001");
+
+  assert.equal(payload.customer.code, "C001");
+  assert.equal(payload.customer.name, "Alpha Store");
+  assert.equal(payload.summary.total_orders, 2);
+  assert.equal(payload.summary.total_pieces, 15);
+  assert.equal(payload.summary.total_revenue, 245.6);
+  assert.equal(payload.summary.average_order_value, 122.8);
+  assert.equal(payload.product_sales.items.length, 2);
+  assert.equal(payload.top_products_by_qty[0].code, "P1");
+  assert.equal(payload.top_products_by_value[0].code, "P1");
+  assert.equal(payload.recent_orders.length, 2);
+  assert.equal(payload.detailed_orders.length, 1);
+  assert.equal(payload.detailed_orders[0].lines.length, 1);
+  assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
+  assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
+});
+
+test("imported-data provider returns 404 when imported customer is missing", async () => {
+  const provider = createSqliteCustomerStatsProvider({
+    db: createImportedDbFixture(),
+    sqlDialect: "mysql",
+  });
+
+  await assert.rejects(provider.getCustomerStats("MISS"), (error) => {
+    assert.equal(error.status, 404);
+    assert.match(error.message, /Customer not found/);
+    return true;
+  });
+});

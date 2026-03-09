@@ -11,8 +11,10 @@ backend/2025.CSV
 backend/2026.CSV
 backend/daily_info.csv
 backend/today.csv
+backend/lastweek.csv
 site/node_modules/
 site/*.log
+.tmp/
 automation/
 automation/windows/*.txt
 automation/windows/*.bat

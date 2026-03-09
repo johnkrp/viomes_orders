@@ -1,3 +1,5 @@
+import { getMysqlImportSchemaStatements } from "./mysql-import-schema.js";
+
 async function hasColumn(db, kind, table, column) {
   if (kind === "mysql") {
     const row = await db.get(
@@ -66,6 +68,13 @@ async function ensureMysqlColumnType(db, table, column, ddl) {
 }
 
 async function initSqliteSchema(db) {
+  // SQLite remains for tests and legacy/local compatibility only.
+  // Production runtime is MySQL and should continue to use initMysqlSchema().
+  // Logical domains:
+  // - operational: products, admin_users, admin_sessions
+  // - ingestion: import_runs, imported_sales_lines
+  // - projections: imported_customers/imported_orders/imported_monthly_sales/imported_product_sales
+  // - legacy_dormant: orders, order_lines, customer_receivables, non-import customer behavior
   await db.exec(`PRAGMA foreign_keys = ON;`);
 
   const statements = [
@@ -226,11 +235,22 @@ async function initSqliteSchema(db) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         dataset TEXT NOT NULL,
         file_name TEXT NOT NULL,
+        import_mode TEXT NOT NULL DEFAULT 'incremental',
         status TEXT NOT NULL,
         started_at TEXT NOT NULL,
         finished_at TEXT,
+        source_files_json TEXT,
+        source_checksum TEXT,
+        source_row_count INTEGER NOT NULL DEFAULT 0,
         rows_in INTEGER NOT NULL DEFAULT 0,
         rows_upserted INTEGER NOT NULL DEFAULT 0,
+        rows_skipped_duplicate INTEGER NOT NULL DEFAULT 0,
+        rows_rejected INTEGER NOT NULL DEFAULT 0,
+        rebuild_started_at TEXT,
+        rebuild_finished_at TEXT,
+        schema_version TEXT NOT NULL DEFAULT 'import-ledger-v2',
+        trigger_source TEXT,
+        metadata_json TEXT,
         error_text TEXT
       )
     `,
@@ -261,6 +281,11 @@ async function initSqliteSchema(db) {
 }
 
 async function initMysqlSchema(db) {
+  // Logical domains:
+  // - operational: products, admin_users, admin_sessions
+  // - ingestion: import_runs, imported_sales_lines
+  // - projections: imported_customers/imported_orders/imported_monthly_sales/imported_product_sales
+  // - legacy_dormant: orders, order_lines, customer_receivables, non-import customer behavior
   const statements = [
     `
       CREATE TABLE IF NOT EXISTS products (
@@ -327,110 +352,7 @@ async function initMysqlSchema(db) {
         CONSTRAINT fk_receivable_customer FOREIGN KEY(customer_code) REFERENCES customers(code) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `,
-    `
-      CREATE TABLE IF NOT EXISTS imported_customers (
-        customer_code VARCHAR(128) PRIMARY KEY,
-        customer_name VARCHAR(255) NOT NULL,
-        delivery_code VARCHAR(128),
-        delivery_description VARCHAR(255),
-        address_1 VARCHAR(255),
-        postal_code VARCHAR(64),
-        city VARCHAR(128),
-        region VARCHAR(128),
-        country VARCHAR(128),
-        phone VARCHAR(128),
-        pallet_info VARCHAR(128),
-        delivery_method VARCHAR(128),
-        salesperson_code VARCHAR(128),
-        salesperson_name VARCHAR(255),
-        is_inactive TINYINT(1) NOT NULL DEFAULT 0,
-        source_file VARCHAR(255),
-        imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS imported_sales_lines (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        source_file VARCHAR(255) NOT NULL,
-        order_date DATE NOT NULL,
-        order_year INT NOT NULL,
-        order_month INT NOT NULL,
-        document_no VARCHAR(128) NOT NULL,
-        document_type VARCHAR(128),
-        item_code VARCHAR(128) NOT NULL,
-        item_description VARCHAR(255) NOT NULL,
-        unit_code VARCHAR(32),
-        qty DOUBLE NOT NULL DEFAULT 0,
-        qty_base DOUBLE NOT NULL DEFAULT 0,
-        unit_price DOUBLE NOT NULL DEFAULT 0,
-        net_value DOUBLE NOT NULL DEFAULT 0,
-        customer_code VARCHAR(128) NOT NULL,
-        customer_name VARCHAR(255) NOT NULL,
-        delivery_code VARCHAR(128),
-        delivery_description VARCHAR(255),
-        account_code VARCHAR(128),
-        account_description VARCHAR(255),
-        branch_code VARCHAR(128),
-        branch_description VARCHAR(255),
-        note_1 VARCHAR(255),
-        UNIQUE KEY uq_imported_sales_line(
-          source_file, document_no, item_code, customer_code, delivery_code, net_value, qty
-        )
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS imported_orders (
-        order_id VARCHAR(300) PRIMARY KEY,
-        document_no VARCHAR(128) NOT NULL,
-        customer_code VARCHAR(128) NOT NULL,
-        customer_name VARCHAR(255) NOT NULL,
-        created_at VARCHAR(64) NOT NULL,
-        total_lines INT NOT NULL DEFAULT 0,
-        total_pieces DOUBLE NOT NULL DEFAULT 0,
-        total_net_value DOUBLE NOT NULL DEFAULT 0,
-        average_discount_pct DOUBLE NOT NULL DEFAULT 0,
-        document_type VARCHAR(128),
-        delivery_code VARCHAR(128),
-        delivery_description VARCHAR(255),
-        source_file VARCHAR(255),
-        imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS imported_monthly_sales (
-        customer_code VARCHAR(128) NOT NULL,
-        order_year INT NOT NULL,
-        order_month INT NOT NULL,
-        revenue DOUBLE NOT NULL DEFAULT 0,
-        pieces DOUBLE NOT NULL DEFAULT 0,
-        PRIMARY KEY(customer_code, order_year, order_month)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS imported_product_sales (
-        customer_code VARCHAR(128) NOT NULL,
-        item_code VARCHAR(128) NOT NULL,
-        item_description VARCHAR(255) NOT NULL,
-        revenue DOUBLE NOT NULL DEFAULT 0,
-        pieces DOUBLE NOT NULL DEFAULT 0,
-        orders INT NOT NULL DEFAULT 0,
-        avg_unit_price DOUBLE NOT NULL DEFAULT 0,
-        PRIMARY KEY(customer_code, item_code)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS import_runs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        dataset VARCHAR(64) NOT NULL,
-        file_name VARCHAR(255) NOT NULL,
-        status VARCHAR(32) NOT NULL,
-        started_at VARCHAR(64) NOT NULL,
-        finished_at VARCHAR(64),
-        rows_in INT NOT NULL DEFAULT 0,
-        rows_upserted INT NOT NULL DEFAULT 0,
-        error_text TEXT
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `,
+    ...getMysqlImportSchemaStatements(),
     `
       CREATE TABLE IF NOT EXISTS admin_users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -504,6 +426,83 @@ export async function initDatabaseSchema({ db, kind }) {
     "order_lines",
     "line_net_value",
     `line_net_value ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "import_mode",
+    `import_mode ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"} NOT NULL DEFAULT 'incremental'`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "source_files_json",
+    `source_files_json ${kind === "mysql" ? "LONGTEXT" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "source_checksum",
+    `source_checksum ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "source_row_count",
+    `source_row_count ${typeInt} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "rows_skipped_duplicate",
+    `rows_skipped_duplicate ${typeInt} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "rows_rejected",
+    `rows_rejected ${typeInt} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "rebuild_started_at",
+    `rebuild_started_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "rebuild_finished_at",
+    `rebuild_finished_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "schema_version",
+    `schema_version ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"} NOT NULL DEFAULT 'import-ledger-v2'`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "trigger_source",
+    `trigger_source ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "import_runs",
+    "metadata_json",
+    `metadata_json ${kind === "mysql" ? "LONGTEXT" : "TEXT"}`,
   );
   await ensureIndex(
     db,

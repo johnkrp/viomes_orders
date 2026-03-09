@@ -7,6 +7,42 @@ This project now uses:
 
 The active production path is now the Node.js app in `site/server.js`, which is a better fit for Plesk deployment.
 
+## Architecture map
+
+Treat the repo as two connected systems:
+
+- Runtime app: `site/server.js` serves the public order form, admin UI, admin auth, catalog API, and customer stats API.
+- Data pipeline: `backend/import_entersoft.py` imports Entersoft sales files into MySQL, usually through the wrappers in `site/scripts/`.
+
+Current shared MySQL source-of-truth layout:
+
+- operational: `products`, `admin_users`, `admin_sessions`
+- ingestion: `import_runs`, `imported_sales_lines`
+- projections: `imported_customers`, `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, mirrored `customers`
+- legacy/dormant compatibility tables: `orders`, `order_lines`, `customer_receivables`, non-import `customers`
+
+Legacy-but-present code:
+
+- `backend/app/*`
+- `backend/main.py`
+- older FastAPI/SQLite/demo helpers in `backend/`
+
+Those legacy files are kept for reference only and are not part of the active production runtime unless explicitly re-enabled.
+
+## Supported matrix
+
+Supported today:
+
+- Production runtime: Node app in `site/` with `DB_CLIENT=mysql`
+- Import pipeline: Python importer in `backend/` targeting MySQL
+- Automated tests: Node tests may use SQLite in-memory databases for integration coverage of the local SQL-backed provider branch
+
+Not a supported production target:
+
+- FastAPI backend in `backend/app/*`
+- SQLite runtime deployment for the current production app
+- Legacy `backend/db.py` path except as reference code
+
 ## Backend status
 
 The Node backend currently provides:
@@ -44,6 +80,15 @@ npm run start
 
 The app keeps the same routes, including `GET /api/admin/customers/:code/stats`.
 On startup, it auto-creates required tables in MySQL.
+
+Schema ownership note:
+
+- runtime authority: `site/lib/db/init-schema.js`
+- shared MySQL import-table DDL: `backend/sql/mysql_import_schema.sql`
+- importer compatibility loader: `backend/mysql_db.py`
+
+Keep those definitions aligned. The Python schema helper is transitional and should not evolve independently from the Node runtime schema.
+Treat `imported_sales_lines` as the canonical raw imported-sales fact table. The other `imported_*` tables are rebuildable projections.
 
 ## Seed demo customer stats
 
@@ -190,7 +235,7 @@ Detailed mapping, table behavior, and known limitations are documented in:
 
 ## Next integration step
 
-Replace the local SQL-backed customer stats implementation with an Entersoft-backed adapter while keeping the same JSON contract exposed by `site/server.js`.
+Replace the projection-first local SQL-backed customer stats implementation with an Entersoft-backed adapter while keeping the same JSON contract exposed by `site/server.js`.
 
 ## Customer stats provider switch
 
@@ -199,6 +244,15 @@ The admin endpoint `GET /api/admin/customers/:code/stats` now uses a provider la
 Default:
 
 - `CUSTOMER_STATS_PROVIDER=sqlite` (local SQL provider name)
+
+Despite the historical name, `sqlite` currently means the local SQL-backed customer-stats provider. In the active Node runtime it is projection-first and can read the MySQL-backed imported projections created by the current import/runtime flow.
+
+Import observability:
+
+- `import_runs` is now an ingestion ledger, not just a status table.
+- It records import mode, source file metadata/checksums, duplicate skips, rejected rows, rebuild timing, schema version, and trigger source.
+- `GET /api/health` now exposes the logical DB architecture and latest import-run summary.
+- `GET /api/admin/import-health` exposes full projection integrity checks for admin users.
 
 Entersoft handoff mode:
 
@@ -229,3 +283,35 @@ The health endpoint now reports:
 - `customer_stats_provider`
 
 so staging can confirm the switch safely before production rollout.
+
+## Public/admin split
+
+Current public ordering behavior is intentionally static-first:
+
+- `site/public/order-form.js` loads `site/public/catalog.json`
+- Excel generation happens client-side in the browser
+- Gmail/Outlook draft creation happens client-side in the browser
+
+Current admin/analytics behavior is runtime/API-backed:
+
+- admin auth runs through `site/server.js`
+- customer analytics run through MySQL-backed APIs and the customer-stats provider layer
+
+Compatibility note:
+
+- `POST /api/order/export-xlsx` still exists in `site/server.js`, but it is not the canonical path used by the current public order form
+
+## Tests
+
+Node-side regression checks:
+
+```powershell
+cd site
+npm test
+```
+
+Python-side importer helper checks:
+
+```powershell
+python -m unittest discover -s backend/tests
+```

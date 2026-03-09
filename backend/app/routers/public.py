@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Legacy FastAPI public routes kept for reference only.
+# The active production runtime is the Node app in site/server.js.
+
 from fastapi import APIRouter, Query
 
 from app.schemas import CatalogResponse, OrderCreated, OrderIn
@@ -27,4 +30,3 @@ def catalog(
 @router.post("/order", response_model=OrderCreated)
 def order(payload: OrderIn):
     return create_order(payload)
-

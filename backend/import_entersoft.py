@@ -1,4 +1,6 @@
 import csv
+import hashlib
+import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -15,6 +17,19 @@ DEFAULT_SALES_FILES = [
 PROGRESS_EVERY_ROWS = 5000
 LOCK_WAIT_TIMEOUT_SECONDS = 5
 VALID_IMPORT_MODES = {"incremental", "full_refresh"}
+IMPORT_SCHEMA_VERSION = "import-ledger-v2"
+RAW_FACT_TABLE = "imported_sales_lines"
+PROJECTION_TABLES = [
+    "imported_customers",
+    "imported_orders",
+    "imported_monthly_sales",
+    "imported_product_sales",
+]
+LEGACY_DORMANT_TABLES = [
+    "orders",
+    "order_lines",
+    "customer_receivables",
+]
 
 
 def parse_decimal(value):
@@ -37,11 +52,79 @@ def parse_date(value):
 
 
 class ImportStats:
-    def __init__(self, dataset, file_name):
+    def __init__(self, dataset, file_name, import_mode, source_files_json, source_checksum, trigger_source, metadata_json):
         self.dataset = dataset
         self.file_name = file_name
+        self.import_mode = import_mode
+        self.source_files_json = source_files_json
+        self.source_checksum = source_checksum
+        self.trigger_source = trigger_source
+        self.metadata_json = metadata_json
+        self.source_row_count = 0
         self.rows_in = 0
         self.rows_upserted = 0
+        self.rows_skipped_duplicate = 0
+        self.rows_rejected = 0
+        self.rebuild_started_at = None
+        self.rebuild_finished_at = None
+
+
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def resolve_trigger_source() -> Optional[str]:
+    for key in ("IMPORT_TRIGGER_SOURCE", "ENTERSOFT_IMPORT_TRIGGER_SOURCE"):
+        value = str(os.getenv(key, "")).strip()
+        if value:
+            return value
+    return "manual_or_cli"
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def describe_source_files(sales_files) -> tuple[str, str]:
+    files = []
+    overall_digest = hashlib.sha256()
+
+    for sales_file in sales_files:
+        stat = sales_file.stat()
+        checksum = sha256_file(sales_file)
+        files.append(
+            {
+                "name": sales_file.name,
+                "path": str(sales_file),
+                "size_bytes": int(stat.st_size),
+                "sha256": checksum,
+            }
+        )
+        overall_digest.update(f"{sales_file.name}:{checksum}".encode("utf-8"))
+
+    return (
+        json.dumps(files, ensure_ascii=True, separators=(",", ":")),
+        overall_digest.hexdigest(),
+    )
+
+
+def build_import_metadata_json(import_mode: str) -> str:
+    return json.dumps(
+        {
+            "raw_fact_table": RAW_FACT_TABLE,
+            "projection_tables": PROJECTION_TABLES,
+            "customer_projection_table": "customers",
+            "projection_strategy": "truncate_and_recompute",
+            "legacy_dormant_tables": LEGACY_DORMANT_TABLES,
+            "import_mode": import_mode,
+        },
+        ensure_ascii=True,
+        separators=(",", ":"),
+    )
 
 
 def resolve_sales_files():
@@ -69,14 +152,35 @@ def resolve_import_mode() -> str:
     return mode
 
 
-def begin_import(cur, dataset: str, file_name: str) -> int:
-    started_at = datetime.now(timezone.utc).isoformat()
+def begin_import(cur, stats: ImportStats) -> int:
+    started_at = utc_now_iso()
     cur.execute(
         """
-        INSERT INTO import_runs(dataset, file_name, status, started_at)
-        VALUES (%s, %s, 'running', %s)
+        INSERT INTO import_runs(
+          dataset,
+          file_name,
+          import_mode,
+          status,
+          started_at,
+          source_files_json,
+          source_checksum,
+          schema_version,
+          trigger_source,
+          metadata_json
+        )
+        VALUES (%s, %s, %s, 'running', %s, %s, %s, %s, %s, %s)
         """,
-        (dataset, file_name, started_at),
+        (
+            stats.dataset,
+            stats.file_name,
+            stats.import_mode,
+            started_at,
+            stats.source_files_json,
+            stats.source_checksum,
+            IMPORT_SCHEMA_VERSION,
+            stats.trigger_source,
+            stats.metadata_json,
+        ),
     )
     return cur.lastrowid
 
@@ -109,14 +213,47 @@ def execute_step(cur, label: str, sql: str, params=None) -> None:
 
 
 def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success", error_text: Optional[str] = None) -> None:
-    finished_at = datetime.now(timezone.utc).isoformat()
+    finished_at = utc_now_iso()
     cur.execute(
         """
         UPDATE import_runs
-        SET status = %s, finished_at = %s, rows_in = %s, rows_upserted = %s, error_text = %s
+        SET status = %s,
+            finished_at = %s,
+            import_mode = %s,
+            source_files_json = %s,
+            source_checksum = %s,
+            source_row_count = %s,
+            rows_in = %s,
+            rows_upserted = %s,
+            rows_skipped_duplicate = %s,
+            rows_rejected = %s,
+            rebuild_started_at = %s,
+            rebuild_finished_at = %s,
+            schema_version = %s,
+            trigger_source = %s,
+            metadata_json = %s,
+            error_text = %s
         WHERE id = %s
         """,
-        (status, finished_at, stats.rows_in, stats.rows_upserted, error_text, run_id),
+        (
+            status,
+            finished_at,
+            stats.import_mode,
+            stats.source_files_json,
+            stats.source_checksum,
+            stats.source_row_count,
+            stats.rows_in,
+            stats.rows_upserted,
+            stats.rows_skipped_duplicate,
+            stats.rows_rejected,
+            stats.rebuild_started_at,
+            stats.rebuild_finished_at,
+            IMPORT_SCHEMA_VERSION,
+            stats.trigger_source,
+            stats.metadata_json,
+            error_text,
+            run_id,
+        ),
     )
 
 
@@ -237,9 +374,18 @@ def rebuild_sales_aggregates(cur) -> None:
 
 
 def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
-    stats = ImportStats(dataset="sales_lines", file_name=",".join(path.name for path in sales_files))
+    source_files_json, source_checksum = describe_source_files(sales_files)
+    stats = ImportStats(
+        dataset="sales_lines",
+        file_name=",".join(path.name for path in sales_files),
+        import_mode=import_mode,
+        source_files_json=source_files_json,
+        source_checksum=source_checksum,
+        trigger_source=resolve_trigger_source(),
+        metadata_json=build_import_metadata_json(import_mode),
+    )
     print(f"[import] sales_lines: starting ({stats.file_name})", flush=True)
-    run_id = begin_import(cur, stats.dataset, stats.file_name)
+    run_id = begin_import(cur, stats)
     try:
         if import_mode == "full_refresh":
             execute_step(cur, "truncate imported_sales_lines", "DELETE FROM imported_sales_lines")
@@ -249,12 +395,14 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
             with sales_file.open("r", encoding="utf-8-sig", newline="") as f:
                 reader = csv.DictReader(f, delimiter="\t")
                 for row in reader:
+                    stats.source_row_count += 1
                     stats.rows_in += 1
                     customer_code = str(row.get("Κωδικός", "")).strip()
                     document_no = str(row.get("Παραστατικό", "")).strip()
                     item_code = str(row.get("Είδος", "")).strip()
                     order_date = parse_date(row.get("Ημ/νία "))
                     if not (customer_code and document_no and item_code and order_date):
+                        stats.rows_rejected += 1
                         continue
 
                     order_dt = datetime.strptime(order_date, "%Y-%m-%d")
@@ -354,25 +502,36 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             note_1,
                         ),
                     )
-                    stats.rows_upserted += cur.rowcount
+                    if cur.rowcount:
+                        stats.rows_upserted += cur.rowcount
+                    else:
+                        stats.rows_skipped_duplicate += 1
                     if stats.rows_in % PROGRESS_EVERY_ROWS == 0:
                         print(
-                            f"[import] sales_lines: rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
+                            f"[import] sales_lines: rows_in={stats.rows_in}, "
+                            f"rows_upserted={stats.rows_upserted}, "
+                            f"rows_skipped_duplicate={stats.rows_skipped_duplicate}, "
+                            f"rows_rejected={stats.rows_rejected}",
                             flush=True,
                         )
 
             print(
-                f"[import] sales_lines: finished {sales_file.name} (rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted})",
+                f"[import] sales_lines: finished {sales_file.name} "
+                f"(rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}, "
+                f"rows_skipped_duplicate={stats.rows_skipped_duplicate}, rows_rejected={stats.rows_rejected})",
                 flush=True,
             )
 
+        stats.rebuild_started_at = utc_now_iso()
         rebuild_customers_from_sales(cur)
         print("[import] customers: rebuilt from sales files", flush=True)
         rebuild_sales_aggregates(cur)
+        stats.rebuild_finished_at = utc_now_iso()
 
         finish_import(cur, run_id, stats)
         print(
-            f"[import] sales_lines: completed rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}",
+            f"[import] sales_lines: completed rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}, "
+            f"rows_skipped_duplicate={stats.rows_skipped_duplicate}, rows_rejected={stats.rows_rejected}",
             flush=True,
         )
         return stats
@@ -404,7 +563,11 @@ def main() -> None:
     try:
         sales_stats = import_sales_lines(cur, sales_files, import_mode)
         conn.commit()
-        print(f"Imported sales_lines={sales_stats.rows_upserted}")
+        print(
+            "Imported sales_lines="
+            f"{sales_stats.rows_upserted} "
+            f"(duplicates_skipped={sales_stats.rows_skipped_duplicate}, rejected={sales_stats.rows_rejected})"
+        )
     except Exception:
         conn.rollback()
         raise

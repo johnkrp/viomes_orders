@@ -1,3 +1,5 @@
+# Legacy SQLite schema kept for reference only.
+# The active production runtime uses MySQL through site/server.js and the Entersoft importer.
 import sqlite3
 from pathlib import Path
 
@@ -207,11 +209,22 @@ def init_schema() -> None:
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       dataset TEXT NOT NULL,
       file_name TEXT NOT NULL,
+      import_mode TEXT NOT NULL DEFAULT 'incremental',
       status TEXT NOT NULL,
       started_at TEXT NOT NULL,
       finished_at TEXT,
+      source_files_json TEXT,
+      source_checksum TEXT,
+      source_row_count INTEGER NOT NULL DEFAULT 0,
       rows_in INTEGER NOT NULL DEFAULT 0,
       rows_upserted INTEGER NOT NULL DEFAULT 0,
+      rows_skipped_duplicate INTEGER NOT NULL DEFAULT 0,
+      rows_rejected INTEGER NOT NULL DEFAULT 0,
+      rebuild_started_at TEXT,
+      rebuild_finished_at TEXT,
+      schema_version TEXT NOT NULL DEFAULT 'import-ledger-v2',
+      trigger_source TEXT,
+      metadata_json TEXT,
       error_text TEXT
     );
     """)
@@ -244,6 +257,17 @@ def init_schema() -> None:
     _ensure_column(cur, "order_lines", "discount_pct", "discount_pct REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "order_lines", "line_net_value", "line_net_value REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "imported_orders", "document_no", "document_no TEXT NOT NULL DEFAULT ''")
+    _ensure_column(cur, "import_runs", "import_mode", "import_mode TEXT NOT NULL DEFAULT 'incremental'")
+    _ensure_column(cur, "import_runs", "source_files_json", "source_files_json TEXT")
+    _ensure_column(cur, "import_runs", "source_checksum", "source_checksum TEXT")
+    _ensure_column(cur, "import_runs", "source_row_count", "source_row_count INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(cur, "import_runs", "rows_skipped_duplicate", "rows_skipped_duplicate INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(cur, "import_runs", "rows_rejected", "rows_rejected INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(cur, "import_runs", "rebuild_started_at", "rebuild_started_at TEXT")
+    _ensure_column(cur, "import_runs", "rebuild_finished_at", "rebuild_finished_at TEXT")
+    _ensure_column(cur, "import_runs", "schema_version", "schema_version TEXT NOT NULL DEFAULT 'import-ledger-v2'")
+    _ensure_column(cur, "import_runs", "trigger_source", "trigger_source TEXT")
+    _ensure_column(cur, "import_runs", "metadata_json", "metadata_json TEXT")
     _ensure_index(
         cur,
         "imported_sales_lines",

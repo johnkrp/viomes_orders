@@ -1,6 +1,8 @@
 import { createEntersoftCustomerStatsProvider } from "./entersoft-provider.js";
 import { createSqliteCustomerStatsProvider } from "./sqlite-provider.js";
 
+// "sqlite" remains the compatibility env/provider key for the local SQL-backed path.
+// The active Node runtime uses it as a projection-first SQL provider against MySQL or SQLite.
 export function createCustomerStatsProvider({ db, sqlDialect = "sqlite", env = process.env } = {}) {
   const providerName = String(env.CUSTOMER_STATS_PROVIDER || "sqlite")
     .trim()

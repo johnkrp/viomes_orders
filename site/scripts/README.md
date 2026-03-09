@@ -17,11 +17,13 @@ Operational scripts used by Plesk/local maintenance.
   - Reads `backend/today.csv`.
   - Runs importer with `--mode=incremental`.
   - Exports `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
+  - Requires `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` to be set by the environment or scheduler.
 
 - `manual-reload-sales.sh`
   - Server-side wrapper for a clean rebuild from canonical yearly sales files.
   - Creates a timestamped log file and runs integrity checks after the reload.
   - Exports `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
+  - Requires `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` to be set by the environment or shell.
 
 - `reset-business-data.js`
   - Clears business/import tables while keeping admin tables.
@@ -63,6 +65,7 @@ Use `full_refresh` instead when you want to rebuild from canonical yearly files.
 - A `504` in the Plesk web UI usually means the request path timed out, not that the DB necessarily failed.
 - The importer uses a single transaction. If it fails before commit, other sessions may still show `0` rows and the final state may remain empty after rollback.
 - `manual-reload-sales.sh` is the preferred script for a clean rebuild because it creates a timestamped log file and then runs integrity checks.
+- Do not commit server credentials into these shell wrappers; keep DB configuration in host-level environment variables or scheduler configuration.
 
 ## Typical Plesk command
 

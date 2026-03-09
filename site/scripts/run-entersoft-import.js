@@ -25,17 +25,18 @@ function parseArgs(argv) {
 }
 
 const cli = parseArgs(process.argv.slice(2));
-const effectiveEnv = {
-  ...process.env,
+  const effectiveEnv = {
+    ...process.env,
   MYSQL_HOST: cli["mysql-host"] || process.env.MYSQL_HOST,
   MYSQL_PORT: cli["mysql-port"] || process.env.MYSQL_PORT,
   MYSQL_DATABASE: cli["mysql-database"] || process.env.MYSQL_DATABASE,
   MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
   MYSQL_PASSWORD: cli["mysql-password"] || process.env.MYSQL_PASSWORD,
-  ENTERSOFT_IMPORT_MODE: cli.mode || process.env.ENTERSOFT_IMPORT_MODE,
-  ENTERSOFT_SALES_FILES: cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
-  ENTERSOFT_DAILY_INFO_FILE: cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
-};
+    ENTERSOFT_IMPORT_MODE: cli.mode || process.env.ENTERSOFT_IMPORT_MODE,
+    ENTERSOFT_SALES_FILES: cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
+    ENTERSOFT_DAILY_INFO_FILE: cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
+    IMPORT_TRIGGER_SOURCE: cli["trigger-source"] || process.env.IMPORT_TRIGGER_SOURCE,
+  };
 
 const requiredEnv = ["MYSQL_DATABASE", "MYSQL_USER"];
 const missing = requiredEnv.filter((key) => !String(effectiveEnv[key] || "").trim());

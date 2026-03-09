@@ -58,6 +58,7 @@ Customer mirror (rebuilt from sales):
 Run tracking:
 
 - `import_runs`
+- `import_runs` is the ingestion ledger and should be treated as operational telemetry, not just a success/failure row.
 
 ## Run Commands
 
@@ -157,10 +158,14 @@ HAVING COUNT(*) > 1;
 
 - Receivables are not imported yet.
 - Incremental mode now skips duplicate logical sales lines even if the source filename changes.
+- `imported_sales_lines` is the canonical raw imported-sales fact table.
+- `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, and `imported_customers` are rebuildable projections only.
+- `customers` rows with `source='entersoft_import'` are a mirror/projection target, not the primary customer master.
 - Existing historical duplicates already present in `imported_sales_lines` are not removed automatically by an incremental run; use `npm run dedupe:sales` or `full_refresh` if cleanup is needed.
 - `dedupe:sales` preserves the earliest `imported_sales_lines.id` per logical sales line, deletes the rest, and then rebuilds all derived import tables plus mirrored customers.
 - `imported_orders.order_id` is now a synthetic value: `{customer_code}::{order_date}::{document_no}`.
 - `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, and `imported_customers` are rebuilt from the full `imported_sales_lines` history on each run.
+- `import_runs` now records import mode, file checksums, duplicate skips, rejected rows, rebuild timing, schema version, and trigger source.
 - If import blocks on locks, stop Node app and retry.
 
 ## Troubleshooting

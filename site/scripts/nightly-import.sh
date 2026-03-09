@@ -11,15 +11,16 @@ LOG_DIR="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/logs"
 IMPORT_RUNNER_JS="$APP_ROOT/scripts/run-entersoft-import.js"
 
 # DB settings (server-local MySQL)
-MYSQL_HOST="127.0.0.1"
-MYSQL_PORT="3306"
-MYSQL_DATABASE="admin_viomes_orders"
-MYSQL_USER="admin_viomes_app"
-MYSQL_PASSWORD="Yudd042&"
+MYSQL_HOST="${MYSQL_HOST:?Missing MYSQL_HOST for nightly import}"
+MYSQL_PORT="${MYSQL_PORT:?Missing MYSQL_PORT for nightly import}"
+MYSQL_DATABASE="${MYSQL_DATABASE:?Missing MYSQL_DATABASE for nightly import}"
+MYSQL_USER="${MYSQL_USER:?Missing MYSQL_USER for nightly import}"
+MYSQL_PASSWORD="${MYSQL_PASSWORD:?Missing MYSQL_PASSWORD for nightly import}"
 
 # Plesk scheduled tasks may have minimal PATH.
 export PATH="/opt/plesk/node/24/bin:/opt/plesk/node/22/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 export ENTERSOFT_IMPORT_TIMEOUT_SECONDS="${ENTERSOFT_IMPORT_TIMEOUT_SECONDS:-7200}"
+export IMPORT_TRIGGER_SOURCE="${IMPORT_TRIGGER_SOURCE:-scheduled_task_nightly}"
 
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/nightly-import-$(date +%F).log"

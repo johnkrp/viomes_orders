@@ -29,6 +29,7 @@ function buildForwardArgs(cli) {
     "mysql-password",
     "sales-files",
     "daily-info-file",
+    "trigger-source",
     "python-install-deps",
     "install-pymysql",
   ];
