@@ -15,6 +15,11 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
         last_order_date: "2026-03-01",
       },
       monthly_sales: {
+        yearly_series: [
+          { year: 2024, months: [{ month: 1, revenue: 25, pieces: 1 }] },
+          { year: 2025, months: [{ month: 12, revenue: 50, pieces: 2 }] },
+          { year: 2026, months: [{ month: 3, revenue: 100, pieces: 5 }] },
+        ],
         current_year: [{ month: 3, revenue: 100, pieces: 5 }],
         previous_year: [{ month: 12, revenue: 50, pieces: 2 }],
       },
@@ -44,6 +49,9 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
   assert.equal(payload.summary.total_revenue, 123.46);
   assert.equal(payload.monthly_sales.current_year.length, 12);
   assert.deepEqual(payload.monthly_sales.current_year[2], { month: 3, revenue: 100, pieces: 5 });
+  assert.equal(payload.monthly_sales.yearly_series.length, 3);
+  assert.equal(payload.monthly_sales.yearly_series[0].year, 2024);
+  assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
   assert.equal(payload.product_sales.metric, "pieces");
   assert.deepEqual(payload.product_sales.items[0], {
     code: "P1",

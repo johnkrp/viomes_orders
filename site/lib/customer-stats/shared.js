@@ -105,6 +105,26 @@ export function normalizeMonthlySeries(series) {
   return [...normalized.values()];
 }
 
+export function normalizeMonthlyYearlySeries(series, fallbackYears = []) {
+  const map = new Map();
+
+  for (const year of fallbackYears) {
+    if (!Number.isInteger(year)) continue;
+    map.set(year, { year, months: normalizeMonthlySeries([]) });
+  }
+
+  for (const entry of Array.isArray(series) ? series : []) {
+    const year = asInteger(entry?.year);
+    if (!year) continue;
+    map.set(year, {
+      year,
+      months: normalizeMonthlySeries(entry?.months),
+    });
+  }
+
+  return [...map.values()].sort((a, b) => a.year - b.year);
+}
+
 export function normalizeReceivables(receivables) {
   const items = Array.isArray(receivables?.items) ? receivables.items : [];
   return {
@@ -137,6 +157,22 @@ export function normalizeStatsPayload(payload, customerCode) {
   const totalOrders = Number(summary.total_orders ?? recentOrders.length ?? 0);
   const totalRevenue = asMoney(summary.total_revenue);
 
+  const currentYear = now.getUTCFullYear();
+  const fallbackYears = [currentYear - 2, currentYear - 1, currentYear];
+  const providedYearlySeries = Array.isArray(payload?.monthly_sales?.yearly_series)
+    ? payload.monthly_sales.yearly_series
+    : [
+        { year: currentYear - 1, months: payload?.monthly_sales?.previous_year },
+        { year: currentYear, months: payload?.monthly_sales?.current_year },
+      ];
+  const normalizedYearlySeries = normalizeMonthlyYearlySeries(providedYearlySeries, fallbackYears);
+  const previousYearSeries =
+    normalizedYearlySeries.find((entry) => entry.year === currentYear - 1)?.months ||
+    normalizeMonthlySeries(payload?.monthly_sales?.previous_year);
+  const currentYearSeries =
+    normalizedYearlySeries.find((entry) => entry.year === currentYear)?.months ||
+    normalizeMonthlySeries(payload?.monthly_sales?.current_year);
+
   return {
     customer: {
       code: customer.code,
@@ -162,8 +198,9 @@ export function normalizeStatsPayload(payload, customerCode) {
       last_order_date: summary.last_order_date || null,
     },
     monthly_sales: {
-      current_year: normalizeMonthlySeries(payload?.monthly_sales?.current_year),
-      previous_year: normalizeMonthlySeries(payload?.monthly_sales?.previous_year),
+      current_year: currentYearSeries,
+      previous_year: previousYearSeries,
+      yearly_series: normalizedYearlySeries,
     },
     product_sales: {
       metric: payload?.product_sales?.metric === "pieces" ? "pieces" : "revenue",

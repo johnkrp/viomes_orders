@@ -5,6 +5,7 @@ import { createSqliteCustomerStatsProvider } from "../lib/customer-stats/sqlite-
 function createImportedDbFixture() {
   const currentYear = new Date().getUTCFullYear();
   const previousYear = currentYear - 1;
+  const olderYear = currentYear - 2;
 
   return {
     async get(sql, params = []) {
@@ -106,6 +107,7 @@ function createImportedDbFixture() {
         ];
       }
       if (sql.includes("FROM imported_monthly_sales")) {
+        if (params[1] === olderYear) return [{ month: 1, revenue: 25, pieces: 2 }];
         if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
         if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
       }
@@ -115,6 +117,7 @@ function createImportedDbFixture() {
 }
 
 test("imported-data provider builds the customer stats contract from imported tables", async () => {
+  const olderYear = new Date().getUTCFullYear() - 2;
   const provider = createSqliteCustomerStatsProvider({
     db: createImportedDbFixture(),
     sqlDialect: "mysql",
@@ -136,6 +139,9 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.detailed_orders[0].lines.length, 1);
   assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
   assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
+  assert.equal(payload.monthly_sales.yearly_series.length, 3);
+  assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
+  assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
 });
 
 test("imported-data provider returns 404 when imported customer is missing", async () => {

@@ -71,8 +71,9 @@ const els = {
   revenue12mValue: document.getElementById("revenue12mValue"),
   lastOrderDateValue: document.getElementById("lastOrderDateValue"),
   monthlySalesBody: document.getElementById("monthlySalesBody"),
-  monthlyPrevRevenueHeading: document.getElementById("monthlyPrevRevenueHeading"),
-  monthlyCurrRevenueHeading: document.getElementById("monthlyCurrRevenueHeading"),
+  monthlyYearOneHeading: document.getElementById("monthlyYearOneHeading"),
+  monthlyYearTwoHeading: document.getElementById("monthlyYearTwoHeading"),
+  monthlyYearThreeHeading: document.getElementById("monthlyYearThreeHeading"),
   monthlySalesFoot: document.getElementById("monthlySalesFoot"),
   receivablesOpenValue: document.getElementById("receivablesOpenValue"),
   receivablesOverdueValue: document.getElementById("receivablesOverdueValue"),
@@ -253,12 +254,13 @@ function buildCustomerSearchParams(filters) {
 }
 
 function resetMonthlySales() {
-  if (els.monthlyPrevRevenueHeading) els.monthlyPrevRevenueHeading.textContent = "Προηγ. έτος";
-  if (els.monthlyCurrRevenueHeading) els.monthlyCurrRevenueHeading.textContent = "Τρέχον έτος";
+  if (els.monthlyYearOneHeading) els.monthlyYearOneHeading.textContent = "Έτος 1";
+  if (els.monthlyYearTwoHeading) els.monthlyYearTwoHeading.textContent = "Έτος 2";
+  if (els.monthlyYearThreeHeading) els.monthlyYearThreeHeading.textContent = "Έτος 3";
   if (els.monthlySalesBody) {
     els.monthlySalesBody.innerHTML = `
       <tr>
-        <td colspan="4" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη μηνιαίες πωλήσεις.</td>
+        <td colspan="5" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη μηνιαίες πωλήσεις.</td>
       </tr>
     `;
   }
@@ -266,6 +268,7 @@ function resetMonthlySales() {
     els.monthlySalesFoot.innerHTML = `
       <tr>
         <td>Σύνολο</td>
+        <td>-</td>
         <td>-</td>
         <td>-</td>
         <td>-</td>
@@ -434,43 +437,63 @@ function renderSelectedOrderDetails() {
 
 function renderMonthlySales(monthlySales) {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const previousYear = currentYear - 1;
-  const currentYearRows = Array.isArray(monthlySales?.current_year) ? monthlySales.current_year : [];
-  const previousYearRows = Array.isArray(monthlySales?.previous_year) ? monthlySales.previous_year : [];
+  const currentYear = now.getUTCFullYear();
+  const yearlySeries = Array.isArray(monthlySales?.yearly_series) && monthlySales.yearly_series.length
+    ? monthlySales.yearly_series
+    : [
+        { year: currentYear - 2, months: [] },
+        { year: currentYear - 1, months: monthlySales?.previous_year || [] },
+        { year: currentYear, months: monthlySales?.current_year || [] },
+      ];
+  const displaySeries = [...yearlySeries]
+    .sort((a, b) => Number(a.year || 0) - Number(b.year || 0))
+    .slice(-3);
   const rows = [];
-  let previousTotal = 0;
-  let currentTotal = 0;
+  const yearlyTotals = displaySeries.map(() => 0);
 
   for (let month = 1; month <= 12; month += 1) {
-    const previous = previousYearRows.find((row) => Number(row.month) === month) || {};
-    const current = currentYearRows.find((row) => Number(row.month) === month) || {};
-    const previousRevenue = Number(previous.revenue || 0);
-    const currentRevenue = Number(current.revenue || 0);
-    const totalRevenue = previousRevenue + currentRevenue;
-    previousTotal += previousRevenue;
-    currentTotal += currentRevenue;
+    const revenues = displaySeries.map((entry, index) => {
+      const row = (Array.isArray(entry.months) ? entry.months : []).find(
+        (candidate) => Number(candidate.month) === month,
+      ) || {};
+      const revenue = Number(row.revenue || 0);
+      yearlyTotals[index] += revenue;
+      return revenue;
+    });
+    const totalRevenue = revenues.reduce((sum, value) => sum + value, 0);
+    const revenueCells = revenues
+      .map(
+        (revenue) =>
+          `<td class="admin-table-number${numberStateClass(revenue)}">${escapeHtml(formatMoney(revenue))}</td>`,
+      )
+      .join("");
 
     rows.push(`
       <tr>
         <td>${MONTH_LABELS[month - 1]}</td>
-        <td class="admin-table-number${numberStateClass(previousRevenue)}">${escapeHtml(formatMoney(previousRevenue))}</td>
-        <td class="admin-table-number${numberStateClass(currentRevenue)}">${escapeHtml(formatMoney(currentRevenue))}</td>
+        ${revenueCells}
         <td class="admin-table-number admin-monthly-total-cell${numberStateClass(totalRevenue)}">${escapeHtml(formatMoney(totalRevenue))}</td>
       </tr>
     `);
   }
 
-  els.monthlyPrevRevenueHeading.textContent = String(previousYear);
-  els.monthlyCurrRevenueHeading.textContent = String(currentYear);
+  if (els.monthlyYearOneHeading) els.monthlyYearOneHeading.textContent = String(displaySeries[0]?.year || currentYear - 2);
+  if (els.monthlyYearTwoHeading) els.monthlyYearTwoHeading.textContent = String(displaySeries[1]?.year || currentYear - 1);
+  if (els.monthlyYearThreeHeading) els.monthlyYearThreeHeading.textContent = String(displaySeries[2]?.year || currentYear);
   els.monthlySalesBody.innerHTML = rows.join("");
   if (els.monthlySalesFoot) {
+    const totalCells = yearlyTotals
+      .map(
+        (value) =>
+          `<td class="admin-table-number${numberStateClass(value)}">${escapeHtml(formatMoney(value))}</td>`,
+      )
+      .join("");
+    const grandTotal = yearlyTotals.reduce((sum, value) => sum + value, 0);
     els.monthlySalesFoot.innerHTML = `
       <tr>
         <td>Σύνολο</td>
-        <td class="admin-table-number${numberStateClass(previousTotal)}">${escapeHtml(formatMoney(previousTotal))}</td>
-        <td class="admin-table-number${numberStateClass(currentTotal)}">${escapeHtml(formatMoney(currentTotal))}</td>
-        <td class="admin-table-number admin-monthly-total-cell${numberStateClass(previousTotal + currentTotal)}">${escapeHtml(formatMoney(previousTotal + currentTotal))}</td>
+        ${totalCells}
+        <td class="admin-table-number admin-monthly-total-cell${numberStateClass(grandTotal)}">${escapeHtml(formatMoney(grandTotal))}</td>
       </tr>
     `;
   }

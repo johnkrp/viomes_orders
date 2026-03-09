@@ -30,6 +30,18 @@ function mergeMonthlyRows(rows) {
   return buckets;
 }
 
+async function loadMonthlyYearlySeries(db, query, customerCode, years) {
+  const series = [];
+  for (const year of years) {
+    const rows = await db.all(query, [customerCode, year]);
+    series.push({
+      year,
+      months: mergeMonthlyRows(rows),
+    });
+  }
+  return series;
+}
+
 function buildCutoffDateString(now, days) {
   const cutoff = new Date(now.getTime() - days * 86400000);
   return cutoff.toISOString().slice(0, 10);
@@ -216,12 +228,13 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
 
         const currentYear = now.getUTCFullYear();
         const previousYear = currentYear - 1;
+        const olderYear = currentYear - 2;
 
         const castInt = sqlDialect === "mysql" ? "UNSIGNED" : "INTEGER";
         const monthExpr = `CAST(SUBSTR(o.created_at, 6, 2) AS ${castInt})`;
         const yearExpr = `CAST(SUBSTR(o.created_at, 1, 4) AS ${castInt})`;
 
-        const monthlyCurrent = await db.all(
+        const monthlyYearQuery =
           `
             SELECT
               ${monthExpr} AS month,
@@ -232,23 +245,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               AND ${yearExpr} = ?
             GROUP BY ${monthExpr}
             ORDER BY month ASC
-          `,
-          [code, currentYear],
-        );
-
-        const monthlyPrevious = await db.all(
-          `
-            SELECT
-              ${monthExpr} AS month,
-              COALESCE(SUM(o.total_net_value), 0) AS revenue,
-              COALESCE(SUM(o.total_qty_pieces), 0) AS pieces
-            FROM orders o
-            WHERE o.customer_code = ?
-              AND ${yearExpr} = ?
-            GROUP BY ${monthExpr}
-            ORDER BY month ASC
-          `,
-          [code, previousYear],
+          `;
+        const monthlyYearlySeries = await loadMonthlyYearlySeries(
+          db,
+          monthlyYearQuery,
+          code,
+          [olderYear, previousYear, currentYear],
         );
 
         const totalOrders = asInteger(summary.total_orders);
@@ -274,8 +276,13 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             last_order_date: summary.last_order_date,
           },
           monthly_sales: {
-            current_year: mergeMonthlyRows(monthlyCurrent),
-            previous_year: mergeMonthlyRows(monthlyPrevious),
+            current_year:
+              monthlyYearlySeries.find((entry) => entry.year === currentYear)?.months ||
+              mergeMonthlyRows([]),
+            previous_year:
+              monthlyYearlySeries.find((entry) => entry.year === previousYear)?.months ||
+              mergeMonthlyRows([]),
+            yearly_series: monthlyYearlySeries,
           },
           product_sales: {
             metric: "revenue",
@@ -466,8 +473,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
 
       const currentYear = now.getUTCFullYear();
       const previousYear = currentYear - 1;
-
-      const monthlyCurrent = await db.all(
+      const olderYear = currentYear - 2;
+      const monthlyYearQuery =
         `
           SELECT
             order_month AS month,
@@ -477,22 +484,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           WHERE customer_code = ?
             AND order_year = ?
           ORDER BY order_month ASC
-        `,
-        [code, currentYear],
-      );
-
-      const monthlyPrevious = await db.all(
-        `
-          SELECT
-            order_month AS month,
-            revenue,
-            pieces
-          FROM imported_monthly_sales
-          WHERE customer_code = ?
-            AND order_year = ?
-          ORDER BY order_month ASC
-        `,
-        [code, previousYear],
+        `;
+      const monthlyYearlySeries = await loadMonthlyYearlySeries(
+        db,
+        monthlyYearQuery,
+        code,
+        [olderYear, previousYear, currentYear],
       );
 
       const totalOrders = asInteger(summary.total_orders);
@@ -520,8 +517,13 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           last_order_date: summary.last_order_date,
         },
         monthly_sales: {
-          current_year: mergeMonthlyRows(monthlyCurrent),
-          previous_year: mergeMonthlyRows(monthlyPrevious),
+          current_year:
+            monthlyYearlySeries.find((entry) => entry.year === currentYear)?.months ||
+            mergeMonthlyRows([]),
+          previous_year:
+            monthlyYearlySeries.find((entry) => entry.year === previousYear)?.months ||
+            mergeMonthlyRows([]),
+          yearly_series: monthlyYearlySeries,
         },
         product_sales: {
           metric: "revenue",

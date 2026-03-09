@@ -41,6 +41,7 @@ test("SQLite-backed local-order stats integration returns the expected contract"
   const db = await openTestDb();
   const currentYear = new Date().getUTCFullYear();
   const previousYear = currentYear - 1;
+  const olderYear = currentYear - 2;
 
   try {
     await db.run(
@@ -71,9 +72,16 @@ test("SQLite-backed local-order stats integration returns the expected contract"
         INSERT INTO orders(customer_name, customer_email, customer_code, notes, total_qty_pieces, total_net_value, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
-      ["Alpha Store", "buyer@example.com", "C001", "First order", 5, 70, `${previousYear}-12-10`],
+      ["Alpha Store", "buyer@example.com", "C001", "Seed order", 2, 25, `${olderYear}-01-05`],
     );
     const orderTwo = await db.run(
+      `
+        INSERT INTO orders(customer_name, customer_email, customer_code, notes, total_qty_pieces, total_net_value, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      ["Alpha Store", "buyer@example.com", "C001", "First order", 5, 70, `${previousYear}-12-10`],
+    );
+    const orderThree = await db.run(
       `
         INSERT INTO orders(customer_name, customer_email, customer_code, notes, total_qty_pieces, total_net_value, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -87,19 +95,19 @@ test("SQLite-backed local-order stats integration returns the expected contract"
         VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
       `,
       [
-        orderOne.lastID,
+        orderTwo.lastID,
         productTwo.lastID,
         5,
         14,
         0,
         70,
-        orderTwo.lastID,
+        orderThree.lastID,
         productOne.lastID,
         8,
         17.5,
         0,
         140,
-        orderTwo.lastID,
+        orderThree.lastID,
         productOne.lastID,
         2,
         17.8,
@@ -113,17 +121,20 @@ test("SQLite-backed local-order stats integration returns the expected contract"
 
     assert.equal(payload.customer.code, "C001");
     assert.equal(payload.customer.email, "buyer@example.com");
-    assert.equal(payload.summary.total_orders, 2);
+    assert.equal(payload.summary.total_orders, 3);
     assert.equal(payload.summary.total_pieces, 15);
     assert.equal(payload.summary.total_revenue, 245.6);
-    assert.equal(payload.summary.average_order_value, 122.8);
+    assert.equal(payload.summary.average_order_value, 81.87);
     assert.equal(payload.top_products_by_qty[0].code, "P1");
     assert.equal(payload.top_products_by_value[0].code, "P1");
-    assert.equal(payload.recent_orders.length, 2);
-    assert.equal(payload.detailed_orders.length, 2);
+    assert.equal(payload.recent_orders.length, 3);
+    assert.equal(payload.detailed_orders.length, 3);
     assert.equal(payload.detailed_orders[0].lines.length, 2);
     assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
     assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
+    assert.equal(payload.monthly_sales.yearly_series.length, 3);
+    assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
+    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
   } finally {
     await db.close();
   }

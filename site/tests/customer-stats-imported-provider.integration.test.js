@@ -41,6 +41,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
   const db = await openTestDb();
   const currentYear = new Date().getUTCFullYear();
   const previousYear = currentYear - 1;
+  const olderYear = currentYear - 2;
 
   try {
     await db.run(
@@ -128,9 +129,25 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     await db.run(
       `
         INSERT INTO imported_monthly_sales(customer_code, order_year, order_month, revenue, pieces)
-        VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)
       `,
-      ["C001", currentYear, 2, 175.6, 10, "C001", previousYear, 12, 70, 5],
+      [
+        "C001",
+        olderYear,
+        1,
+        25,
+        2,
+        "C001",
+        currentYear,
+        2,
+        175.6,
+        10,
+        "C001",
+        previousYear,
+        12,
+        70,
+        5,
+      ],
     );
 
     await db.run(
@@ -180,6 +197,9 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.top_products_by_value[0].code, "P1");
     assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
     assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
+    assert.equal(payload.monthly_sales.yearly_series.length, 3);
+    assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
+    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
     assert.equal(payload.detailed_orders[0].lines[0].code, "P1");
   } finally {
     await db.close();
