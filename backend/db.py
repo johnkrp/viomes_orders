@@ -116,6 +116,8 @@ def init_schema() -> None:
       customer_name TEXT NOT NULL,
       delivery_code TEXT,
       delivery_description TEXT,
+      branch_code TEXT,
+      branch_description TEXT,
       address_1 TEXT,
       postal_code TEXT,
       city TEXT,
@@ -257,6 +259,8 @@ def init_schema() -> None:
     _ensure_column(cur, "order_lines", "discount_pct", "discount_pct REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "order_lines", "line_net_value", "line_net_value REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "imported_orders", "document_no", "document_no TEXT NOT NULL DEFAULT ''")
+    _ensure_column(cur, "imported_customers", "branch_code", "branch_code TEXT")
+    _ensure_column(cur, "imported_customers", "branch_description", "branch_description TEXT")
     _ensure_column(cur, "import_runs", "import_mode", "import_mode TEXT NOT NULL DEFAULT 'incremental'")
     _ensure_column(cur, "import_runs", "source_files_json", "source_files_json TEXT")
     _ensure_column(cur, "import_runs", "source_checksum", "source_checksum TEXT")

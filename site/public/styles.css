@@ -1268,6 +1268,16 @@ button.secondary:hover,
   align-items: center;
 }
 
+.admin-search-results {
+  padding: 0 18px 18px;
+}
+
+.admin-result-select {
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 .admin-empty-state {
   padding: 28px 22px;
   text-align: center;

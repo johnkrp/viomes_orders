@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS imported_customers (
   customer_name VARCHAR(255) NOT NULL,
   delivery_code VARCHAR(128),
   delivery_description VARCHAR(255),
+  branch_code VARCHAR(128),
+  branch_description VARCHAR(255),
   address_1 VARCHAR(255),
   postal_code VARCHAR(64),
   city VARCHAR(128),

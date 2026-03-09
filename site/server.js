@@ -365,6 +365,80 @@ app.post("/api/admin/logout", async (req, res) => {
   }
 });
 
+app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
+  try {
+    const q = String(req.query.q || "").trim();
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "20", 10), 1), 50);
+    if (!q) {
+      res.json({ items: [], total: 0, query: q });
+      return;
+    }
+
+    const like = `%${q}%`;
+    const exactCode = await db.all(
+      `
+        SELECT
+          customer_code AS code,
+          customer_name AS name,
+          branch_code,
+          branch_description
+        FROM imported_customers
+        WHERE customer_code = ?
+        ORDER BY customer_name, customer_code
+        LIMIT ?
+      `,
+      [q, limit],
+    );
+
+    const rows = exactCode.length
+      ? exactCode
+      : await db.all(
+          `
+            SELECT
+              customer_code AS code,
+              customer_name AS name,
+              branch_code,
+              branch_description
+            FROM imported_customers
+            WHERE customer_code LIKE ?
+               OR customer_name LIKE ?
+               OR branch_code LIKE ?
+               OR branch_description LIKE ?
+            ORDER BY
+              CASE
+                WHEN customer_name = ? THEN 0
+                WHEN customer_code = ? THEN 1
+                WHEN branch_code = ? THEN 2
+                WHEN branch_description = ? THEN 3
+                WHEN customer_name LIKE ? THEN 4
+                WHEN customer_code LIKE ? THEN 5
+                WHEN branch_code LIKE ? THEN 6
+                WHEN branch_description LIKE ? THEN 7
+                ELSE 8
+              END,
+              customer_name,
+              customer_code
+            LIMIT ?
+          `,
+          [like, like, like, like, q, q, q, q, `${q}%`, `${q}%`, `${q}%`, `${q}%`, limit],
+        );
+
+    res.json({
+      query: q,
+      total: rows.length,
+      items: rows.map((row) => ({
+        code: row.code,
+        name: row.name,
+        branch_code: row.branch_code || "",
+        branch_description: row.branch_description || "",
+      })),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: String(error) });
+  }
+});
+
 app.get("/api/admin/customers/:code/stats", requireAdmin, async (req, res) => {
   try {
     const payload = await customerStatsProvider.getCustomerStats(req.params.code);

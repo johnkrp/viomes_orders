@@ -104,29 +104,50 @@
 
             <form id="customerSearchForm" class="admin-searchbar">
               <label class="field field-grow">
-                <span>Κωδικός πελάτη</span>
+                <span>Αναζήτηση πελάτη</span>
                 <input
-                  id="customerCode"
-                  type="text"
+                  id="customerQuery"
+                  type="search"
                   autocomplete="off"
                   autocapitalize="off"
                   autocorrect="off"
                   spellcheck="false"
-                  placeholder="π.χ. CUST001"
+                  placeholder="Επωνυμία, κωδικός, κωδ. υποκ. ή περιγραφή υποκ."
                   required
                 />
               </label>
 
               <div class="admin-search-actions">
-                <button id="loadStatsBtn" type="submit">Φόρτωση στατιστικών</button>
+                <button id="searchCustomersBtn" type="submit">Αναζήτηση</button>
                 <button id="clearStatsBtn" type="button" class="btn ghost">Καθαρισμός</button>
               </div>
             </form>
+
+            <div id="searchResultsPanel" class="admin-search-results" hidden>
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Κωδικός</th>
+                      <th>Επωνυμία</th>
+                      <th>Κωδ. υποκ.</th>
+                      <th>Περιγραφή υποκ.</th>
+                      <th>Ενέργεια</th>
+                    </tr>
+                  </thead>
+                  <tbody id="searchResultsBody">
+                    <tr>
+                      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη αποτελέσματα.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </section>
 
           <section id="emptyState" class="panel admin-panel admin-empty-state">
             <h2>Δεν έχει φορτωθεί πελάτης</h2>
-            <p>Δώστε κωδικό πελάτη για να εμφανιστούν τα διαθέσιμα στοιχεία.</p>
+            <p>Αναζητήστε πελάτη με επωνυμία, κωδικό ή στοιχεία υποκαταστήματος και επιλέξτε αποτέλεσμα.</p>
           </section>
 
           <section id="statsPanel" class="admin-stats-stack" hidden>

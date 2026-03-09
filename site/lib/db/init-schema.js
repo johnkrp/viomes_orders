@@ -147,6 +147,8 @@ async function initSqliteSchema(db) {
         customer_name TEXT NOT NULL,
         delivery_code TEXT,
         delivery_description TEXT,
+        branch_code TEXT,
+        branch_description TEXT,
         address_1 TEXT,
         postal_code TEXT,
         city TEXT,
@@ -426,6 +428,20 @@ export async function initDatabaseSchema({ db, kind }) {
     "order_lines",
     "line_net_value",
     `line_net_value ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customers",
+    "branch_code",
+    `branch_code ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customers",
+    "branch_description",
+    `branch_description ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"}`,
   );
   await ensureColumn(
     db,

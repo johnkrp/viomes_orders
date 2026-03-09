@@ -33,6 +33,7 @@ const PRODUCT_SALES_PAGE_SIZE = 10;
 
 let currentDetailedOrders = [];
 let currentProductSales = [];
+let currentSearchResults = [];
 let selectedOrderId = null;
 let currentProductSalesPage = 1;
 
@@ -47,9 +48,11 @@ const els = {
   dashboardPanel: document.getElementById("dashboardPanel"),
   sessionInfo: document.getElementById("sessionInfo"),
   customerSearchForm: document.getElementById("customerSearchForm"),
-  customerCode: document.getElementById("customerCode"),
-  loadStatsBtn: document.getElementById("loadStatsBtn"),
+  customerQuery: document.getElementById("customerQuery"),
+  searchCustomersBtn: document.getElementById("searchCustomersBtn"),
   clearStatsBtn: document.getElementById("clearStatsBtn"),
+  searchResultsPanel: document.getElementById("searchResultsPanel"),
+  searchResultsBody: document.getElementById("searchResultsBody"),
   emptyState: document.getElementById("emptyState"),
   statsPanel: document.getElementById("statsPanel"),
   customerNameHeading: document.getElementById("customerNameHeading"),
@@ -213,6 +216,18 @@ function resetProductSales() {
   }
 }
 
+function resetSearchResults() {
+  currentSearchResults = [];
+  if (els.searchResultsPanel) els.searchResultsPanel.hidden = true;
+  if (els.searchResultsBody) {
+    els.searchResultsBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη αποτελέσματα.</td>
+      </tr>
+    `;
+  }
+}
+
 function resetMonthlySales() {
   if (els.monthlyPrevRevenueHeading) els.monthlyPrevRevenueHeading.textContent = "Προηγ. έτος";
   if (els.monthlyCurrRevenueHeading) els.monthlyCurrRevenueHeading.textContent = "Τρέχον έτος";
@@ -287,6 +302,40 @@ function resetStats() {
   `;
   els.emptyState.hidden = false;
   els.statsPanel.hidden = true;
+}
+
+function renderSearchResults(items, query) {
+  currentSearchResults = Array.isArray(items) ? items : [];
+  if (els.searchResultsPanel) els.searchResultsPanel.hidden = false;
+  if (!els.searchResultsBody) return;
+
+  els.searchResultsBody.innerHTML = currentSearchResults.length
+    ? currentSearchResults
+        .map((item) => {
+          return `
+            <tr>
+              <td>${escapeHtml(item.code)}</td>
+              <td>${escapeHtml(item.name)}</td>
+              <td>${escapeHtml(item.branch_code || "-")}</td>
+              <td>${escapeHtml(item.branch_description || "-")}</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn ghost admin-result-select"
+                  data-customer-code="${escapeHtml(item.code)}"
+                >
+                  Επιλογή
+                </button>
+              </td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν πελάτες για "${escapeHtml(query)}".</td>
+        </tr>
+      `;
 }
 
 function renderSelectedOrderDetails() {
@@ -503,6 +552,12 @@ function renderStats(data) {
   currentProductSalesPage = 1;
 
   const metaParts = [customer.code, customer.email];
+  if (customer.branch_code) {
+    metaParts.push(`υποκ.: ${customer.branch_code}`);
+  }
+  if (customer.branch_description) {
+    metaParts.push(customer.branch_description);
+  }
   if (customer.aggregation_level) {
     metaParts.push(`επίπεδο: ${customer.aggregation_level}`);
   }
@@ -642,9 +697,10 @@ async function handleLogin(event) {
     });
 
     setAuthenticatedUI(result);
+    resetSearchResults();
     resetStats();
     els.password.value = "";
-    els.customerCode.focus();
+    els.customerQuery.focus();
     setStatus("Η σύνδεση ολοκληρώθηκε.", "ok");
   } catch (error) {
     setStatus(`Η σύνδεση απέτυχε: ${error.message}`, "error");
@@ -659,6 +715,7 @@ async function handleLogout() {
   try {
     await apiFetch("/api/admin/logout", { method: "POST" });
     setAuthenticatedUI({ authenticated: false });
+    resetSearchResults();
     resetStats();
     els.username.focus();
     setStatus("Η αποσύνδεση ολοκληρώθηκε.", "ok");
@@ -669,18 +726,14 @@ async function handleLogout() {
   }
 }
 
-async function loadCustomerStats(event) {
-  event.preventDefault();
+async function fetchCustomerStats(customerCode) {
   setStatus("");
 
-  const customerCode = (els.customerCode.value || "").trim();
   if (!customerCode) {
     setStatus("Δώστε κωδικό πελάτη.", "error");
-    els.customerCode.focus();
+    els.customerQuery.focus();
     return;
   }
-
-  els.loadStatsBtn.disabled = true;
 
   try {
     const payload = await apiFetch(
@@ -688,26 +741,61 @@ async function loadCustomerStats(event) {
       { method: "GET" },
     );
     renderStats(payload);
+    if (els.customerQuery) {
+      els.customerQuery.value = customerCode;
+    }
     setStatus(`Φορτώθηκαν τα στατιστικά για τον κωδικό ${customerCode}.`, "ok");
   } catch (error) {
     resetStats();
+    setStatus(`Η φόρτωση στατιστικών απέτυχε: ${error.message}`, "error");
+  }
+}
+
+async function searchCustomers(event) {
+  event.preventDefault();
+  setStatus("");
+
+  const query = (els.customerQuery.value || "").trim();
+  if (!query) {
+    setStatus("Δώστε επωνυμία, κωδικό ή στοιχεία υποκαταστήματος.", "error");
+    els.customerQuery.focus();
+    return;
+  }
+
+  els.searchCustomersBtn.disabled = true;
+  try {
+    const payload = await apiFetch(
+      `/api/admin/customers/search?q=${encodeURIComponent(query)}`,
+      { method: "GET" },
+    );
+    renderSearchResults(payload.items, query);
+    setStatus(`Βρέθηκαν ${payload.total} αποτελέσματα για "${query}".`, "ok");
+  } catch (error) {
+    resetSearchResults();
     setStatus(`Η αναζήτηση πελάτη απέτυχε: ${error.message}`, "error");
   } finally {
-    els.loadStatsBtn.disabled = false;
+    els.searchCustomersBtn.disabled = false;
   }
 }
 
 function clearCustomerStats() {
-  els.customerCode.value = "";
+  els.customerQuery.value = "";
+  resetSearchResults();
   resetStats();
   setStatus("");
-  els.customerCode.focus();
+  els.customerQuery.focus();
 }
 
 els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
-els.customerSearchForm?.addEventListener("submit", loadCustomerStats);
+els.customerSearchForm?.addEventListener("submit", searchCustomers);
 els.clearStatsBtn?.addEventListener("click", clearCustomerStats);
+els.searchResultsBody?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-customer-code]");
+  if (!button) return;
+
+  fetchCustomerStats(button.getAttribute("data-customer-code"));
+});
 els.productSalesMetric?.addEventListener("change", () => {
   currentProductSalesPage = 1;
   renderProductSales();
@@ -737,9 +825,10 @@ els.recentOrdersBody?.addEventListener("click", (event) => {
 });
 
 resetStats();
+resetSearchResults();
 refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
-    els.customerCode.focus();
+    els.customerQuery.focus();
   } else {
     els.username.focus();
   }

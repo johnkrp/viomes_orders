@@ -268,6 +268,8 @@ def rebuild_customers_from_sales(cur) -> None:
           customer_name,
           delivery_code,
           delivery_description,
+          branch_code,
+          branch_description,
           source_file
         )
         SELECT
@@ -275,6 +277,8 @@ def rebuild_customers_from_sales(cur) -> None:
           COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
           MAX(delivery_code) AS delivery_code,
           MAX(delivery_description) AS delivery_description,
+          MAX(branch_code) AS branch_code,
+          MAX(branch_description) AS branch_description,
           MAX(source_file) AS source_file
         FROM imported_sales_lines
         GROUP BY customer_code

@@ -7,6 +7,8 @@ Operational scripts used by Plesk/local maintenance.
 - `run-entersoft-import.js`
   - NPM-safe runner for Python importer.
   - Supports DB args and import mode.
+  - Creates a timestamped log file under `site/logs/imports/` by default.
+  - Honors `ENTERSOFT_IMPORT_LOG_DIR` and `ENTERSOFT_IMPORT_LOG_FILE` when set.
 
 - `check-import-integrity.js`
   - Verifies imported row counts, duplicate logical sales lines, and imported-order collisions.
@@ -65,6 +67,7 @@ Use `full_refresh` instead when you want to rebuild from canonical yearly files.
 - A `504` in the Plesk web UI usually means the request path timed out, not that the DB necessarily failed.
 - The importer uses a single transaction. If it fails before commit, other sessions may still show `0` rows and the final state may remain empty after rollback.
 - `manual-reload-sales.sh` is the preferred script for a clean rebuild because it creates a timestamped log file and then runs integrity checks.
+- Ad hoc `npm run import:entersoft` executions also create a dedicated importer log file under `site/logs/imports/`.
 - Do not commit server credentials into these shell wrappers; keep DB configuration in host-level environment variables or scheduler configuration.
 
 ## Typical Plesk command

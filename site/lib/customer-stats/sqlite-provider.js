@@ -315,7 +315,9 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             ic.customer_name AS name,
             NULL AS email,
             ic.delivery_code,
-            ic.delivery_description
+            ic.delivery_description,
+            ic.branch_code,
+            ic.branch_description
           FROM imported_customers ic
           WHERE ic.customer_code = ?
         `,
@@ -502,6 +504,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           name: customer.name,
           email: null,
           aggregation_level: "store",
+          branch_code: customer.branch_code || null,
+          branch_description: customer.branch_description || null,
         },
         summary: {
           total_orders: totalOrders,

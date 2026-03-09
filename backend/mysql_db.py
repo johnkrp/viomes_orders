@@ -128,6 +128,8 @@ def init_schema() -> None:
 
     _ensure_column(cur, "customers", "source", "source VARCHAR(64) NOT NULL DEFAULT 'local'")
     _ensure_column(cur, "imported_orders", "document_no", "document_no VARCHAR(128) NOT NULL DEFAULT ''")
+    _ensure_column(cur, "imported_customers", "branch_code", "branch_code VARCHAR(128)")
+    _ensure_column(cur, "imported_customers", "branch_description", "branch_description VARCHAR(255)")
     _ensure_column(cur, "import_runs", "import_mode", "import_mode VARCHAR(32) NOT NULL DEFAULT 'incremental'")
     _ensure_column(cur, "import_runs", "source_files_json", "source_files_json LONGTEXT")
     _ensure_column(cur, "import_runs", "source_checksum", "source_checksum VARCHAR(64)")
