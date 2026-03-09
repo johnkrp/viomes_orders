@@ -270,6 +270,7 @@ def rebuild_customers_from_sales(cur) -> None:
           delivery_description,
           branch_code,
           branch_description,
+          postal_code,
           source_file
         )
         SELECT
@@ -279,6 +280,7 @@ def rebuild_customers_from_sales(cur) -> None:
           MAX(delivery_description) AS delivery_description,
           MAX(branch_code) AS branch_code,
           MAX(branch_description) AS branch_description,
+          MAX(postal_code) AS postal_code,
           MAX(source_file) AS source_file
         FROM imported_sales_lines
         GROUP BY customer_code
@@ -424,6 +426,7 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                     account_description = str(row.get("Περ. ΑΧ", "")).strip()
                     branch_code = str(row.get("Κωδ.υποκ.", "")).strip()
                     branch_description = str(row.get("Περ.υποκ.", "")).strip()
+                    postal_code = str(row.get("Ταχ.Κώδικας", "")).strip()
                     note_1 = str(row.get("Σχόλιο 1", "")).strip()
 
                     execute_step(
@@ -434,9 +437,9 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                           source_file, order_date, order_year, order_month, document_no, document_type,
                           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
                           customer_code, customer_name, delivery_code, delivery_description, account_code,
-                          account_description, branch_code, branch_description, note_1
+                          account_description, branch_code, branch_description, postal_code, note_1
                         )
-                        SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                         FROM DUAL
                         WHERE NOT EXISTS (
                           SELECT 1
@@ -459,6 +462,7 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             AND existing.account_description = %s
                             AND existing.branch_code = %s
                             AND existing.branch_description = %s
+                            AND existing.postal_code = %s
                             AND existing.note_1 = %s
                         )
                         """,
@@ -484,6 +488,7 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             account_description,
                             branch_code,
                             branch_description,
+                            postal_code,
                             note_1,
                             order_date,
                             document_no,
@@ -503,6 +508,7 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             account_description,
                             branch_code,
                             branch_description,
+                            postal_code,
                             note_1,
                         ),
                     )

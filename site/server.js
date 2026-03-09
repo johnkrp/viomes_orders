@@ -362,6 +362,7 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
       customer_code: String(req.query.customer_code || "").trim(),
       branch_code: String(req.query.branch_code || "").trim(),
       branch_description: String(req.query.branch_description || "").trim(),
+      postal_code: String(req.query.postal_code || "").trim(),
     };
 
     if (!Object.values(filters).some(Boolean)) {
@@ -412,6 +413,15 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
       prefixScoreParams.push(`${filters.branch_description}%`);
     }
 
+    if (filters.postal_code) {
+      whereParts.push("postal_code LIKE ?");
+      whereParams.push(`%${filters.postal_code}%`);
+      exactScoreParts.push("MAX(CASE WHEN postal_code = ? THEN 1 ELSE 0 END)");
+      exactScoreParams.push(filters.postal_code);
+      prefixScoreParts.push("MAX(CASE WHEN postal_code LIKE ? THEN 1 ELSE 0 END)");
+      prefixScoreParams.push(`${filters.postal_code}%`);
+    }
+
     const rows = await db.all(
       `
         SELECT
@@ -427,6 +437,12 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
               THEN MAX(branch_description)
             ELSE CONCAT(COUNT(DISTINCT CONCAT(COALESCE(branch_code, ''), '||', COALESCE(branch_description, ''))), ' υποκαταστήματα')
           END AS branch_description
+          ,
+          CASE
+            WHEN COUNT(DISTINCT COALESCE(postal_code, '')) = 1
+              THEN MAX(postal_code)
+            ELSE ''
+          END AS postal_code
         FROM imported_sales_lines
         WHERE ${whereParts.join(" AND ")}
         GROUP BY customer_code
@@ -448,6 +464,7 @@ app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
         name: row.name,
         branch_code: row.branch_code || "",
         branch_description: row.branch_description || "",
+        postal_code: row.postal_code || "",
       })),
     });
   } catch (error) {
@@ -462,6 +479,7 @@ app.get("/api/admin/customers/:code/stats", requireAdmin, async (req, res) => {
       branchCode: String(req.query.branch_code || "").trim() || null,
       branchScopeCode: String(req.query.filter_branch_code || "").trim() || null,
       branchScopeDescription: String(req.query.filter_branch_description || "").trim() || null,
+      postalScopeCode: String(req.query.filter_postal_code || "").trim() || null,
     });
     res.json(payload);
   } catch (error) {

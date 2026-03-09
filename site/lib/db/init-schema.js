@@ -188,6 +188,7 @@ async function initSqliteSchema(db) {
         account_description TEXT,
         branch_code TEXT,
         branch_description TEXT,
+        postal_code TEXT,
         note_1 TEXT,
         UNIQUE(source_file, document_no, item_code, customer_code, delivery_code, net_value, qty)
       )
@@ -442,6 +443,13 @@ export async function initDatabaseSchema({ db, kind }) {
     "imported_customers",
     "branch_description",
     `branch_description ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_sales_lines",
+    "postal_code",
+    `postal_code ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
   );
   await ensureColumn(
     db,

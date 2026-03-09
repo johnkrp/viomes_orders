@@ -95,6 +95,7 @@ function buildImportedBranchScopeClause(scope = {}, alias = "") {
   const prefix = alias ? `${alias}.` : "";
   const branchCode = String(scope?.branchCode || "").trim();
   const branchDescription = String(scope?.branchDescription || "").trim();
+  const postalCode = String(scope?.postalCode || "").trim();
   const parts = [];
   const params = [];
 
@@ -106,6 +107,11 @@ function buildImportedBranchScopeClause(scope = {}, alias = "") {
   if (branchDescription) {
     parts.push(`${prefix}branch_description LIKE ?`);
     params.push(`%${branchDescription}%`);
+  }
+
+  if (postalCode) {
+    parts.push(`${prefix}postal_code LIKE ?`);
+    params.push(`%${postalCode}%`);
   }
 
   if (!parts.length) {
@@ -154,6 +160,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
       const selectedBranchCode = String(options?.branchCode || "").trim() || null;
       const branchScopeCode = String(options?.branchScopeCode || "").trim() || null;
       const branchScopeDescription = String(options?.branchScopeDescription || "").trim() || null;
+      const postalScopeCode = String(options?.postalScopeCode || "").trim() || null;
       const useImportedData = await hasImportedData(db);
       const now = new Date();
 
@@ -381,10 +388,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
       const branchScope = buildImportedBranchScopeClause({
         branchCode: branchScopeCode,
         branchDescription: branchScopeDescription,
+        postalCode: postalScopeCode,
       });
       const availableBranches = await loadImportedCustomerBranches(db, code, {
         branchCode: branchScopeCode,
         branchDescription: branchScopeDescription,
+        postalCode: postalScopeCode,
       });
       const importedDataFilter = selectedBranchCode
         ? buildImportedBranchClause(selectedBranchCode)

@@ -44,6 +44,7 @@ let currentCustomerSearchFilters = {
   customer_code: "",
   branch_code: "",
   branch_description: "",
+  postal_code: "",
 };
 
 const els = {
@@ -64,6 +65,7 @@ const els = {
   customerCodeQuery: document.getElementById("customerCodeQuery"),
   branchCodeQuery: document.getElementById("branchCodeQuery"),
   branchDescriptionQuery: document.getElementById("branchDescriptionQuery"),
+  postalCodeQuery: document.getElementById("postalCodeQuery"),
   searchCustomersBtn: document.getElementById("searchCustomersBtn"),
   clearStatsBtn: document.getElementById("clearStatsBtn"),
   searchResultsPanel: document.getElementById("searchResultsPanel"),
@@ -241,7 +243,7 @@ function resetSearchResults() {
   if (els.searchResultsBody) {
     els.searchResultsBody.innerHTML = `
       <tr>
-        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη αποτελέσματα.</td>
+        <td colspan="6" class="admin-table-empty">Δεν υπάρχουν ακόμη αποτελέσματα.</td>
       </tr>
     `;
   }
@@ -328,6 +330,7 @@ function getCustomerSearchFilters() {
     customer_code: (els.customerCodeQuery?.value || "").trim(),
     branch_code: (els.branchCodeQuery?.value || "").trim(),
     branch_description: (els.branchDescriptionQuery?.value || "").trim(),
+    postal_code: (els.postalCodeQuery?.value || "").trim(),
   };
 }
 
@@ -356,6 +359,7 @@ function setCurrentCustomerSearchFilters(filters = {}) {
     customer_code: String(filters.customer_code || "").trim(),
     branch_code: String(filters.branch_code || "").trim(),
     branch_description: String(filters.branch_description || "").trim(),
+    postal_code: String(filters.postal_code || "").trim(),
   };
 }
 
@@ -510,6 +514,7 @@ function renderSearchResults(items, filters = {}) {
               <td>${escapeHtml(item.name)}</td>
               <td>${escapeHtml(item.branch_code || "-")}</td>
               <td>${escapeHtml(item.branch_description || "-")}</td>
+              <td>${escapeHtml(item.postal_code || "-")}</td>
               <td>
                 <button
                   type="button"
@@ -525,7 +530,7 @@ function renderSearchResults(items, filters = {}) {
         .join("")
     : `
         <tr>
-          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν πελάτες${activeFilters ? ` για "${escapeHtml(activeFilters)}"` : ""}.</td>
+          <td colspan="6" class="admin-table-empty">Δεν βρέθηκαν πελάτες${activeFilters ? ` για "${escapeHtml(activeFilters)}"` : ""}.</td>
         </tr>
       `;
 }
@@ -960,12 +965,16 @@ async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = 
     const normalizedScopeFilters = {
       branch_code: String(scopeFilters?.branch_code || "").trim(),
       branch_description: String(scopeFilters?.branch_description || "").trim(),
+      postal_code: String(scopeFilters?.postal_code || "").trim(),
     };
     if (normalizedScopeFilters.branch_code) {
       params.set("filter_branch_code", normalizedScopeFilters.branch_code);
     }
     if (normalizedScopeFilters.branch_description) {
       params.set("filter_branch_description", normalizedScopeFilters.branch_description);
+    }
+    if (normalizedScopeFilters.postal_code) {
+      params.set("filter_postal_code", normalizedScopeFilters.postal_code);
     }
     const payload = await apiFetch(
       `/api/admin/customers/${encodeURIComponent(customerCode)}/stats${params.toString() ? `?${params.toString()}` : ""}`,
@@ -1024,6 +1033,7 @@ function clearCustomerStats() {
   if (els.customerCodeQuery) els.customerCodeQuery.value = "";
   if (els.branchCodeQuery) els.branchCodeQuery.value = "";
   if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = "";
+  if (els.postalCodeQuery) els.postalCodeQuery.value = "";
   setCurrentCustomerSearchFilters({});
   resetSearchSuggestions();
   resetSearchResults();
