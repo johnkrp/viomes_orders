@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Manual full reload runner for Plesk/SSH.
 # Run with:
-# /bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/manual-reload-sales.sh
+# /bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/manual-reload-sales.sh
 
-APP_ROOT="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site"
-BACKEND_ROOT="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend"
+APP_ROOT="/var/www/vhosts/viomes.gr/orders.viomes.gr/site"
+BACKEND_ROOT="/var/www/vhosts/viomes.gr/orders.viomes.gr/backend"
 LOCK_FILE="/tmp/viomes-manual-reload-sales.lock"
 LOG_DIR="$APP_ROOT/logs"
 

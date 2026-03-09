@@ -168,13 +168,13 @@ npm run reset:business-data -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-
 Run reset + import in one command:
 
 ```powershell
-npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2025.CSV,/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/2025.CSV,/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
 ```
 
 Manual full rebuild script with logging and post-check:
 
 ```bash
-/bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/manual-reload-sales.sh
+/bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/manual-reload-sales.sh
 ```
 
 Cleanup historical duplicates already present in import history:
@@ -205,12 +205,12 @@ In Plesk `Scheduled Tasks` use:
 - Command:
 
 ```bash
-/bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/nightly-import.sh
+/bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/nightly-import.sh
 ```
 
 The script logs to:
 
-- `/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/logs/nightly-import-YYYY-MM-DD.log`
+- `/var/www/vhosts/viomes.gr/orders.viomes.gr/site/logs/nightly-import-YYYY-MM-DD.log`
 
 Current files:
 

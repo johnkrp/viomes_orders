@@ -1190,28 +1190,78 @@ button.secondary:hover,
   overflow: visible;
 }
 
+.admin-customer-hero {
+  border-color: rgba(42, 105, 184, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(42, 105, 184, 0.08), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(243, 247, 252, 0.99));
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+}
+
+.admin-customer-hero .panel-head {
+  padding-bottom: 14px;
+  background: linear-gradient(180deg, rgba(233, 242, 254, 0.95), rgba(248, 251, 255, 0.7));
+  border-bottom: 1px solid rgba(42, 105, 184, 0.12);
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
 .panel-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 18px 8px;
+  padding: 18px 18px 10px;
 }
 
 .panel-head-inline {
   align-items: center;
 }
 
+.panel-head > div:first-child {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+
 .panel-head h2,
 .admin-empty-state h2 {
   margin: 0;
   font-size: 20px;
+  line-height: 1.15;
 }
 
 .panel-head p,
 .admin-empty-state p {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--muted);
+}
+
+.admin-customer-hero .panel-head h2 {
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.admin-customer-meta {
+  font-size: 14px;
+  color: #334155 !important;
+  font-weight: 600;
+}
+
+.admin-panel-subtle {
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.admin-panel-subtle .panel-head {
+  padding-bottom: 8px;
+}
+
+.admin-panel-note {
+  max-width: 52ch;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #64748b !important;
 }
 
 .admin-toast {
@@ -1270,6 +1320,10 @@ button.secondary:hover,
 
 .admin-search-results {
   padding: 0 18px 18px;
+}
+
+.admin-panel.is-collapsed {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .admin-search-suggestions {
@@ -1341,6 +1395,13 @@ button.secondary:hover,
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
 }
 
+.admin-customer-hero .admin-stat-card {
+  border-color: rgba(42, 105, 184, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(239, 245, 252, 1));
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
 .admin-stat-label {
   display: block;
   font-size: 12px;
@@ -1376,12 +1437,14 @@ button.secondary:hover,
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .admin-compact-field {
   min-width: 180px;
 }
 
+.admin-compact-field input[type="search"],
 .admin-compact-field select {
   padding: 10px 12px;
   border: 1px solid var(--line);
@@ -1389,6 +1452,10 @@ button.secondary:hover,
   background: #fff;
   color: var(--text);
   font: inherit;
+}
+
+.admin-compact-field input[type="search"] {
+  min-width: 260px;
 }
 
 .admin-monthly-table th,
@@ -1420,6 +1487,10 @@ button.secondary:hover,
 .admin-table-number {
   text-align: right !important;
   font-variant-numeric: tabular-nums;
+}
+
+.admin-table-action {
+  text-align: center;
 }
 
 .admin-pagination {
@@ -1454,14 +1525,101 @@ button.secondary:hover,
   border-bottom: 1px solid var(--line);
   text-align: left;
   font-size: 13px;
+  vertical-align: top;
 }
 
 .admin-table th {
-  background: #e2ebf8;
+  background: #e7edf7;
   color: #0f172a;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+}
+
+.admin-panel-subtle .admin-table th {
+  background: #edf2f8;
+}
+
+.admin-top-qty-table,
+.admin-top-value-table,
+.admin-recent-orders-table {
+  table-layout: auto;
+}
+
+.admin-top-qty-table th:nth-child(1),
+.admin-top-qty-table td:nth-child(1) {
+  width: 12%;
+}
+
+.admin-top-qty-table th:nth-child(2),
+.admin-top-qty-table td:nth-child(2) {
+  width: 42%;
+}
+
+.admin-top-qty-table th:nth-child(3),
+.admin-top-qty-table td:nth-child(3),
+.admin-top-qty-table th:nth-child(4),
+.admin-top-qty-table td:nth-child(4),
+.admin-top-qty-table th:nth-child(5),
+.admin-top-qty-table td:nth-child(5) {
+  width: 15%;
+}
+
+.admin-top-value-table th:nth-child(1),
+.admin-top-value-table td:nth-child(1) {
+  width: 12%;
+}
+
+.admin-top-value-table th:nth-child(2),
+.admin-top-value-table td:nth-child(2) {
+  width: 16%;
+}
+
+.admin-top-value-table th:nth-child(3),
+.admin-top-value-table td:nth-child(3) {
+  width: 37%;
+}
+
+.admin-top-value-table th:nth-child(4),
+.admin-top-value-table td:nth-child(4) {
+  width: 20%;
+}
+
+.admin-top-value-table th:nth-child(5),
+.admin-top-value-table td:nth-child(5) {
+  width: 15%;
+}
+
+.admin-recent-orders-table th:nth-child(1),
+.admin-recent-orders-table td:nth-child(1) {
+  width: 24%;
+}
+
+.admin-recent-orders-table th:nth-child(2),
+.admin-recent-orders-table td:nth-child(2) {
+  width: 18%;
+}
+
+.admin-recent-orders-table th:nth-child(3),
+.admin-recent-orders-table td:nth-child(3),
+.admin-recent-orders-table th:nth-child(4),
+.admin-recent-orders-table td:nth-child(4) {
+  width: 10%;
+}
+
+.admin-recent-orders-table th:nth-child(5),
+.admin-recent-orders-table td:nth-child(5) {
+  width: 14%;
+}
+
+.admin-recent-orders-table th:nth-child(6),
+.admin-recent-orders-table td:nth-child(6) {
+  width: 10%;
+}
+
+.admin-recent-orders-table th:nth-child(7),
+.admin-recent-orders-table td:nth-child(7) {
+  width: 14%;
 }
 
 .admin-table tbody tr:nth-child(even) {

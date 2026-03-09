@@ -77,11 +77,11 @@ Use `full_refresh` instead when you want to rebuild from canonical yearly files.
 ## Typical Plesk command
 
 ```bash
-/bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/nightly-import.sh
+/bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/nightly-import.sh
 ```
 
 Manual rebuild command:
 
 ```bash
-/bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/manual-reload-sales.sh
+/bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/manual-reload-sales.sh
 ```

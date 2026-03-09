@@ -39,6 +39,7 @@ let selectedOrderId = null;
 let currentProductSalesPage = 1;
 let currentCustomerCode = null;
 let currentBranchCode = "";
+let currentAvailableBranches = [];
 let activeSuggestionIndex = -1;
 let searchDebounceTimer = null;
 let latestSearchRequestId = 0;
@@ -53,6 +54,9 @@ const els = {
   logoutBtn: document.getElementById("logoutBtn"),
   dashboardPanel: document.getElementById("dashboardPanel"),
   sessionInfo: document.getElementById("sessionInfo"),
+  customerSearchPanel: document.getElementById("customerSearchPanel"),
+  searchPanelContent: document.getElementById("searchPanelContent"),
+  expandSearchPanelBtn: document.getElementById("expandSearchPanelBtn"),
   customerSearchForm: document.getElementById("customerSearchForm"),
   customerNameQuery: document.getElementById("customerNameQuery"),
   customerCodeQuery: document.getElementById("customerCodeQuery"),
@@ -65,6 +69,7 @@ const els = {
   searchResultsPanel: document.getElementById("searchResultsPanel"),
   searchResultsBody: document.getElementById("searchResultsBody"),
   branchSelectorPanel: document.getElementById("branchSelectorPanel"),
+  branchSelectorSearch: document.getElementById("branchSelectorSearch"),
   branchSelector: document.getElementById("branchSelector"),
   emptyState: document.getElementById("emptyState"),
   statsPanel: document.getElementById("statsPanel"),
@@ -253,14 +258,75 @@ function resetSearchSuggestions() {
   if (els.searchSuggestionsList) els.searchSuggestionsList.innerHTML = "";
 }
 
+function setSearchPanelCollapsed(collapsed) {
+  if (els.customerSearchPanel) {
+    els.customerSearchPanel.classList.toggle("is-collapsed", Boolean(collapsed));
+  }
+  if (els.searchPanelContent) {
+    els.searchPanelContent.hidden = Boolean(collapsed);
+  }
+  if (els.expandSearchPanelBtn) {
+    els.expandSearchPanelBtn.hidden = !collapsed;
+  }
+}
+
+function focusPrimarySearchField() {
+  els.customerNameQuery?.focus();
+}
+
 function resetBranchSelector() {
   currentCustomerCode = null;
   currentBranchCode = "";
+  currentAvailableBranches = [];
   if (els.branchSelectorPanel) els.branchSelectorPanel.hidden = true;
+  if (els.branchSelectorSearch) {
+    els.branchSelectorSearch.value = "";
+    els.branchSelectorSearch.disabled = true;
+  }
   if (els.branchSelector) {
     els.branchSelector.innerHTML = `<option value="">Όλα τα υποκαταστήματα</option>`;
     els.branchSelector.value = "";
   }
+}
+
+function getBranchOptionLabel(branch) {
+  const code = branch?.branch_code || "";
+  const description = branch?.branch_description || "";
+  return [code, description].filter(Boolean).join(" | ") || "Χωρίς στοιχεία υποκαταστήματος";
+}
+
+function renderFilteredBranchOptions(branches, selectedBranchCode = "") {
+  const items = Array.isArray(branches) ? branches : [];
+  if (!els.branchSelector) return;
+
+  els.branchSelector.innerHTML = [
+    `<option value="">Όλα τα υποκαταστήματα</option>`,
+    ...items.map((branch) => {
+      const code = branch.branch_code || "";
+      return `<option value="${escapeHtml(code)}">${escapeHtml(getBranchOptionLabel(branch))}</option>`;
+    }),
+  ].join("");
+
+  const desiredValue = selectedBranchCode || "";
+  const hasDesiredOption = desiredValue === "" || items.some((branch) => (branch.branch_code || "") === desiredValue);
+  els.branchSelector.value = hasDesiredOption ? desiredValue : "";
+}
+
+function filterBranches(term, selectedBranchCode = currentBranchCode) {
+  const normalizedTerm = String(term || "").trim().toLocaleLowerCase("el-GR");
+  if (!normalizedTerm) {
+    renderFilteredBranchOptions(currentAvailableBranches, selectedBranchCode);
+    return currentAvailableBranches;
+  }
+
+  const filtered = currentAvailableBranches.filter((branch) => {
+    const code = String(branch.branch_code || "").toLocaleLowerCase("el-GR");
+    const description = String(branch.branch_description || "").toLocaleLowerCase("el-GR");
+    return code.includes(normalizedTerm) || description.includes(normalizedTerm);
+  });
+
+  renderFilteredBranchOptions(filtered, selectedBranchCode);
+  return filtered;
 }
 
 function getCustomerSearchFilters() {
@@ -475,24 +541,23 @@ function renderBranchSelector(customerCode, branches = [], selectedBranchCode = 
   if (!els.branchSelectorPanel || !els.branchSelector) return;
 
   const items = Array.isArray(branches) ? branches : [];
+  currentAvailableBranches = items;
   if (!customerCode || items.length <= 1) {
     els.branchSelectorPanel.hidden = true;
-    els.branchSelector.innerHTML = `<option value="">Όλα τα υποκαταστήματα</option>`;
-    els.branchSelector.value = "";
+    if (els.branchSelectorSearch) {
+      els.branchSelectorSearch.value = "";
+      els.branchSelectorSearch.disabled = true;
+    }
+    renderFilteredBranchOptions([], "");
     return;
   }
 
   els.branchSelectorPanel.hidden = false;
-  els.branchSelector.innerHTML = [
-    `<option value="">Όλα τα υποκαταστήματα</option>`,
-    ...items.map((branch) => {
-      const code = branch.branch_code || "";
-      const description = branch.branch_description || "";
-      const label = [code, description].filter(Boolean).join(" | ") || "Χωρίς στοιχεία υποκαταστήματος";
-      return `<option value="${escapeHtml(code)}">${escapeHtml(label)}</option>`;
-    }),
-  ].join("");
-  els.branchSelector.value = selectedBranchCode || "";
+  if (els.branchSelectorSearch) {
+    els.branchSelectorSearch.disabled = false;
+    els.branchSelectorSearch.value = "";
+  }
+  renderFilteredBranchOptions(items, selectedBranchCode);
 }
 
 function formatAggregationLevelLabel(level) {
@@ -811,9 +876,9 @@ function renderStats(data) {
             <tr>
               <td>${escapeHtml(item.code)}</td>
               <td>${escapeHtml(item.description)}</td>
-              <td>${escapeHtml(formatNumber(item.qty))}</td>
-              <td>${escapeHtml(formatNumber(item.orders))}</td>
-              <td>${escapeHtml(formatMoney(item.revenue))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.orders))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.revenue))}</td>
             </tr>
           `;
         })
@@ -829,11 +894,11 @@ function renderStats(data) {
         .map((item) => {
           return `
             <tr>
-              <td>${escapeHtml(formatNumber(item.qty))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
               <td>${escapeHtml(item.code)}</td>
               <td>${escapeHtml(item.description)}</td>
-              <td>${escapeHtml(formatMoney(item.revenue))}</td>
-              <td>${escapeHtml(formatMoney(item.avg_unit_price))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.revenue))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.avg_unit_price))}</td>
             </tr>
           `;
         })
@@ -851,11 +916,11 @@ function renderStats(data) {
             <tr>
               <td>${escapeHtml(item.order_id)}</td>
               <td>${escapeHtml(formatDateTime(item.created_at))}</td>
-              <td>${escapeHtml(formatNumber(item.total_lines))}</td>
-              <td>${escapeHtml(formatNumber(item.total_pieces))}</td>
-              <td>${escapeHtml(formatMoney(item.total_net_value))}</td>
-              <td>${escapeHtml(`${item.average_discount_pct}%`)}</td>
-              <td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
+              <td class="admin-table-number">${escapeHtml(`${item.average_discount_pct}%`)}</td>
+              <td class="admin-table-action">
                 <button
                   type="button"
                   class="btn ghost admin-order-select"
@@ -877,6 +942,7 @@ function renderStats(data) {
   renderSelectedOrderDetails();
   els.emptyState.hidden = true;
   els.statsPanel.hidden = false;
+  setSearchPanelCollapsed(true);
 }
 
 async function refreshSession(options = {}) {
@@ -921,8 +987,9 @@ async function handleLogin(event) {
     resetSearchSuggestions();
     resetSearchResults();
     resetStats();
+    setSearchPanelCollapsed(false);
     els.password.value = "";
-    els.customerNameQuery.focus();
+    focusPrimarySearchField();
     setStatus("Η σύνδεση ολοκληρώθηκε.", "ok");
   } catch (error) {
     setStatus(`Η σύνδεση απέτυχε: ${error.message}`, "error");
@@ -940,6 +1007,7 @@ async function handleLogout() {
     resetSearchSuggestions();
     resetSearchResults();
     resetStats();
+    setSearchPanelCollapsed(false);
     els.username.focus();
     setStatus("Η αποσύνδεση ολοκληρώθηκε.", "ok");
   } catch (error) {
@@ -1021,8 +1089,9 @@ function clearCustomerStats() {
   resetSearchSuggestions();
   resetSearchResults();
   resetStats();
+  setSearchPanelCollapsed(false);
   setStatus("");
-  els.customerNameQuery.focus();
+  focusPrimarySearchField();
 }
 
 async function selectSuggestion(index) {
@@ -1035,7 +1104,55 @@ async function selectSuggestion(index) {
 function handleBranchSelectionChange() {
   if (!currentCustomerCode) return;
   const branchCode = els.branchSelector?.value || "";
+  if (els.branchSelectorSearch) {
+    const selectedBranch = currentAvailableBranches.find((branch) => (branch.branch_code || "") === branchCode);
+    els.branchSelectorSearch.value = branchCode ? getBranchOptionLabel(selectedBranch) : "";
+  }
   fetchCustomerStats(currentCustomerCode, branchCode);
+}
+
+function handleBranchSearchInput() {
+  if (!currentAvailableBranches.length) return;
+  filterBranches(els.branchSelectorSearch?.value || "");
+}
+
+function handleBranchSearchKeydown(event) {
+  if (!currentAvailableBranches.length) return;
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    els.branchSelector?.focus();
+    if (els.branchSelector) {
+      const nextIndex = Math.min(els.branchSelector.selectedIndex + 1, els.branchSelector.options.length - 1);
+      els.branchSelector.selectedIndex = Math.max(nextIndex, 0);
+    }
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    const filtered = filterBranches(els.branchSelectorSearch?.value || "", "");
+    const firstBranch = filtered[0];
+    const branchCode = firstBranch?.branch_code || "";
+    if (els.branchSelector) {
+      els.branchSelector.value = branchCode;
+    }
+    fetchCustomerStats(currentCustomerCode, branchCode);
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    if (els.branchSelectorSearch) {
+      els.branchSelectorSearch.value = "";
+    }
+    filterBranches("", currentBranchCode);
+  }
+}
+
+function expandSearchPanel() {
+  setSearchPanelCollapsed(false);
+  focusPrimarySearchField();
 }
 
 function handleSearchFieldKeydown(event) {
@@ -1071,7 +1188,10 @@ els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
 els.customerSearchForm?.addEventListener("submit", searchCustomers);
 els.clearStatsBtn?.addEventListener("click", clearCustomerStats);
+els.expandSearchPanelBtn?.addEventListener("click", expandSearchPanel);
 els.branchSelector?.addEventListener("change", handleBranchSelectionChange);
+els.branchSelectorSearch?.addEventListener("input", handleBranchSearchInput);
+els.branchSelectorSearch?.addEventListener("keydown", handleBranchSearchKeydown);
 [
   els.customerNameQuery,
   els.customerCodeQuery,
@@ -1123,9 +1243,10 @@ els.recentOrdersBody?.addEventListener("click", (event) => {
 resetStats();
 resetSearchResults();
 resetSearchSuggestions();
+setSearchPanelCollapsed(false);
 refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
-    els.customerNameQuery.focus();
+    focusPrimarySearchField();
   } else {
     els.username.focus();
   }

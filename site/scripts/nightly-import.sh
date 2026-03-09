@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # Nightly Entersoft import runner for Plesk Scheduled Tasks.
-# Run with: /bin/bash /var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/scripts/nightly-import.sh
+# Run with: /bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/nightly-import.sh
 
-APP_ROOT="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site"
-DAILY_INFO_FILE="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/backend/today.csv"
+APP_ROOT="/var/www/vhosts/viomes.gr/orders.viomes.gr/site"
+DAILY_INFO_FILE="/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/today.csv"
 LOCK_FILE="/tmp/viomes-nightly-import.lock"
-LOG_DIR="/var/www/vhosts/viomes.gr/orders-test.viomes.gr/site/logs"
+LOG_DIR="/var/www/vhosts/viomes.gr/orders.viomes.gr/site/logs"
 IMPORT_RUNNER_JS="$APP_ROOT/scripts/run-entersoft-import.js"
 
 # DB settings (server-local MySQL)
