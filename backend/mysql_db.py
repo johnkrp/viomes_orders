@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import List
 
 import pymysql
 from pymysql.cursors import DictCursor
@@ -100,7 +101,7 @@ def _ensure_column_type(cur, table: str, column: str, ddl: str) -> None:
     cur.execute(f"ALTER TABLE {table} MODIFY COLUMN {column} {ddl}")
 
 
-def _load_sql_statements(path: Path) -> list[str]:
+def _load_sql_statements(path: Path) -> List[str]:
     content = path.read_text(encoding="utf-8")
     return [statement.strip() for statement in content.split(";") if statement.strip()]
 

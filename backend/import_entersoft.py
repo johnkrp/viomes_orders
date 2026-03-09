@@ -5,7 +5,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 from mysql_db import get_conn, init_schema
 
@@ -89,7 +89,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def describe_source_files(sales_files) -> tuple[str, str]:
+def describe_source_files(sales_files) -> Tuple[str, str]:
     files = []
     overall_digest = hashlib.sha256()
 
