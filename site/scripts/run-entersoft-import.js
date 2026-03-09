@@ -6,11 +6,6 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const importerPath = path.join(__dirname, "..", "..", "backend", "import_entersoft.py");
-const timeoutSeconds = Math.max(
-  Number(process.env.ENTERSOFT_IMPORT_TIMEOUT_SECONDS || process.env.IMPORT_TIMEOUT_SECONDS || 1800),
-  30,
-);
-const timeoutMs = timeoutSeconds * 1000;
 
 function parseArgs(argv) {
   const args = {};
@@ -27,6 +22,19 @@ function parseArgs(argv) {
 
 const cli = parseArgs(process.argv.slice(2));
 const requestedMode = cli.mode || process.env.ENTERSOFT_IMPORT_MODE || "incremental";
+const hasExplicitSalesFiles = Boolean(
+  String(cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES || "").trim(),
+);
+const defaultTimeoutSeconds = hasExplicitSalesFiles || requestedMode === "full_refresh" ? 10800 : 1800;
+const timeoutSeconds = Math.max(
+  Number(
+    process.env.ENTERSOFT_IMPORT_TIMEOUT_SECONDS ||
+      process.env.IMPORT_TIMEOUT_SECONDS ||
+      defaultTimeoutSeconds,
+  ),
+  30,
+);
+const timeoutMs = timeoutSeconds * 1000;
 const logDir = process.env.ENTERSOFT_IMPORT_LOG_DIR || path.join(__dirname, "..", "logs", "imports");
 
 function slugify(value) {
@@ -94,6 +102,7 @@ if (missing.length) {
 
 function runPython(executable) {
   writeLog(`[import] log file: ${logFile}`);
+  writeLog(`[import] mode=${requestedMode} default_timeout=${defaultTimeoutSeconds}s`);
   writeLog(`[import] launching ${executable} with timeout=${timeoutSeconds}s`);
   return spawnSync(executable, ["-u", importerPath], {
     stdio: "pipe",

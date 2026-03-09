@@ -9,6 +9,7 @@ Operational scripts used by Plesk/local maintenance.
   - Supports DB args and import mode.
   - Creates a timestamped log file under `site/logs/imports/` by default.
   - Honors `ENTERSOFT_IMPORT_LOG_DIR` and `ENTERSOFT_IMPORT_LOG_FILE` when set.
+  - Uses an internal default timeout of `1800s` for daily/incremental runs and `10800s` for file-based/full-reload runs unless an env override is provided.
 
 - `check-import-integrity.js`
   - Verifies imported row counts, duplicate logical sales lines, and imported-order collisions.
