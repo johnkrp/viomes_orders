@@ -91,7 +91,35 @@ function buildImportedBranchClause(branchCode, alias = "") {
   };
 }
 
-async function loadImportedCustomerBranches(db, customerCode) {
+function buildImportedBranchScopeClause(scope = {}, alias = "") {
+  const prefix = alias ? `${alias}.` : "";
+  const branchCode = String(scope?.branchCode || "").trim();
+  const branchDescription = String(scope?.branchDescription || "").trim();
+  const parts = [];
+  const params = [];
+
+  if (branchCode) {
+    parts.push(`${prefix}branch_code LIKE ?`);
+    params.push(`%${branchCode}%`);
+  }
+
+  if (branchDescription) {
+    parts.push(`${prefix}branch_description LIKE ?`);
+    params.push(`%${branchDescription}%`);
+  }
+
+  if (!parts.length) {
+    return { clause: "", params: [] };
+  }
+
+  return {
+    clause: ` AND ${parts.join(" AND ")}`,
+    params,
+  };
+}
+
+async function loadImportedCustomerBranches(db, customerCode, scope = {}) {
+  const branchScope = buildImportedBranchScopeClause(scope);
   return db.all(
     `
       SELECT
@@ -103,11 +131,12 @@ async function loadImportedCustomerBranches(db, customerCode) {
         MAX(order_date) AS last_order_date
       FROM imported_sales_lines
       WHERE customer_code = ?
+        ${branchScope.clause}
         AND (COALESCE(branch_code, '') <> '' OR COALESCE(branch_description, '') <> '')
       GROUP BY COALESCE(branch_code, ''), COALESCE(branch_description, '')
       ORDER BY branch_description ASC, branch_code ASC
     `,
-    [customerCode],
+    [customerCode, ...branchScope.params],
   );
 }
 
@@ -123,6 +152,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
     async getCustomerStats(customerCode, options = {}) {
       const code = ensureCustomerCode(customerCode);
       const selectedBranchCode = String(options?.branchCode || "").trim() || null;
+      const branchScopeCode = String(options?.branchScopeCode || "").trim() || null;
+      const branchScopeDescription = String(options?.branchScopeDescription || "").trim() || null;
       const useImportedData = await hasImportedData(db);
       const now = new Date();
 
@@ -347,8 +378,17 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         };
       }
 
-      const availableBranches = await loadImportedCustomerBranches(db, code);
-      const branchFilter = buildImportedBranchClause(selectedBranchCode);
+      const branchScope = buildImportedBranchScopeClause({
+        branchCode: branchScopeCode,
+        branchDescription: branchScopeDescription,
+      });
+      const availableBranches = await loadImportedCustomerBranches(db, code, {
+        branchCode: branchScopeCode,
+        branchDescription: branchScopeDescription,
+      });
+      const importedDataFilter = selectedBranchCode
+        ? buildImportedBranchClause(selectedBranchCode)
+        : branchScope;
 
       const customer = await db.get(
         `
@@ -361,10 +401,10 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             ${selectedBranchCode ? "MAX(branch_code)" : "NULL"} AS branch_code,
             ${selectedBranchCode ? "MAX(branch_description)" : "NULL"} AS branch_description
           FROM imported_sales_lines
-          WHERE customer_code = ?${branchFilter.clause}
+          WHERE customer_code = ?${importedDataFilter.clause}
           GROUP BY customer_code
         `,
-        [code, ...branchFilter.params],
+        [code, ...importedDataFilter.params],
       );
 
       if (!customer) {
@@ -385,11 +425,11 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               COALESCE(SUM(qty_base), 0) AS total_pieces,
               COALESCE(SUM(net_value), 0) AS total_net_value
             FROM imported_sales_lines
-            WHERE customer_code = ?${branchFilter.clause}
+            WHERE customer_code = ?${importedDataFilter.clause}
             GROUP BY document_no, order_date
           ) order_totals
         `,
-        [code, ...branchFilter.params],
+        [code, ...importedDataFilter.params],
       );
       const revenueWindows = await db.get(
         `
@@ -398,14 +438,14 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_6m,
             COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_12m
           FROM imported_sales_lines
-          WHERE customer_code = ?${branchFilter.clause}
+          WHERE customer_code = ?${importedDataFilter.clause}
         `,
         [
           buildCutoffDateString(now, 90),
           buildCutoffDateString(now, 180),
           buildCutoffDateString(now, 365),
           code,
-          ...branchFilter.params,
+          ...importedDataFilter.params,
         ],
       );
 
@@ -422,11 +462,11 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               ELSE 0
             END AS avg_unit_price
           FROM imported_sales_lines
-          WHERE customer_code = ?${branchFilter.clause}
+          WHERE customer_code = ?${importedDataFilter.clause}
           GROUP BY item_code
           ORDER BY item_code ASC
         `,
-        [code, ...branchFilter.params],
+        [code, ...importedDataFilter.params],
       );
 
       const topProductsByQty = [...allProductSales]
@@ -464,12 +504,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             COALESCE(SUM(net_value), 0) AS total_net_value,
             0 AS average_discount_pct
           FROM imported_sales_lines
-          WHERE customer_code = ?${branchFilter.clause}
+          WHERE customer_code = ?${importedDataFilter.clause}
           GROUP BY customer_code, document_no, order_date
           ORDER BY order_date DESC, document_no DESC
           LIMIT 10
         `,
-        [code, ...branchFilter.params],
+        [code, ...importedDataFilter.params],
       );
 
       const detailedOrderHeaders = await db.all(
@@ -483,12 +523,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             COALESCE(SUM(net_value), 0) AS total_net_value,
             0 AS average_discount_pct
           FROM imported_sales_lines
-          WHERE customer_code = ?${branchFilter.clause}
+          WHERE customer_code = ?${importedDataFilter.clause}
           GROUP BY customer_code, document_no, order_date
           ORDER BY order_date DESC, document_no DESC
           LIMIT 6
         `,
-        [code, ...branchFilter.params],
+        [code, ...importedDataFilter.params],
       );
 
       const detailedOrders = [];
@@ -504,14 +544,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               net_value AS line_net_value
             FROM imported_sales_lines
             WHERE customer_code = ?
-              ${selectedBranchCode ? "AND branch_code = ?" : ""}
+              ${importedDataFilter.clause}
               AND document_no = ?
               AND order_date = ?
             ORDER BY item_code ASC
           `,
-          selectedBranchCode
-            ? [code, selectedBranchCode, order.document_no, order.created_at]
-            : [code, order.document_no, order.created_at],
+          [code, ...importedDataFilter.params, order.document_no, order.created_at],
         );
 
         detailedOrders.push({
@@ -544,7 +582,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             COALESCE(SUM(qty_base), 0) AS pieces
           FROM imported_sales_lines
           WHERE customer_code = ?
-            AND order_year = ?${selectedBranchCode ? "\n            AND branch_code = ?" : ""}
+            AND order_year = ?${importedDataFilter.clause}
           GROUP BY order_month
           ORDER BY order_month ASC
         `;
@@ -552,7 +590,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
       for (const year of [olderYear, previousYear, currentYear]) {
         const rows = await db.all(
           monthlyYearQuery,
-          selectedBranchCode ? [code, year, selectedBranchCode] : [code, year],
+          [code, year, ...importedDataFilter.params],
         );
         monthlyYearlySeries.push({ year, months: mergeMonthlyRows(rows) });
       }

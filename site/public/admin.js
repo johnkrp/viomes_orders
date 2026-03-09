@@ -39,6 +39,12 @@ let currentProductSalesPage = 1;
 let currentCustomerCode = null;
 let currentBranchCode = "";
 let currentAvailableBranches = [];
+let currentCustomerSearchFilters = {
+  customer_name: "",
+  customer_code: "",
+  branch_code: "",
+  branch_description: "",
+};
 
 const els = {
   adminStatus: document.getElementById("adminStatus"),
@@ -342,6 +348,15 @@ function fillSearchFieldsFromItem(item) {
   if (els.customerCodeQuery) els.customerCodeQuery.value = item?.code || "";
   if (els.branchCodeQuery) els.branchCodeQuery.value = item?.branch_code || "";
   if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = item?.branch_description || "";
+}
+
+function setCurrentCustomerSearchFilters(filters = {}) {
+  currentCustomerSearchFilters = {
+    customer_name: String(filters.customer_name || "").trim(),
+    customer_code: String(filters.customer_code || "").trim(),
+    branch_code: String(filters.branch_code || "").trim(),
+    branch_description: String(filters.branch_description || "").trim(),
+  };
 }
 
 async function performCustomerSearch(filters, options = {}) {
@@ -930,7 +945,7 @@ async function handleLogout() {
   }
 }
 
-async function fetchCustomerStats(customerCode, branchCode = "") {
+async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = currentCustomerSearchFilters) {
   setStatus("");
 
   if (!customerCode) {
@@ -942,16 +957,25 @@ async function fetchCustomerStats(customerCode, branchCode = "") {
   try {
     const params = new URLSearchParams();
     if (branchCode) params.set("branch_code", branchCode);
+    const normalizedScopeFilters = {
+      branch_code: String(scopeFilters?.branch_code || "").trim(),
+      branch_description: String(scopeFilters?.branch_description || "").trim(),
+    };
+    if (normalizedScopeFilters.branch_code) {
+      params.set("filter_branch_code", normalizedScopeFilters.branch_code);
+    }
+    if (normalizedScopeFilters.branch_description) {
+      params.set("filter_branch_description", normalizedScopeFilters.branch_description);
+    }
     const payload = await apiFetch(
       `/api/admin/customers/${encodeURIComponent(customerCode)}/stats${params.toString() ? `?${params.toString()}` : ""}`,
       { method: "GET" },
     );
     renderStats(payload);
-    fillSearchFieldsFromItem({
-      code: payload?.customer?.code || customerCode,
-      name: payload?.customer?.name || "",
-      branch_code: payload?.customer?.branch_code || "",
-      branch_description: payload?.customer?.branch_description || "",
+    setCurrentCustomerSearchFilters({
+      ...currentCustomerSearchFilters,
+      ...scopeFilters,
+      customer_code: payload?.customer?.code || customerCode,
     });
     currentCustomerCode = payload?.customer?.code || customerCode;
     currentBranchCode = payload?.customer?.branch_code || branchCode || "";
@@ -979,6 +1003,7 @@ async function searchCustomers(event) {
 
   els.searchCustomersBtn.disabled = true;
   try {
+    setCurrentCustomerSearchFilters(filters);
     resetSearchSuggestions();
     await performCustomerSearch(filters, {
       limit: 20,
@@ -999,6 +1024,7 @@ function clearCustomerStats() {
   if (els.customerCodeQuery) els.customerCodeQuery.value = "";
   if (els.branchCodeQuery) els.branchCodeQuery.value = "";
   if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = "";
+  setCurrentCustomerSearchFilters({});
   resetSearchSuggestions();
   resetSearchResults();
   resetStats();
@@ -1014,7 +1040,7 @@ function handleBranchSelectionChange() {
     const selectedBranch = currentAvailableBranches.find((branch) => (branch.branch_code || "") === branchCode);
     els.branchSelectorSearch.value = branchCode ? getBranchOptionLabel(selectedBranch) : "";
   }
-  fetchCustomerStats(currentCustomerCode, branchCode);
+  fetchCustomerStats(currentCustomerCode, branchCode, currentCustomerSearchFilters);
 }
 
 function handleBranchSearchInput() {
@@ -1043,7 +1069,7 @@ function handleBranchSearchKeydown(event) {
     if (els.branchSelector) {
       els.branchSelector.value = branchCode;
     }
-    fetchCustomerStats(currentCustomerCode, branchCode);
+    fetchCustomerStats(currentCustomerCode, branchCode, currentCustomerSearchFilters);
     return;
   }
 
@@ -1073,7 +1099,7 @@ els.searchResultsBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-customer-code]");
   if (!button) return;
 
-  fetchCustomerStats(button.getAttribute("data-customer-code"));
+  fetchCustomerStats(button.getAttribute("data-customer-code"), "", currentCustomerSearchFilters);
 });
 els.productSalesMetric?.addEventListener("change", () => {
   currentProductSalesPage = 1;

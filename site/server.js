@@ -43,6 +43,15 @@ let db;
 let dbClient;
 let customerStatsProvider;
 
+app.use((req, res, next) => {
+  if (req.path === "/admin.html" || req.path === "/admin.js" || req.path === "/styles.css") {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+  next();
+});
+
 app.use(
   cors({
     origin: true,
@@ -451,6 +460,8 @@ app.get("/api/admin/customers/:code/stats", requireAdmin, async (req, res) => {
   try {
     const payload = await customerStatsProvider.getCustomerStats(req.params.code, {
       branchCode: String(req.query.branch_code || "").trim() || null,
+      branchScopeCode: String(req.query.filter_branch_code || "").trim() || null,
+      branchScopeDescription: String(req.query.filter_branch_description || "").trim() || null,
     });
     res.json(payload);
   } catch (error) {

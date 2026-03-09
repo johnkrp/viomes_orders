@@ -234,6 +234,16 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(branchPayload.customer.branch_code, "B1");
     assert.equal(branchPayload.summary.total_orders, 1);
     assert.equal(branchPayload.summary.total_revenue, 175.6);
+
+    const scopedPayload = await provider.getCustomerStats("C001", {
+      branchScopeDescription: "Branch 1",
+    });
+    assert.equal(scopedPayload.customer.aggregation_level, "customer");
+    assert.equal(scopedPayload.customer.branch_code, null);
+    assert.equal(scopedPayload.available_branches.length, 1);
+    assert.equal(scopedPayload.available_branches[0].branch_code, "B1");
+    assert.equal(scopedPayload.summary.total_orders, 1);
+    assert.equal(scopedPayload.summary.total_revenue, 175.6);
   } finally {
     await db.close();
   }
