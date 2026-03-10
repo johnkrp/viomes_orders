@@ -29,8 +29,19 @@ export function resolveAllowedCorsOrigins({ nodeEnv, corsAllowedOrigins, port } 
   return origins;
 }
 
-export function isOriginAllowed(origin, allowedOrigins = []) {
+export function getRequestOrigin(req) {
+  const forwardedProto = String(req?.headers?.["x-forwarded-proto"] || "")
+    .split(",")[0]
+    .trim();
+  const host = String(req?.headers?.host || "").trim();
+  if (!host) return "";
+  const protocol = forwardedProto || (req?.secure ? "https" : "http");
+  return `${protocol}://${host}`;
+}
+
+export function isOriginAllowed(origin, allowedOrigins = [], req = null) {
   if (!origin) return true;
+  if (req && origin === getRequestOrigin(req)) return true;
   return allowedOrigins.includes(origin);
 }
 
@@ -39,8 +50,8 @@ export function buildCorsOriginDelegate({ nodeEnv, corsAllowedOrigins, port } = 
 
   return {
     allowedOrigins,
-    origin(origin, callback) {
-      if (isOriginAllowed(origin, allowedOrigins)) {
+    origin(origin, req, callback) {
+      if (isOriginAllowed(origin, allowedOrigins, req)) {
         callback(null, true);
         return;
       }

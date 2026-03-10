@@ -154,10 +154,11 @@ export function createApp({
   });
 
   app.use(
-    cors({
-      origin: corsPolicy.origin,
-      credentials: true,
-    }),
+    (req, res, next) =>
+      cors({
+        origin: (origin, callback) => corsPolicy.origin(origin, req, callback),
+        credentials: true,
+      })(req, res, next),
   );
   app.use(express.json());
   app.use(cookieParser());

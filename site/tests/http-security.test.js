@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   buildCorsOriginDelegate,
   buildSessionCookieOptions,
+  getRequestOrigin,
   isOriginAllowed,
   resolveAllowedCorsOrigins,
 } from "../lib/http-security.js";
@@ -34,6 +35,31 @@ test("isOriginAllowed permits same-origin requests without Origin and blocks unk
   assert.equal(isOriginAllowed("https://evil.example", ["https://orders.viomes.gr"]), false);
 });
 
+test("getRequestOrigin derives the effective request origin from forwarded proto and host", () => {
+  const req = {
+    secure: false,
+    headers: {
+      host: "orders.viomes.gr",
+      "x-forwarded-proto": "https",
+    },
+  };
+
+  assert.equal(getRequestOrigin(req), "https://orders.viomes.gr");
+});
+
+test("isOriginAllowed permits same-origin browser requests in production without explicit CORS env", () => {
+  const req = {
+    secure: false,
+    headers: {
+      host: "orders.viomes.gr",
+      "x-forwarded-proto": "https",
+    },
+  };
+
+  assert.equal(isOriginAllowed("https://orders.viomes.gr", [], req), true);
+  assert.equal(isOriginAllowed("https://evil.example", [], req), false);
+});
+
 test("buildCorsOriginDelegate returns an error for disallowed origins", async () => {
   const delegate = buildCorsOriginDelegate({
     nodeEnv: "production",
@@ -42,7 +68,7 @@ test("buildCorsOriginDelegate returns an error for disallowed origins", async ()
   });
 
   await new Promise((resolve, reject) => {
-    delegate.origin("https://evil.example", (error, allowed) => {
+    delegate.origin("https://evil.example", { headers: { host: "orders.viomes.gr" } }, (error, allowed) => {
       try {
         assert.match(String(error), /CORS origin not allowed/);
         assert.equal(allowed, undefined);
@@ -51,6 +77,30 @@ test("buildCorsOriginDelegate returns an error for disallowed origins", async ()
         reject(assertionError);
       }
     });
+  });
+});
+
+test("buildCorsOriginDelegate permits same-origin browser requests without explicit production allowlist", async () => {
+  const delegate = buildCorsOriginDelegate({
+    nodeEnv: "production",
+    corsAllowedOrigins: "",
+    port: 3001,
+  });
+
+  await new Promise((resolve, reject) => {
+    delegate.origin(
+      "https://orders.viomes.gr",
+      { secure: false, headers: { host: "orders.viomes.gr", "x-forwarded-proto": "https" } },
+      (error, allowed) => {
+        try {
+          assert.equal(error, null);
+          assert.equal(allowed, true);
+          resolve();
+        } catch (assertionError) {
+          reject(assertionError);
+        }
+      },
+    );
   });
 });
 
