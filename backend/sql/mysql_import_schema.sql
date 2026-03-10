@@ -59,7 +59,10 @@ CREATE TABLE IF NOT EXISTS imported_sales_lines (
   note_1 VARCHAR(255),
   UNIQUE KEY uq_imported_sales_line(
     source_file, document_no, item_code, customer_code, delivery_code, net_value, qty
-  )
+  ),
+  KEY idx_imported_sales_customer_date_doc(customer_code, order_date, document_no),
+  KEY idx_imported_sales_customer_year_month(customer_code, order_year, order_month),
+  KEY idx_imported_sales_customer_item(customer_code, item_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS imported_orders (

@@ -167,6 +167,24 @@ def init_schema() -> None:
     )
     _ensure_index(
         cur,
+        "imported_sales_lines",
+        "idx_imported_sales_customer_date_doc",
+        "(customer_code, order_date, document_no)",
+    )
+    _ensure_index(
+        cur,
+        "imported_sales_lines",
+        "idx_imported_sales_customer_year_month",
+        "(customer_code, order_year, order_month)",
+    )
+    _ensure_index(
+        cur,
+        "imported_sales_lines",
+        "idx_imported_sales_customer_item",
+        "(customer_code, item_code)",
+    )
+    _ensure_index(
+        cur,
         "imported_orders",
         "idx_imported_orders_customer_document_date",
         "(customer_code, document_no, created_at)",

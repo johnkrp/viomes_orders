@@ -591,6 +591,27 @@ export async function initDatabaseSchema({ db, kind }) {
     "idx_imported_sales_line_lookup",
     "(order_date, document_no, item_code, customer_code, delivery_code)",
   );
+  await ensureIndex(
+    db,
+    kind,
+    "imported_sales_lines",
+    "idx_imported_sales_customer_date_doc",
+    "(customer_code, order_date, document_no)",
+  );
+  await ensureIndex(
+    db,
+    kind,
+    "imported_sales_lines",
+    "idx_imported_sales_customer_year_month",
+    "(customer_code, order_year, order_month)",
+  );
+  await ensureIndex(
+    db,
+    kind,
+    "imported_sales_lines",
+    "idx_imported_sales_customer_item",
+    "(customer_code, item_code)",
+  );
   await ensureColumn(
     db,
     kind,

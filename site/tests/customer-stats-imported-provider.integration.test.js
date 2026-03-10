@@ -152,6 +152,31 @@ test("SQLite-backed imported stats integration returns the expected contract", a
 
     await db.run(
       `
+        INSERT INTO imported_customer_branches(customer_code, customer_name, branch_code, branch_description, orders, revenue, last_order_date, source_file)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "C001",
+        "Alpha Store",
+        "B1",
+        "Branch 1",
+        1,
+        175.6,
+        `${currentYear}-02-15`,
+        "2026.CSV",
+        "C001",
+        "Alpha Store",
+        "B2",
+        "Branch 2",
+        1,
+        70,
+        `${previousYear}-12-10`,
+        "2025.CSV",
+      ],
+    );
+
+    await db.run(
+      `
         INSERT INTO imported_sales_lines(
           source_file, order_date, order_year, order_month, document_no, document_type,
           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
@@ -226,7 +251,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
     assert.equal(payload.monthly_sales.yearly_series.length, 3);
     assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
-    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 0);
+    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
     assert.equal(payload.detailed_orders[0].lines[0].code, "P1");
 
     const branchPayload = await provider.getCustomerStats("C001", { branchCode: "B1" });

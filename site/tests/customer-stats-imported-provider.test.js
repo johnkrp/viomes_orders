@@ -10,6 +10,18 @@ function createImportedDbFixture() {
   return {
     async get(sql, params = []) {
       if (sql.includes("SELECT COUNT(*) AS n FROM imported_sales_lines")) return { n: 3 };
+      if (sql.includes("FROM imported_customers")) {
+        if (params[0] === "MISS") return undefined;
+        return {
+          code: "C001",
+          name: "Alpha Store",
+          email: null,
+          delivery_code: "D1",
+          delivery_description: "Main store",
+          branch_code: null,
+          branch_description: null,
+        };
+      }
       if (sql.includes("MAX(delivery_code) AS delivery_code") && sql.includes("FROM imported_sales_lines")) {
         if (params[0] === "MISS") return undefined;
         return {
@@ -22,12 +34,27 @@ function createImportedDbFixture() {
           branch_description: "Branch 1",
         };
       }
+      if (sql.includes("FROM imported_orders")) {
+        return {
+          total_orders: 2,
+          total_pieces: 15,
+          total_revenue: 245.6,
+          last_order_date: `${currentYear}-02-15`,
+        };
+      }
       if (sql.includes("COUNT(*) AS total_orders") && sql.includes("FROM (")) {
         return {
           total_orders: 2,
           total_pieces: 15,
           total_revenue: 245.6,
           last_order_date: `${currentYear}-02-15`,
+        };
+      }
+      if (sql.includes("AS revenue_3m") && sql.includes("FROM imported_orders")) {
+        return {
+          revenue_3m: 200,
+          revenue_6m: 245.6,
+          revenue_12m: 245.6,
         };
       }
       if (sql.includes("AS revenue_3m") && sql.includes("FROM imported_sales_lines")) {
@@ -41,12 +68,11 @@ function createImportedDbFixture() {
     },
 
     async all(sql, params = []) {
-      if (sql.includes("COUNT(*) AS raw_rows") && sql.includes("GROUP BY COALESCE(branch_code")) {
+      if (sql.includes("FROM imported_customer_branches")) {
         return [
           {
             branch_code: "B1",
             branch_description: "Branch 1",
-            raw_rows: 2,
             orders: 1,
             revenue: 175.6,
             last_order_date: `${currentYear}-02-15`,
@@ -54,10 +80,29 @@ function createImportedDbFixture() {
           {
             branch_code: "B2",
             branch_description: "Branch 2",
-            raw_rows: 1,
             orders: 1,
             revenue: 70,
             last_order_date: `${previousYear}-12-10`,
+          },
+        ];
+      }
+      if (sql.includes("FROM imported_product_sales")) {
+        return [
+          {
+            code: "P2",
+            description: "Second",
+            pieces: 5,
+            orders: 1,
+            revenue: 70,
+            avg_unit_price: 14,
+          },
+          {
+            code: "P1",
+            description: "First",
+            pieces: 10,
+            orders: 2,
+            revenue: 175.6,
+            avg_unit_price: 17.56,
           },
         ];
       }
@@ -78,6 +123,28 @@ function createImportedDbFixture() {
             orders: 2,
             revenue: 175.6,
             avg_unit_price: 17.56,
+          },
+        ];
+      }
+      if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 10")) {
+        return [
+          {
+            order_id: "C001::2026-02-15::INV-2",
+            document_no: "INV-2",
+            created_at: `${currentYear}-02-15`,
+            total_lines: 1,
+            total_pieces: 10,
+            total_net_value: 175.6,
+            average_discount_pct: 0,
+          },
+          {
+            order_id: "C001::2025-12-10::INV-1",
+            document_no: "INV-1",
+            created_at: `${previousYear}-12-10`,
+            total_lines: 2,
+            total_pieces: 5,
+            total_net_value: 70,
+            average_discount_pct: 0,
           },
         ];
       }
@@ -127,6 +194,11 @@ function createImportedDbFixture() {
             line_net_value: 175.6,
           },
         ];
+      }
+      if (sql.includes("FROM imported_monthly_sales")) {
+        if (params[1] === olderYear) return [{ month: 1, revenue: 25, pieces: 2 }];
+        if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
+        if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
       }
       if (sql.includes("GROUP BY order_month")) {
         if (params[1] === olderYear) return [{ month: 1, revenue: 25, pieces: 2 }];
