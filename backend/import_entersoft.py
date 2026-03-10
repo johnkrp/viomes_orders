@@ -21,6 +21,7 @@ IMPORT_SCHEMA_VERSION = "import-ledger-v2"
 RAW_FACT_TABLE = "imported_sales_lines"
 PROJECTION_TABLES = [
     "imported_customers",
+    "imported_customer_branches",
     "imported_orders",
     "imported_monthly_sales",
     "imported_product_sales",
@@ -258,6 +259,34 @@ def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success",
 
 
 def rebuild_customers_from_sales(cur) -> None:
+    execute_step(cur, "truncate imported_customer_branches", "DELETE FROM imported_customer_branches")
+    execute_step(
+        cur,
+        "rebuild imported_customer_branches from sales",
+        """
+        INSERT INTO imported_customer_branches(
+          customer_code,
+          customer_name,
+          branch_code,
+          branch_description,
+          orders,
+          revenue,
+          last_order_date,
+          source_file
+        )
+        SELECT
+          customer_code,
+          COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
+          COALESCE(branch_code, '') AS branch_code,
+          COALESCE(branch_description, '') AS branch_description,
+          COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+          COALESCE(SUM(net_value), 0) AS revenue,
+          MAX(order_date) AS last_order_date,
+          MAX(source_file) AS source_file
+        FROM imported_sales_lines
+        GROUP BY customer_code, COALESCE(branch_code, ''), COALESCE(branch_description, '')
+        """,
+    )
     execute_step(cur, "truncate imported_customers", "DELETE FROM imported_customers")
     execute_step(
         cur,

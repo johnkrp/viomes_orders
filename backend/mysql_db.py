@@ -130,6 +130,11 @@ def init_schema() -> None:
     _ensure_column(cur, "imported_orders", "document_no", "document_no VARCHAR(128) NOT NULL DEFAULT ''")
     _ensure_column(cur, "imported_customers", "branch_code", "branch_code VARCHAR(128)")
     _ensure_column(cur, "imported_customers", "branch_description", "branch_description VARCHAR(255)")
+    _ensure_column(cur, "imported_customer_branches", "customer_name", "customer_name VARCHAR(255) NOT NULL")
+    _ensure_column(cur, "imported_customer_branches", "orders", "orders INT NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_customer_branches", "revenue", "revenue DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_customer_branches", "last_order_date", "last_order_date VARCHAR(64)")
+    _ensure_column(cur, "imported_customer_branches", "source_file", "source_file VARCHAR(255)")
     _ensure_column(cur, "import_runs", "import_mode", "import_mode VARCHAR(32) NOT NULL DEFAULT 'incremental'")
     _ensure_column(cur, "import_runs", "source_files_json", "source_files_json LONGTEXT")
     _ensure_column(cur, "import_runs", "source_checksum", "source_checksum VARCHAR(64)")
@@ -142,6 +147,18 @@ def init_schema() -> None:
     _ensure_column(cur, "import_runs", "trigger_source", "trigger_source VARCHAR(64)")
     _ensure_column(cur, "import_runs", "metadata_json", "metadata_json LONGTEXT")
     _ensure_column_type(cur, "imported_orders", "order_id", "VARCHAR(300) NOT NULL")
+    _ensure_index(
+        cur,
+        "imported_customer_branches",
+        "idx_imported_customer_branches_customer_lookup",
+        "(customer_code, branch_code, branch_description)",
+    )
+    _ensure_index(
+        cur,
+        "imported_customer_branches",
+        "idx_imported_customer_branches_name_lookup",
+        "(customer_name(191), branch_description(191))",
+    )
     _ensure_index(
         cur,
         "imported_sales_lines",

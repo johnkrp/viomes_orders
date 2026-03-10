@@ -34,6 +34,17 @@ export function productSalesRow(row) {
   };
 }
 
+export function availableBranchRow(row) {
+  return {
+    branch_code: row.branch_code ?? row.code ?? "",
+    branch_description: row.branch_description ?? row.description ?? "",
+    orders: asInteger(row.orders),
+    revenue: asMoney(row.revenue),
+    raw_rows: asInteger(row.raw_rows),
+    last_order_date: row.last_order_date ?? row.created_at ?? null,
+  };
+}
+
 export function ensureCustomerCode(customerCode) {
   const code = String(customerCode || "").trim();
   if (!code) {
@@ -179,6 +190,8 @@ export function normalizeStatsPayload(payload, customerCode) {
       name: customer.name,
       email: customer.email || null,
       aggregation_level: customer.aggregation_level || "store",
+      branch_code: customer.branch_code || null,
+      branch_description: customer.branch_description || null,
       chain_name: customer.chain_name || null,
     },
     summary: {
@@ -214,6 +227,9 @@ export function normalizeStatsPayload(payload, customerCode) {
       : [],
     top_products_by_value: Array.isArray(payload?.top_products_by_value)
       ? payload.top_products_by_value.map(productStatRow)
+      : [],
+    available_branches: Array.isArray(payload?.available_branches)
+      ? payload.available_branches.map(availableBranchRow)
       : [],
     recent_orders: recentOrders.map((order) => ({
       order_id: order.order_id,

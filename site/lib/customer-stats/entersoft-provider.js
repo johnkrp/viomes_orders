@@ -17,6 +17,20 @@ function buildUrl(baseUrl, pathTemplate, customerCode) {
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+function buildQueryString(options = {}) {
+  const params = new URLSearchParams();
+  const branchCode = String(options.branchCode || "").trim();
+  const branchScopeCode = String(options.branchScopeCode || "").trim();
+  const branchScopeDescription = String(options.branchScopeDescription || "").trim();
+
+  if (branchCode) params.set("branch_code", branchCode);
+  if (branchScopeCode) params.set("filter_branch_code", branchScopeCode);
+  if (branchScopeDescription) params.set("filter_branch_description", branchScopeDescription);
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 function buildHeaders(config) {
   const headers = {
     Accept: "application/json",
@@ -113,6 +127,17 @@ function mapReceivableItems(rows) {
   }));
 }
 
+function mapAvailableBranches(rows) {
+  return (Array.isArray(rows) ? rows : []).map((row) => ({
+    branch_code: row.branch_code ?? row.code ?? "",
+    branch_description: row.branch_description ?? row.description ?? "",
+    orders: Number(row.orders ?? row.order_count ?? 0),
+    revenue: asMoney(row.revenue ?? row.net_value ?? row.value ?? 0),
+    raw_rows: Number(row.raw_rows ?? row.rows ?? 0),
+    last_order_date: row.last_order_date ?? row.created_at ?? row.order_date ?? null,
+  }));
+}
+
 function mapPayload(rawPayload, customerCode, responseShape) {
   if (responseShape === "viomes-admin-stats") {
     return normalizeStatsPayload(rawPayload, customerCode);
@@ -137,6 +162,12 @@ function mapPayload(rawPayload, customerCode, responseShape) {
         name: customer.name ?? customer.customer_name ?? customer.trade_name ?? "",
         email: customer.email ?? customer.email_address ?? null,
         aggregation_level: customer.aggregation_level ?? customer.level ?? "store",
+        branch_code: customer.branch_code ?? customer.store_code ?? customer.branch?.code ?? null,
+        branch_description:
+          customer.branch_description ??
+          customer.store_description ??
+          customer.branch?.description ??
+          null,
         chain_name: customer.chain_name ?? customer.parent_name ?? null,
       },
       summary: {
@@ -185,6 +216,11 @@ function mapPayload(rawPayload, customerCode, responseShape) {
       top_products_by_value: mapProductRows(
         getByPath(root, "top_products_by_value") ?? getByPath(root, "products_by_value"),
       ),
+      available_branches: mapAvailableBranches(
+        getByPath(root, "available_branches") ??
+          getByPath(root, "branches") ??
+          getByPath(root, "customer.available_branches"),
+      ),
       recent_orders: mapRecentOrders(
         getByPath(root, "recent_orders") ?? getByPath(root, "recent_documents"),
       ),
@@ -215,13 +251,14 @@ export function createEntersoftCustomerStatsProvider(options = {}) {
 
   return {
     name: "entersoft",
-    async getCustomerStats(customerCode) {
+    async getCustomerStats(customerCode, requestOptions = {}) {
       const code = ensureCustomerCode(customerCode);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+      const url = `${buildUrl(config.baseUrl, config.pathTemplate, code)}${buildQueryString(requestOptions)}`;
 
       try {
-        const response = await fetch(buildUrl(config.baseUrl, config.pathTemplate, code), {
+        const response = await fetch(url, {
           method: "GET",
           headers: buildHeaders(config),
           signal: controller.signal,

@@ -8,6 +8,8 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
       customer: {
         code: "C001",
         name: "Store 1",
+        branch_code: "B1",
+        branch_description: "Branch 1",
       },
       summary: {
         total_orders: 2,
@@ -30,6 +32,9 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
       receivables: {
         items: [{ document: "INV-1", amount: 10, balance: 3 }],
       },
+      available_branches: [
+        { branch_code: "B1", branch_description: "Branch 1", orders: 2, revenue: 123.456, raw_rows: 4 },
+      ],
       recent_orders: [
         {
           order_id: "A",
@@ -46,6 +51,8 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
 
   assert.equal(payload.customer.code, "C001");
   assert.equal(payload.customer.aggregation_level, "store");
+  assert.equal(payload.customer.branch_code, "B1");
+  assert.equal(payload.customer.branch_description, "Branch 1");
   assert.equal(payload.summary.total_revenue, 123.46);
   assert.equal(payload.monthly_sales.current_year.length, 12);
   assert.deepEqual(payload.monthly_sales.current_year[2], { month: 3, revenue: 100, pieces: 5 });
@@ -70,5 +77,13 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
     open_balance: 3,
     is_overdue: false,
     status: "",
+  });
+  assert.deepEqual(payload.available_branches[0], {
+    branch_code: "B1",
+    branch_description: "Branch 1",
+    orders: 2,
+    revenue: 123.46,
+    raw_rows: 4,
+    last_order_date: null,
   });
 });

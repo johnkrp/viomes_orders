@@ -3,6 +3,7 @@ export const IMPORTED_SALES_ARCHITECTURE = Object.freeze({
   ingestionTables: ["import_runs", "imported_sales_lines"],
   projectionTables: [
     "imported_customers",
+    "imported_customer_branches",
     "imported_orders",
     "imported_monthly_sales",
     "imported_product_sales",
@@ -213,8 +214,33 @@ export async function rebuildImportedSalesData(db) {
   await db.run("DELETE FROM imported_orders");
   await db.run("DELETE FROM imported_monthly_sales");
   await db.run("DELETE FROM imported_product_sales");
+  await db.run("DELETE FROM imported_customer_branches");
   await db.run("DELETE FROM imported_customers");
   await db.run("DELETE FROM customers WHERE source = 'entersoft_import'");
+
+  await db.run(`
+    INSERT INTO imported_customer_branches(
+      customer_code,
+      customer_name,
+      branch_code,
+      branch_description,
+      orders,
+      revenue,
+      last_order_date,
+      source_file
+    )
+    SELECT
+      customer_code,
+      COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
+      COALESCE(branch_code, '') AS branch_code,
+      COALESCE(branch_description, '') AS branch_description,
+      COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+      COALESCE(SUM(net_value), 0) AS revenue,
+      MAX(order_date) AS last_order_date,
+      MAX(source_file) AS source_file
+    FROM imported_sales_lines
+    GROUP BY customer_code, COALESCE(branch_code, ''), COALESCE(branch_description, '')
+  `);
 
   await db.run(`
     INSERT INTO imported_customers(

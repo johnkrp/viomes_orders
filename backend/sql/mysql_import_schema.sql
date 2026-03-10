@@ -19,6 +19,20 @@ CREATE TABLE IF NOT EXISTS imported_customers (
   imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS imported_customer_branches (
+  customer_code VARCHAR(128) NOT NULL,
+  customer_name VARCHAR(255) NOT NULL,
+  branch_code VARCHAR(128) NOT NULL DEFAULT '',
+  branch_description VARCHAR(255) NOT NULL DEFAULT '',
+  orders INT NOT NULL DEFAULT 0,
+  revenue DOUBLE NOT NULL DEFAULT 0,
+  last_order_date VARCHAR(64),
+  source_file VARCHAR(255),
+  imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(customer_code, branch_code, branch_description),
+  KEY idx_imported_customer_branches_name_lookup(customer_name(191), branch_description(191))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS imported_sales_lines (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   source_file VARCHAR(255) NOT NULL,

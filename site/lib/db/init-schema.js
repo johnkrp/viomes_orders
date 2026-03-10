@@ -164,6 +164,20 @@ async function initSqliteSchema(db) {
       )
     `,
     `
+      CREATE TABLE IF NOT EXISTS imported_customer_branches (
+        customer_code TEXT NOT NULL,
+        customer_name TEXT NOT NULL,
+        branch_code TEXT NOT NULL DEFAULT '',
+        branch_description TEXT NOT NULL DEFAULT '',
+        orders INTEGER NOT NULL DEFAULT 0,
+        revenue REAL NOT NULL DEFAULT 0,
+        last_order_date TEXT,
+        source_file TEXT,
+        imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(customer_code, branch_code, branch_description)
+      )
+    `,
+    `
       CREATE TABLE IF NOT EXISTS imported_sales_lines (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         source_file TEXT NOT NULL,
@@ -393,6 +407,57 @@ export async function initDatabaseSchema({ db, kind }) {
   const typeReal = kind === "mysql" ? "DOUBLE" : "REAL";
 
   await ensureColumn(db, kind, "orders", "customer_code", `customer_code ${typeText}`);
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_branches",
+    "customer_name",
+    `customer_name ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"} NOT NULL`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_branches",
+    "orders",
+    `orders ${typeInt} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_branches",
+    "revenue",
+    `revenue ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_branches",
+    "last_order_date",
+    `last_order_date ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_branches",
+    "source_file",
+    `source_file ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"}`,
+  );
+  await ensureIndex(
+    db,
+    kind,
+    "imported_customer_branches",
+    "idx_imported_customer_branches_customer_lookup",
+    "(customer_code, branch_code, branch_description)",
+  );
+  await ensureIndex(
+    db,
+    kind,
+    "imported_customer_branches",
+    "idx_imported_customer_branches_name_lookup",
+    kind === "mysql"
+      ? "(customer_name(191), branch_description(191))"
+      : "(customer_name, branch_description)",
+  );
   await ensureColumn(
     db,
     kind,
