@@ -4,16 +4,20 @@ import {
   DELETE_DUPLICATES_SQL,
   DUPLICATE_GROUP_BY,
   DUPLICATE_SUMMARY_SQL,
+  ensureImportedCustomerBranchProjection,
   getImportedSalesProjectionHealth,
+  IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL,
   IMPORTED_MONTHLY_CARDINALITY_SQL,
   IMPORTED_ORDER_COLLISIONS_SQL,
   IMPORTED_ORDER_CARDINALITY_SQL,
   IMPORTED_PRODUCT_CARDINALITY_SQL,
+  IMPORTED_SALES_LINES_COUNT_SQL,
   IMPORTED_SALES_ARCHITECTURE,
   LATEST_IMPORT_RUN_SQL,
   MISSING_MIRRORED_CUSTOMERS_SQL,
   ORPHAN_MIRRORED_CUSTOMERS_SQL,
   PREVIEW_DUPLICATES_SQL,
+  REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL,
   rebuildImportedSalesData,
 } from "../lib/imported-sales.js";
 
@@ -58,6 +62,67 @@ test("rebuildImportedSalesData runs the expected rebuild sequence", async () => 
   assert.match(executed[9], /^INSERT INTO imported_orders\(/);
   assert.match(executed[10], /^INSERT INTO imported_monthly_sales/);
   assert.match(executed[11], /^INSERT INTO imported_product_sales\(/);
+});
+
+test("ensureImportedCustomerBranchProjection backfills missing branch projection rows", async () => {
+  const executed = [];
+  const db = {
+    async get(sql) {
+      if (sql === IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL) {
+        return executed.includes("DELETE FROM imported_customer_branches")
+          ? { imported_customer_branches_count: 12 }
+          : { imported_customer_branches_count: 0 };
+      }
+      if (sql === IMPORTED_SALES_LINES_COUNT_SQL) {
+        return { imported_sales_lines_count: 25 };
+      }
+      throw new Error(`Unexpected get SQL: ${sql}`);
+    },
+    async run(sql) {
+      executed.push(sql.trim());
+      return { changes: 0 };
+    },
+  };
+
+  const result = await ensureImportedCustomerBranchProjection(db);
+
+  assert.deepEqual(result, {
+    repaired: true,
+    branch_count: 12,
+    sales_line_count: 25,
+  });
+  assert.deepEqual(executed, [
+    "DELETE FROM imported_customer_branches",
+    REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL.trim(),
+  ]);
+});
+
+test("ensureImportedCustomerBranchProjection skips rebuild when branch projection already exists", async () => {
+  let runCalled = false;
+  const db = {
+    async get(sql) {
+      if (sql === IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL) {
+        return { imported_customer_branches_count: 3 };
+      }
+      if (sql === IMPORTED_SALES_LINES_COUNT_SQL) {
+        return { imported_sales_lines_count: 25 };
+      }
+      throw new Error(`Unexpected get SQL: ${sql}`);
+    },
+    async run() {
+      runCalled = true;
+      return { changes: 0 };
+    },
+  };
+
+  const result = await ensureImportedCustomerBranchProjection(db);
+
+  assert.deepEqual(result, {
+    repaired: false,
+    branch_count: 3,
+    sales_line_count: 25,
+  });
+  assert.equal(runCalled, false);
 });
 
 test("getImportedSalesProjectionHealth summarizes invariant and ledger status", async () => {

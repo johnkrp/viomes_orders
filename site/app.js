@@ -10,6 +10,7 @@ import { openDatabase } from "./lib/db/client.js";
 import { initDatabaseSchema } from "./lib/db/init-schema.js";
 import { buildCorsOriginDelegate, buildSessionCookieOptions } from "./lib/http-security.js";
 import {
+  ensureImportedCustomerBranchProjection,
   getImportedSalesProjectionHealth,
   IMPORTED_SALES_ARCHITECTURE,
   LATEST_IMPORT_RUN_SQL,
@@ -82,6 +83,12 @@ export async function initializeRuntimeState({ settings }) {
   const dbClient = await openDatabase({ env: settings.env });
   const db = dbClient;
   await initDatabaseSchema({ db, kind: dbClient.kind });
+  const branchProjectionRepair = await ensureImportedCustomerBranchProjection(db);
+  if (branchProjectionRepair.repaired) {
+    console.log(
+      `Backfilled imported_customer_branches (${branchProjectionRepair.branch_count} rows) from imported_sales_lines during startup.`,
+    );
+  }
 
   const admin = await db.get(
     `SELECT id, username, password_hash FROM admin_users WHERE username = ?`,

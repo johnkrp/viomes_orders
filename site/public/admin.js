@@ -30,6 +30,8 @@ function resolveApiBase() {
 const API_BASE = resolveApiBase();
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const PRODUCT_SALES_PAGE_SIZE = 10;
+const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
+const STATS_LOADING_MIN_VISIBLE_MS = 300;
 
 let currentDetailedOrders = [];
 let currentProductSales = [];
@@ -45,6 +47,12 @@ let currentCustomerSearchFilters = {
   branch_code: "",
   branch_description: "",
 };
+let currentSearchRequestId = 0;
+let currentStatsRequestId = 0;
+let searchLoadingStateId = 0;
+let statsLoadingStateId = 0;
+let searchLoadingStartedAt = 0;
+let statsLoadingStartedAt = 0;
 
 const els = {
   adminStatus: document.getElementById("adminStatus"),
@@ -66,6 +74,7 @@ const els = {
   branchDescriptionQuery: document.getElementById("branchDescriptionQuery"),
   searchCustomersBtn: document.getElementById("searchCustomersBtn"),
   clearStatsBtn: document.getElementById("clearStatsBtn"),
+  searchLoadingNotice: document.getElementById("searchLoadingNotice"),
   searchResultsPanel: document.getElementById("searchResultsPanel"),
   searchResultsBody: document.getElementById("searchResultsBody"),
   branchSelectorPanel: document.getElementById("branchSelectorPanel"),
@@ -73,6 +82,7 @@ const els = {
   branchSelector: document.getElementById("branchSelector"),
   emptyState: document.getElementById("emptyState"),
   statsPanel: document.getElementById("statsPanel"),
+  statsLoadingNotice: document.getElementById("statsLoadingNotice"),
   receivablesPanel: document.getElementById("receivablesPanel"),
   customerNameHeading: document.getElementById("customerNameHeading"),
   customerMeta: document.getElementById("customerMeta"),
@@ -127,6 +137,102 @@ function setStatus(text, type = "info") {
     <div class="icon">${icon}</div>
     <div class="text">${escapeHtml(text)}</div>
   `;
+}
+
+function renderLoadingNotice(element, isLoading, message) {
+  if (!element) return;
+  element.hidden = !isLoading;
+  if (!isLoading) {
+    element.innerHTML = "";
+    return;
+  }
+  element.innerHTML = `
+    <div class="admin-loading-spinner" aria-hidden="true"></div>
+    <div class="admin-loading-text">${escapeHtml(message)}</div>
+  `;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function applySearchLoadingState(isLoading, message = "Φόρτωση...") {
+  const busy = Boolean(isLoading);
+  els.customerSearchPanel?.setAttribute("aria-busy", String(busy));
+  els.searchResultsPanel?.classList.toggle("is-loading", busy);
+  renderLoadingNotice(els.searchLoadingNotice, busy, message);
+
+  if (els.searchCustomersBtn) {
+    els.searchCustomersBtn.disabled = busy;
+    els.searchCustomersBtn.textContent = busy ? "Αναζήτηση..." : "Αναζήτηση";
+  }
+  if (els.clearStatsBtn) els.clearStatsBtn.disabled = busy;
+  [els.customerNameQuery, els.customerCodeQuery, els.branchCodeQuery, els.branchDescriptionQuery].forEach(
+    (input) => {
+      if (input) input.disabled = busy;
+    },
+  );
+}
+
+async function setSearchLoading(isLoading, message = "Φόρτωση...") {
+  const stateId = ++searchLoadingStateId;
+  const busy = Boolean(isLoading);
+
+  if (busy) {
+    searchLoadingStartedAt = Date.now();
+    applySearchLoadingState(true, message);
+    return;
+  }
+
+  const elapsed = searchLoadingStartedAt ? Date.now() - searchLoadingStartedAt : SEARCH_LOADING_MIN_VISIBLE_MS;
+  const remaining = Math.max(SEARCH_LOADING_MIN_VISIBLE_MS - elapsed, 0);
+  if (remaining > 0) {
+    await sleep(remaining);
+  }
+  if (stateId !== searchLoadingStateId) return;
+  applySearchLoadingState(false, message);
+}
+
+function applyStatsLoadingState(isLoading, message = "Φόρτωση στοιχείων πελάτη...") {
+  const busy = Boolean(isLoading);
+  els.statsPanel?.setAttribute("aria-busy", String(busy));
+  els.statsPanel?.classList.toggle("is-loading", busy);
+  renderLoadingNotice(els.statsLoadingNotice, busy, message);
+
+  if (busy) {
+    els.emptyState.hidden = true;
+    els.statsPanel.hidden = false;
+  }
+
+  if (els.branchSelector) {
+    els.branchSelector.disabled = busy || currentAvailableBranches.length <= 1;
+  }
+  if (els.branchSelectorSearch) {
+    els.branchSelectorSearch.disabled = busy || currentAvailableBranches.length <= 1;
+  }
+
+  els.searchResultsBody?.querySelectorAll("[data-customer-code]").forEach((button) => {
+    button.disabled = busy;
+  });
+}
+
+async function setStatsLoading(isLoading, message = "Φόρτωση στοιχείων πελάτη...") {
+  const stateId = ++statsLoadingStateId;
+  const busy = Boolean(isLoading);
+
+  if (busy) {
+    statsLoadingStartedAt = Date.now();
+    applyStatsLoadingState(true, message);
+    return;
+  }
+
+  const elapsed = statsLoadingStartedAt ? Date.now() - statsLoadingStartedAt : STATS_LOADING_MIN_VISIBLE_MS;
+  const remaining = Math.max(STATS_LOADING_MIN_VISIBLE_MS - elapsed, 0);
+  if (remaining > 0) {
+    await sleep(remaining);
+  }
+  if (stateId !== statsLoadingStateId) return;
+  applyStatsLoadingState(false, message);
 }
 
 async function apiFetch(path, options = {}) {
@@ -239,6 +345,8 @@ function resetProductSales() {
 function resetSearchResults() {
   currentSearchResults = [];
   if (els.searchResultsPanel) els.searchResultsPanel.hidden = true;
+  els.searchResultsPanel?.classList.remove("is-loading");
+  renderLoadingNotice(els.searchLoadingNotice, false, "");
   if (els.searchResultsBody) {
     els.searchResultsBody.innerHTML = `
       <tr>
@@ -422,6 +530,7 @@ function resetReceivables() {
 }
 
 function resetStats() {
+  void setStatsLoading(false);
   resetBranchSelector();
   els.customerNameHeading.textContent = "Πελάτης";
   els.customerMeta.textContent = "-";
@@ -467,6 +576,7 @@ function resetStats() {
 function renderBranchSelector(customerCode, branches = [], selectedBranchCode = "") {
   currentCustomerCode = customerCode || null;
   currentBranchCode = selectedBranchCode || "";
+  const isStatsLoading = els.statsPanel?.getAttribute("aria-busy") === "true";
 
   if (!els.branchSelectorPanel || !els.branchSelector) return;
 
@@ -484,10 +594,11 @@ function renderBranchSelector(customerCode, branches = [], selectedBranchCode = 
 
   els.branchSelectorPanel.hidden = false;
   if (els.branchSelectorSearch) {
-    els.branchSelectorSearch.disabled = false;
+    els.branchSelectorSearch.disabled = isStatsLoading ? true : false;
     els.branchSelectorSearch.value = "";
   }
   renderFilteredBranchOptions(items, selectedBranchCode);
+  els.branchSelector.disabled = isStatsLoading;
 }
 
 function formatAggregationLevelLabel(level) {
@@ -500,6 +611,7 @@ function renderSearchResults(items, filters = {}) {
   currentSearchResults = Array.isArray(items) ? items : [];
   if (els.searchResultsPanel) els.searchResultsPanel.hidden = false;
   if (!els.searchResultsBody) return;
+  const isStatsLoading = els.statsPanel?.getAttribute("aria-busy") === "true";
 
   const activeFilters = Object.values(filters || {}).filter(Boolean).join(" | ");
 
@@ -517,6 +629,7 @@ function renderSearchResults(items, filters = {}) {
                   type="button"
                   class="btn ghost admin-result-select"
                   data-customer-code="${escapeHtml(item.code)}"
+                  ${isStatsLoading ? "disabled" : ""}
                 >
                   Επιλογή
                 </button>
@@ -960,6 +1073,13 @@ async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = 
     return;
   }
 
+  const requestId = ++currentStatsRequestId;
+  const loadingMessage = branchCode
+    ? `Φόρτωση στοιχείων για υποκατάστημα ${branchCode}...`
+    : "Φόρτωση στοιχείων πελάτη...";
+  setStatsLoading(true, loadingMessage);
+  setStatus(loadingMessage, "info");
+
   try {
     const params = new URLSearchParams();
     if (branchCode) params.set("branch_code", branchCode);
@@ -977,6 +1097,7 @@ async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = 
       `/api/admin/customers/${encodeURIComponent(customerCode)}/stats${params.toString() ? `?${params.toString()}` : ""}`,
       { method: "GET" },
     );
+    if (requestId !== currentStatsRequestId) return;
     renderStats(payload);
     setCurrentCustomerSearchFilters({
       ...currentCustomerSearchFilters,
@@ -991,8 +1112,13 @@ async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = 
       "ok",
     );
   } catch (error) {
+    if (requestId !== currentStatsRequestId) return;
     resetStats();
     setStatus(`Η φόρτωση στατιστικών απέτυχε: ${error.message}`, "error");
+  } finally {
+    if (requestId === currentStatsRequestId) {
+      await setStatsLoading(false);
+    }
   }
 }
 
@@ -1007,7 +1133,9 @@ async function searchCustomers(event) {
     return;
   }
 
-  els.searchCustomersBtn.disabled = true;
+  const requestId = ++currentSearchRequestId;
+  setSearchLoading(true, "Αναζήτηση πελατών...");
+  setStatus("Αναζήτηση πελατών...", "info");
   try {
     setCurrentCustomerSearchFilters(filters);
     resetSearchSuggestions();
@@ -1017,11 +1145,15 @@ async function searchCustomers(event) {
       renderSuggestions: false,
       silent: false,
     });
+    if (requestId !== currentSearchRequestId) return;
   } catch (error) {
+    if (requestId !== currentSearchRequestId) return;
     resetSearchResults();
     setStatus(`Η αναζήτηση πελάτη απέτυχε: ${error.message}`, "error");
   } finally {
-    els.searchCustomersBtn.disabled = false;
+    if (requestId === currentSearchRequestId) {
+      await setSearchLoading(false);
+    }
   }
 }
 

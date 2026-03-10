@@ -157,6 +157,46 @@ export const LATEST_IMPORT_RUN_SQL = `
   LIMIT 1
 `;
 
+export const IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL = `
+  SELECT COUNT(*) AS imported_customer_branches_count
+  FROM imported_customer_branches
+`;
+
+export const IMPORTED_SALES_LINES_COUNT_SQL = `
+  SELECT COUNT(*) AS imported_sales_lines_count
+  FROM imported_sales_lines
+`;
+
+export const REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL = `
+  INSERT INTO imported_customer_branches(
+    customer_code,
+    customer_name,
+    branch_code,
+    branch_description,
+    orders,
+    revenue,
+    last_order_date,
+    source_file
+  )
+  SELECT
+    customer_code,
+    COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
+    COALESCE(branch_code, '') AS branch_code,
+    COALESCE(branch_description, '') AS branch_description,
+    COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+    COALESCE(SUM(net_value), 0) AS revenue,
+    MAX(order_date) AS last_order_date,
+    MAX(source_file) AS source_file
+  FROM imported_sales_lines
+  GROUP BY customer_code, COALESCE(branch_code, ''), COALESCE(branch_description, '')
+  ON DUPLICATE KEY UPDATE
+    customer_name = VALUES(customer_name),
+    orders = VALUES(orders),
+    revenue = VALUES(revenue),
+    last_order_date = VALUES(last_order_date),
+    source_file = VALUES(source_file)
+`;
+
 export const PREVIEW_DUPLICATES_SQL = `
   SELECT
     COUNT(*) AS duplicate_groups,
@@ -210,6 +250,35 @@ export const DELETE_DUPLICATES_SQL = `
    AND keeper.note_1 <=> duplicate_row.note_1
 `;
 
+export async function ensureImportedCustomerBranchProjection(db) {
+  const [branchCountRow, salesLineCountRow] = await Promise.all([
+    db.get(IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL),
+    db.get(IMPORTED_SALES_LINES_COUNT_SQL),
+  ]);
+
+  const branchCount = Number(branchCountRow?.imported_customer_branches_count || 0);
+  const salesLineCount = Number(salesLineCountRow?.imported_sales_lines_count || 0);
+
+  if (branchCount > 0 || salesLineCount === 0) {
+    return {
+      repaired: false,
+      branch_count: branchCount,
+      sales_line_count: salesLineCount,
+    };
+  }
+
+  await db.run("DELETE FROM imported_customer_branches");
+  await db.run(REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL);
+
+  const repairedCountRow = await db.get(IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL);
+
+  return {
+    repaired: true,
+    branch_count: Number(repairedCountRow?.imported_customer_branches_count || 0),
+    sales_line_count: salesLineCount,
+  };
+}
+
 export async function rebuildImportedSalesData(db) {
   await db.run("DELETE FROM imported_orders");
   await db.run("DELETE FROM imported_monthly_sales");
@@ -218,29 +287,7 @@ export async function rebuildImportedSalesData(db) {
   await db.run("DELETE FROM imported_customers");
   await db.run("DELETE FROM customers WHERE source = 'entersoft_import'");
 
-  await db.run(`
-    INSERT INTO imported_customer_branches(
-      customer_code,
-      customer_name,
-      branch_code,
-      branch_description,
-      orders,
-      revenue,
-      last_order_date,
-      source_file
-    )
-    SELECT
-      customer_code,
-      COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
-      COALESCE(branch_code, '') AS branch_code,
-      COALESCE(branch_description, '') AS branch_description,
-      COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
-      COALESCE(SUM(net_value), 0) AS revenue,
-      MAX(order_date) AS last_order_date,
-      MAX(source_file) AS source_file
-    FROM imported_sales_lines
-    GROUP BY customer_code, COALESCE(branch_code, ''), COALESCE(branch_description, '')
-  `);
+  await db.run(REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL);
 
   await db.run(`
     INSERT INTO imported_customers(
