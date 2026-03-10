@@ -73,6 +73,7 @@ const els = {
   branchSelector: document.getElementById("branchSelector"),
   emptyState: document.getElementById("emptyState"),
   statsPanel: document.getElementById("statsPanel"),
+  receivablesPanel: document.getElementById("receivablesPanel"),
   customerNameHeading: document.getElementById("customerNameHeading"),
   customerMeta: document.getElementById("customerMeta"),
   totalOrdersValue: document.getElementById("totalOrdersValue"),
@@ -408,6 +409,7 @@ function resetMonthlySales() {
 }
 
 function resetReceivables() {
+  if (els.receivablesPanel) els.receivablesPanel.hidden = false;
   if (els.receivablesOpenValue) els.receivablesOpenValue.textContent = "-";
   if (els.receivablesOverdueValue) els.receivablesOverdueValue.textContent = "-";
   if (els.receivablesBody) {
@@ -758,6 +760,7 @@ function renderStats(data) {
   const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const recentOrders = Array.isArray(data?.recent_orders) ? data.recent_orders : [];
+  const isBranchView = customer.aggregation_level === "branch";
 
   currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
   currentProductSales = Array.isArray(productSales.items) ? productSales.items : [];
@@ -793,6 +796,9 @@ function renderStats(data) {
   renderBranchSelector(customer.code, availableBranches, customer.branch_code || "");
 
   renderMonthlySales(monthlySales);
+  if (els.receivablesPanel) {
+    els.receivablesPanel.hidden = isBranchView;
+  }
   renderReceivables(receivables);
   els.productSalesMetric.value = productSales.metric === "pieces" ? "pieces" : "revenue";
   renderProductSales();
