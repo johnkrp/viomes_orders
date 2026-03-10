@@ -297,6 +297,13 @@ function formatNumber(value) {
   return new Intl.NumberFormat("el-GR").format(Number(value || 0));
 }
 
+function formatPercentRoundedUp(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return "-";
+  return `${Math.ceil(numericValue)}%`;
+}
+
 function formatDays(value) {
   if (value === null || value === undefined || value === "") return "-";
   return `${formatNumber(value)} d`;
@@ -665,7 +672,7 @@ function renderSelectedOrderDetails() {
               <td>${escapeHtml(line.description)}</td>
               <td>${escapeHtml(formatNumber(line.qty))}</td>
               <td>${escapeHtml(formatMoney(line.unit_price))}</td>
-              <td>${escapeHtml(`${line.discount_pct}%`)}</td>
+              <td>${escapeHtml(formatPercentRoundedUp(line.discount_pct))}</td>
               <td>${escapeHtml(formatMoney(line.line_net_value))}</td>
             </tr>
           `;
@@ -692,7 +699,7 @@ function renderSelectedOrderDetails() {
       </div>
       <div class="admin-order-note">${escapeHtml(selectedOrder.notes || "Χωρίς σημειώσεις")}</div>
       <div class="admin-order-meta">
-        <span>Μ. έκπτωση: ${escapeHtml(`${selectedOrder.average_discount_pct}%`)}</span>
+        <span>Μ. έκπτωση: ${escapeHtml(formatPercentRoundedUp(selectedOrder.average_discount_pct))}</span>
       </div>
       <div class="admin-table-wrap admin-order-table-wrap">
         <table class="admin-table admin-order-table">
@@ -966,7 +973,7 @@ function renderStats(data) {
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
-              <td class="admin-table-number">${escapeHtml(`${item.average_discount_pct}%`)}</td>
+              <td class="admin-table-number">${escapeHtml(formatPercentRoundedUp(item.average_discount_pct))}</td>
               <td class="admin-table-action">
                 <button
                   type="button"

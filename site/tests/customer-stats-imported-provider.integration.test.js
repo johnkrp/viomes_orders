@@ -71,7 +71,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         10,
         175.6,
         0,
-        "TI",
+        "\u03A4\u0399\u03A0",
         "D1",
         "Main Store",
         "2026.CSV",
@@ -96,7 +96,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         5,
         70,
         0,
-        "TI",
+        "\u03A4\u0399\u03A0",
         "D1",
         "Main Store",
         "2025.CSV",
@@ -180,11 +180,13 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         INSERT INTO imported_sales_lines(
           source_file, order_date, order_year, order_month, document_no, document_type,
           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
+          discount_pct_1, discount_pct_2, discount_pct_total,
           customer_code, customer_name, delivery_code, delivery_description, account_code,
           account_description, branch_code, branch_description, note_1
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         "2026.CSV",
@@ -192,7 +194,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         currentYear,
         2,
         "INV-2",
-        "TI",
+        "\u03A4\u0399\u03A0",
         "P1",
         "First",
         "PCS",
@@ -200,6 +202,9 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         10,
         17.56,
         175.6,
+        5,
+        2,
+        7,
         "C001",
         "Alpha Store",
         "D1",
@@ -214,7 +219,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         previousYear,
         12,
         "INV-1",
-        "TI",
+        "\u03A4\u0399\u03A0",
         "P2",
         "Second",
         "PCS",
@@ -222,6 +227,9 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         5,
         14,
         70,
+        3,
+        1,
+        4,
         "C001",
         "Alpha Store",
         "D2",
@@ -231,6 +239,31 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         "B2",
         "Branch 2",
         "Note",
+        "2026.CSV",
+        `${currentYear}-02-16`,
+        currentYear,
+        2,
+        "QUOTE-1",
+        "\u03A0\u0391\u03A1",
+        "P999",
+        "Quote Only",
+        "PCS",
+        99,
+        99,
+        999,
+        999,
+        11,
+        0,
+        11,
+        "C001",
+        "Alpha Store",
+        "D1",
+        "Main Store",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "Ignored non-sale",
       ],
     );
 
@@ -253,12 +286,14 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
     assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
     assert.equal(payload.detailed_orders[0].lines[0].code, "P1");
+    assert.equal(payload.detailed_orders[0].lines[0].discount_pct, 7);
 
     const branchPayload = await provider.getCustomerStats("C001", { branchCode: "B1" });
     assert.equal(branchPayload.customer.aggregation_level, "branch");
     assert.equal(branchPayload.customer.branch_code, "B1");
     assert.equal(branchPayload.summary.total_orders, 1);
     assert.equal(branchPayload.summary.total_revenue, 175.6);
+    assert.equal(branchPayload.recent_orders[0].average_discount_pct, 7);
 
     const scopedPayload = await provider.getCustomerStats("C001", {
       branchScopeDescription: "Branch 1",

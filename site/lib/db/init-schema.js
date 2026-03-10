@@ -193,6 +193,9 @@ async function initSqliteSchema(db) {
         qty_base REAL NOT NULL DEFAULT 0,
         unit_price REAL NOT NULL DEFAULT 0,
         net_value REAL NOT NULL DEFAULT 0,
+        discount_pct_1 REAL NOT NULL DEFAULT 0,
+        discount_pct_2 REAL NOT NULL DEFAULT 0,
+        discount_pct_total REAL NOT NULL DEFAULT 0,
         customer_code TEXT NOT NULL,
         customer_name TEXT NOT NULL,
         delivery_code TEXT,
@@ -611,6 +614,27 @@ export async function initDatabaseSchema({ db, kind }) {
     "imported_sales_lines",
     "idx_imported_sales_customer_item",
     "(customer_code, item_code)",
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_sales_lines",
+    "discount_pct_1",
+    `discount_pct_1 ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_sales_lines",
+    "discount_pct_2",
+    `discount_pct_2 ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_sales_lines",
+    "discount_pct_total",
+    `discount_pct_total ${typeReal} NOT NULL DEFAULT 0`,
   );
   await ensureColumn(
     db,

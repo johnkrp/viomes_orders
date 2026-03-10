@@ -1,0 +1,170 @@
+[
+  {
+    "document_type": "ΤΙΠ",
+    "description": "Τιμολόγιο Πώλησης",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": true,
+    "revenue_multiplier": 1,
+    "pieces_multiplier": 1
+  },
+  {
+    "document_type": "ΤΔΑ",
+    "description": "Τιμολόγιο Πώλησης - Δελτίο αποστολής",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": true,
+    "revenue_multiplier": 1,
+    "pieces_multiplier": 1
+  },
+  {
+    "document_type": "ΑΠΛ",
+    "description": "Απόδειξη Λιανικής - Δελτίο Αποστολής",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": true,
+    "revenue_multiplier": 1,
+    "pieces_multiplier": 1
+  },
+  {
+    "document_type": "ΔΑΠ",
+    "description": "Δελτίο Αποστολής Πωλήσεων",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΤΙ",
+    "description": "Πιστωτικό Τιμολόγιο Πώλησης",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": false,
+    "revenue_multiplier": -1,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΤΔ",
+    "description": "Πιστωτικό Τιμολόγιο Πώλησης - Δελτίο Επιστροφής",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": false,
+    "revenue_multiplier": -1,
+    "pieces_multiplier": -1
+  },
+  {
+    "document_type": "ΠΤΕ",
+    "description": "Πιστωτικό Τιμολόγιο Εκπτωσης Πωλήσεων",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": false,
+    "revenue_multiplier": -1,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΤΛ",
+    "description": "Πιστωτικό Τιμολόγιο Διόρθωσης χρέωσης (Πωλήσεων)",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": false,
+    "revenue_multiplier": -1,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΔΛ",
+    "description": "Πιστωτικό Λιανικής - Δελτίο Επιστροφής",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": false,
+    "revenue_multiplier": -1,
+    "pieces_multiplier": -1
+  },
+  {
+    "document_type": "ΠΧΣ",
+    "description": "Τιμολόγιο Πώλησης Διορθωτικό",
+    "include_in_customer_activity": true,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 1,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΑΡ",
+    "description": "Παραγγελία πώλησης",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΔΣ",
+    "description": "Δέσμευση αποθέματος για πελάτη",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΡΦ",
+    "description": "Προσφορά σε πελάτη",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΑΑ",
+    "description": "Απόρριψη παραγγελίας/προτιμολογίου",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΓΛ",
+    "description": "Προβλέψεις εκτέλεσης προϋπολογισμού Πωλήσεων",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΑΥΤ",
+    "description": "Ειδικό Στοιχείο Αυτοπαράδοσης",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΑΥΔ",
+    "description": "Δελτίο Αποστολής Αυτοπαράδοσης",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΤΠΥ",
+    "description": "Τιμολόγιο Παροχής Υπηρεσιών",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΠΤΥ",
+    "description": "Πιστωτικό Παροχής Υπηρεσιών",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΔΕΠ",
+    "description": "Δελτίο Επιστροφής Πωλήσεων",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  },
+  {
+    "document_type": "ΦΤΚ",
+    "description": "Φόρος Τόκων Κατάθεσεων",
+    "include_in_customer_activity": false,
+    "count_in_order_totals": false,
+    "revenue_multiplier": 0,
+    "pieces_multiplier": 0
+  }
+]

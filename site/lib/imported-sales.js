@@ -1,3 +1,25 @@
+import {
+  buildAnalyticsLineFilter,
+  buildCountInOrderTotalsCase,
+  buildCustomerActivityFilter,
+  buildEffectivePiecesExpression,
+  buildEffectiveRevenueExpression,
+  buildKnownDocumentTypesSqlList,
+} from "./document-type-rules.js";
+
+export const IMPORTED_DISCOUNT_PERCENT_EXPRESSION = `
+  CASE
+    WHEN COALESCE(discount_pct_total, 0) <> 0 THEN discount_pct_total
+    WHEN COALESCE(qty_base, 0) > 0 AND COALESCE(unit_price, 0) > 0 THEN
+      CASE
+        WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) < 0 THEN 0
+        WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) > 100 THEN 100
+        ELSE (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100))
+      END
+    ELSE 0
+  END
+`.trim();
+
 export const IMPORTED_SALES_ARCHITECTURE = Object.freeze({
   operationalTables: ["products", "admin_users", "admin_sessions"],
   ingestionTables: ["import_runs", "imported_sales_lines"],
@@ -102,6 +124,7 @@ export const IMPORTED_ORDER_CARDINALITY_SQL = `
       FROM (
         SELECT document_no, customer_code, order_date
         FROM imported_sales_lines
+        WHERE ${buildCountInOrderTotalsCase()} = 1
         GROUP BY document_no, customer_code, order_date
       ) grouped_orders
     ) AS grouped_orders_count
@@ -115,6 +138,7 @@ export const IMPORTED_PRODUCT_CARDINALITY_SQL = `
       FROM (
         SELECT customer_code, item_code
         FROM imported_sales_lines
+        WHERE ${buildAnalyticsLineFilter()}
         GROUP BY customer_code, item_code
       ) grouped_products
     ) AS grouped_products_count
@@ -128,6 +152,7 @@ export const IMPORTED_MONTHLY_CARDINALITY_SQL = `
       FROM (
         SELECT customer_code, order_year, order_month
         FROM imported_sales_lines
+        WHERE ${buildAnalyticsLineFilter()}
         GROUP BY customer_code, order_year, order_month
       ) grouped_months
     ) AS grouped_months_count
@@ -157,6 +182,17 @@ export const LATEST_IMPORT_RUN_SQL = `
   LIMIT 1
 `;
 
+export const UNKNOWN_DOCUMENT_TYPES_SQL = `
+  SELECT
+    document_type,
+    COUNT(*) AS rows_count
+  FROM imported_sales_lines
+  WHERE COALESCE(document_type, '') <> ''
+    AND document_type NOT IN (${buildKnownDocumentTypesSqlList()})
+  GROUP BY document_type
+  ORDER BY rows_count DESC, document_type ASC
+`;
+
 export const IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL = `
   SELECT COUNT(*) AS imported_customer_branches_count
   FROM imported_customer_branches
@@ -183,11 +219,18 @@ export const REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL = `
     COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
     COALESCE(branch_code, '') AS branch_code,
     COALESCE(branch_description, '') AS branch_description,
-    COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
-    COALESCE(SUM(net_value), 0) AS revenue,
-    MAX(order_date) AS last_order_date,
+    COUNT(DISTINCT CASE
+      WHEN ${buildCountInOrderTotalsCase()} = 1 THEN CONCAT(customer_code, '::', order_date, '::', document_no)
+      ELSE NULL
+    END) AS orders,
+    COALESCE(SUM(${buildEffectiveRevenueExpression()}), 0) AS revenue,
+    MAX(CASE
+      WHEN ${buildCustomerActivityFilter()} THEN order_date
+      ELSE NULL
+    END) AS last_order_date,
     MAX(source_file) AS source_file
   FROM imported_sales_lines
+  WHERE ${buildCustomerActivityFilter()}
   GROUP BY customer_code, COALESCE(branch_code, ''), COALESCE(branch_description, '')
   ON DUPLICATE KEY UPDATE
     customer_name = VALUES(customer_name),
@@ -308,6 +351,7 @@ export async function rebuildImportedSalesData(db) {
       MAX(branch_description) AS branch_description,
       MAX(source_file) AS source_file
     FROM imported_sales_lines
+    WHERE ${buildCustomerActivityFilter()}
     GROUP BY customer_code
   `);
 
@@ -344,14 +388,15 @@ export async function rebuildImportedSalesData(db) {
       MAX(customer_name),
       order_date,
       COUNT(*) AS total_lines,
-      COALESCE(SUM(qty_base), 0) AS total_pieces,
-      COALESCE(SUM(net_value), 0) AS total_net_value,
-      0 AS average_discount_pct,
+      COALESCE(SUM(${buildEffectivePiecesExpression()}), 0) AS total_pieces,
+      COALESCE(SUM(${buildEffectiveRevenueExpression()}), 0) AS total_net_value,
+      COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
       MAX(document_type),
       MAX(delivery_code),
       MAX(delivery_description),
       MAX(source_file)
     FROM imported_sales_lines
+    WHERE ${buildCountInOrderTotalsCase()} = 1
     GROUP BY document_no, customer_code, order_date
   `);
 
@@ -361,9 +406,10 @@ export async function rebuildImportedSalesData(db) {
       customer_code,
       order_year,
       order_month,
-      COALESCE(SUM(net_value), 0) AS revenue,
-      COALESCE(SUM(qty_base), 0) AS pieces
+      COALESCE(SUM(${buildEffectiveRevenueExpression()}), 0) AS revenue,
+      COALESCE(SUM(${buildEffectivePiecesExpression()}), 0) AS pieces
     FROM imported_sales_lines
+    WHERE ${buildAnalyticsLineFilter()}
     GROUP BY customer_code, order_year, order_month
   `);
 
@@ -381,14 +427,19 @@ export async function rebuildImportedSalesData(db) {
       customer_code,
       item_code,
       MAX(item_description),
-      COALESCE(SUM(net_value), 0) AS revenue,
-      COALESCE(SUM(qty_base), 0) AS pieces,
-      COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+      COALESCE(SUM(${buildEffectiveRevenueExpression()}), 0) AS revenue,
+      COALESCE(SUM(${buildEffectivePiecesExpression()}), 0) AS pieces,
+      COUNT(DISTINCT CASE
+        WHEN ${buildCountInOrderTotalsCase()} = 1 THEN CONCAT(customer_code, '::', order_date, '::', document_no)
+        ELSE NULL
+      END) AS orders,
       CASE
-        WHEN COALESCE(SUM(qty_base), 0) > 0 THEN COALESCE(SUM(net_value), 0) / SUM(qty_base)
+        WHEN COALESCE(SUM(${buildEffectivePiecesExpression()}), 0) > 0
+          THEN COALESCE(SUM(${buildEffectiveRevenueExpression()}), 0) / SUM(${buildEffectivePiecesExpression()})
         ELSE 0
       END AS avg_unit_price
     FROM imported_sales_lines
+    WHERE ${buildAnalyticsLineFilter()}
     GROUP BY customer_code, item_code
   `);
 }
@@ -403,6 +454,7 @@ export async function getImportedSalesProjectionHealth(db) {
     productCardinality,
     monthlyCardinality,
     latestImportRun,
+    unknownDocumentTypes,
   ] = await Promise.all([
     db.get(DUPLICATE_SUMMARY_SQL),
     db.all(IMPORTED_ORDER_COLLISIONS_SQL),
@@ -412,6 +464,7 @@ export async function getImportedSalesProjectionHealth(db) {
     db.get(IMPORTED_PRODUCT_CARDINALITY_SQL),
     db.get(IMPORTED_MONTHLY_CARDINALITY_SQL),
     db.get(LATEST_IMPORT_RUN_SQL),
+    db.all(UNKNOWN_DOCUMENT_TYPES_SQL),
   ]);
 
   const duplicateGroups = Number(duplicateSummary?.duplicate_groups || 0);
@@ -425,6 +478,10 @@ export async function getImportedSalesProjectionHealth(db) {
   const groupedProductsCount = Number(productCardinality?.grouped_products_count || 0);
   const importedMonthlySalesCount = Number(monthlyCardinality?.imported_monthly_sales_count || 0);
   const groupedMonthsCount = Number(monthlyCardinality?.grouped_months_count || 0);
+  const unmappedDocumentTypes = unknownDocumentTypes.map((row) => ({
+    document_type: row.document_type,
+    rows_count: Number(row.rows_count || 0),
+  }));
 
   return {
     ok:
@@ -432,6 +489,7 @@ export async function getImportedSalesProjectionHealth(db) {
       importedOrderCollisionGroups === 0 &&
       missingMirrors === 0 &&
       orphanMirrors === 0 &&
+      unmappedDocumentTypes.length === 0 &&
       importedOrdersCount === groupedOrdersCount &&
       importedProductSalesCount === groupedProductsCount &&
       importedMonthlySalesCount === groupedMonthsCount,
@@ -442,6 +500,7 @@ export async function getImportedSalesProjectionHealth(db) {
       imported_order_collision_groups: importedOrderCollisionGroups,
       missing_mirrors: missingMirrors,
       orphan_mirrors: orphanMirrors,
+      unmapped_document_types: unmappedDocumentTypes,
       imported_orders_match_grouped_sales: importedOrdersCount === groupedOrdersCount,
       imported_product_sales_match_grouped_sales: importedProductSalesCount === groupedProductsCount,
       imported_monthly_sales_match_grouped_sales: importedMonthlySalesCount === groupedMonthsCount,

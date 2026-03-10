@@ -19,6 +19,7 @@ import {
   PREVIEW_DUPLICATES_SQL,
   REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL,
   rebuildImportedSalesData,
+  UNKNOWN_DOCUMENT_TYPES_SQL,
 } from "../lib/imported-sales.js";
 
 test("shared imported-sales SQL covers logical duplicate identity and collision checks", () => {
@@ -35,6 +36,7 @@ test("shared imported-sales SQL covers logical duplicate identity and collision 
   assert.match(IMPORTED_PRODUCT_CARDINALITY_SQL, /grouped_products_count/);
   assert.match(IMPORTED_MONTHLY_CARDINALITY_SQL, /grouped_months_count/);
   assert.match(LATEST_IMPORT_RUN_SQL, /rows_skipped_duplicate/);
+  assert.match(UNKNOWN_DOCUMENT_TYPES_SQL, /document_type NOT IN/);
   assert.equal(IMPORTED_SALES_ARCHITECTURE.rawFactTable, "imported_sales_lines");
 });
 
@@ -165,6 +167,7 @@ test("getImportedSalesProjectionHealth summarizes invariant and ledger status", 
     },
     async all(sql) {
       if (sql === IMPORTED_ORDER_COLLISIONS_SQL) return [];
+      if (sql === UNKNOWN_DOCUMENT_TYPES_SQL) return [];
       throw new Error(`Unexpected all SQL: ${sql}`);
     },
   };
@@ -175,5 +178,37 @@ test("getImportedSalesProjectionHealth summarizes invariant and ledger status", 
   assert.equal(health.latest_import_run.rows_skipped_duplicate, 2);
   assert.equal(health.latest_import_run.rows_rejected, 1);
   assert.equal(health.invariants.imported_orders_match_grouped_sales, true);
+  assert.deepEqual(health.invariants.unmapped_document_types, []);
   assert.equal(health.architecture.projectionStrategy, "truncate_and_recompute");
+});
+
+test("getImportedSalesProjectionHealth reports unmapped document types as unhealthy", async () => {
+  const db = {
+    async get(sql) {
+      if (sql === DUPLICATE_SUMMARY_SQL) return { duplicate_groups: 0, duplicate_rows: 0 };
+      if (sql === MISSING_MIRRORED_CUSTOMERS_SQL) return { missing_mirrors: 0 };
+      if (sql === ORPHAN_MIRRORED_CUSTOMERS_SQL) return { orphan_mirrors: 0 };
+      if (sql === IMPORTED_ORDER_CARDINALITY_SQL) {
+        return { imported_orders_count: 2, grouped_orders_count: 2 };
+      }
+      if (sql === IMPORTED_PRODUCT_CARDINALITY_SQL) {
+        return { imported_product_sales_count: 3, grouped_products_count: 3 };
+      }
+      if (sql === IMPORTED_MONTHLY_CARDINALITY_SQL) {
+        return { imported_monthly_sales_count: 4, grouped_months_count: 4 };
+      }
+      if (sql === LATEST_IMPORT_RUN_SQL) return null;
+      throw new Error(`Unexpected get SQL: ${sql}`);
+    },
+    async all(sql) {
+      if (sql === IMPORTED_ORDER_COLLISIONS_SQL) return [];
+      if (sql === UNKNOWN_DOCUMENT_TYPES_SQL) return [{ document_type: "XYZ", rows_count: 12 }];
+      throw new Error(`Unexpected all SQL: ${sql}`);
+    },
+  };
+
+  const health = await getImportedSalesProjectionHealth(db);
+
+  assert.equal(health.ok, false);
+  assert.deepEqual(health.invariants.unmapped_document_types, [{ document_type: "XYZ", rows_count: 12 }]);
 });

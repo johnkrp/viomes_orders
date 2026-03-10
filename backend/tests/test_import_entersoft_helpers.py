@@ -13,40 +13,38 @@ TEST_TMP_DIR = Path(__file__).resolve().parents[2] / ".tmp"
 
 
 def sample_sales_row():
-    row = MagicMock()
-    row.get.side_effect = [
-        "C001",           # customer_code
-        "INV-1",          # document_no
-        "P001",           # item_code
-        "08/03/2026",     # order_date
-        "TI",             # document_type
-        "Product 1",      # item_description
-        "PCS",            # unit_code
-        "10",             # qty
-        "10",             # qty_base
-        "12,50",          # unit_price
-        "125,00",         # net_value
-        "Alpha Store",    # customer_name
-        "D1",             # delivery_code
-        "Main Store",     # delivery_description
-        "A1",             # account_code
-        "Account",        # account_description
-        "B1",             # branch_code
-        "Branch",         # branch_description
-        "Note",           # note_1
-    ]
-    return row
+    return {
+        "Κωδικός": "C001",
+        "Παραστατικό": "INV-1",
+        "Είδος": "P001",
+        "Ημ/νία ": "08/03/2026",
+        "Τύπος Παραστατικών": "TI",
+        "Περιγραφή": "Product 1",
+        "ΜΜ": "PCS",
+        "Ποσότητα": "10",
+        "Ποσότητα σε βασική ΜΜ": "10",
+        "Τιμή": "12,50",
+        "Καθαρή  αξία ": "125,00",
+        "% έκπτ.1": "0,00",
+        "% έκπτ.2": "0,00",
+        "Επωνυμία/Ονοματεπώνυμο": "Alpha Store",
+        "Κωδικός1": "D1",
+        "Περιγραφή1": "Main Store",
+        "Κωδ. ΑΧ ": "A1",
+        "Περ. ΑΧ": "Account",
+        "Κωδ.υποκ.": "B1",
+        "Περ.υποκ.": "Branch",
+        "Σχόλιο 1": "Note",
+    }
 
 
 def invalid_sales_row():
-    row = MagicMock()
-    row.get.side_effect = [
-        "",              # customer_code
-        "INV-1",         # document_no
-        "P001",          # item_code
-        "",              # order_date
-    ]
-    return row
+    return {
+        "Κωδικός": "",
+        "Παραστατικό": "INV-1",
+        "Είδος": "P001",
+        "Ημ/νία ": "",
+    }
 
 
 def create_temp_sales_file():
@@ -82,7 +80,7 @@ class FakeCursor:
             self.rowcount = 0
             return
         if "INSERT IGNORE INTO imported_sales_lines" in normalized:
-            logical_key = tuple(params[22:])
+            logical_key = tuple(params[25:])
             if logical_key in self.imported_rows:
                 self.rowcount = 0
             else:

@@ -146,6 +146,9 @@ def init_schema() -> None:
     _ensure_column(cur, "import_runs", "schema_version", "schema_version VARCHAR(32) NOT NULL DEFAULT 'import-ledger-v2'")
     _ensure_column(cur, "import_runs", "trigger_source", "trigger_source VARCHAR(64)")
     _ensure_column(cur, "import_runs", "metadata_json", "metadata_json LONGTEXT")
+    _ensure_column(cur, "imported_sales_lines", "discount_pct_1", "discount_pct_1 DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_sales_lines", "discount_pct_2", "discount_pct_2 DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_sales_lines", "discount_pct_total", "discount_pct_total DOUBLE NOT NULL DEFAULT 0")
     _ensure_column_type(cur, "imported_orders", "order_id", "VARCHAR(300) NOT NULL")
     _ensure_index(
         cur,

@@ -7,6 +7,14 @@ import {
   ensureCustomerCode,
   productStatRow,
 } from "./shared.js";
+import {
+  buildAnalyticsLineFilter,
+  buildCountInOrderTotalsCase,
+  buildCustomerActivityFilter,
+  buildEffectivePiecesExpression,
+  buildEffectiveRevenueExpression,
+} from "../document-type-rules.js";
+import { IMPORTED_DISCOUNT_PERCENT_EXPRESSION } from "../imported-sales.js";
 
 function createMonthlyBuckets() {
   return Array.from({ length: 12 }, (_, index) => ({
@@ -45,6 +53,12 @@ async function loadMonthlyYearlySeries(db, query, customerCode, years) {
 function buildCutoffDateString(now, days) {
   const cutoff = new Date(now.getTime() - days * 86400000);
   return cutoff.toISOString().slice(0, 10);
+}
+
+function asRoundedUpPercent(value) {
+  const numericValue = Number(value ?? 0);
+  if (!Number.isFinite(numericValue)) return 0;
+  return Math.ceil(numericValue);
 }
 
 async function loadRevenueWindows(db, table, customerCodeColumn, dateColumn, customerCode, now) {
@@ -140,6 +154,16 @@ async function loadImportedCustomerBranches(db, customerCode, scope = {}) {
 
 function shouldUseImportedProjections(selectedBranchCode, branchScopeCode, branchScopeDescription) {
   return !selectedBranchCode && !branchScopeCode && !branchScopeDescription;
+}
+
+function buildImportedAnalyticsExpressions(alias = "") {
+  return {
+    analyticsFilter: buildAnalyticsLineFilter(alias),
+    customerActivityFilter: buildCustomerActivityFilter(alias),
+    effectiveRevenue: buildEffectiveRevenueExpression(alias),
+    effectivePieces: buildEffectivePiecesExpression(alias),
+    countInOrderTotals: buildCountInOrderTotalsCase(alias),
+  };
 }
 
 export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" }) {
@@ -284,13 +308,13 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             total_lines: asInteger(order.total_lines),
             total_pieces: asInteger(order.total_pieces),
             total_net_value: asMoney(order.total_net_value),
-            average_discount_pct: asMoney(order.average_discount_pct),
+            average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
             lines: lines.map((line) => ({
               code: line.code,
               description: line.description,
               qty: asInteger(line.qty_pieces),
               unit_price: asMoney(line.unit_price),
-              discount_pct: asMoney(line.discount_pct),
+              discount_pct: asRoundedUpPercent(line.discount_pct),
               line_net_value: asMoney(line.line_net_value),
             })),
           });
@@ -379,7 +403,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             total_lines: asInteger(order.total_lines),
             total_pieces: asInteger(order.total_pieces),
             total_net_value: asMoney(order.total_net_value),
-            average_discount_pct: asMoney(order.average_discount_pct),
+            average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
           })),
           detailed_orders: detailedOrders,
         };
@@ -396,6 +420,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
       const importedDataFilter = selectedBranchCode
         ? buildImportedBranchClause(selectedBranchCode)
         : branchScope;
+      const importedExpressions = buildImportedAnalyticsExpressions();
 
       const customer = useImportedProjections
         ? await db.get(
@@ -424,7 +449,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 ${selectedBranchCode ? "MAX(branch_code)" : "NULL"} AS branch_code,
                 ${selectedBranchCode ? "MAX(branch_description)" : "NULL"} AS branch_description
               FROM imported_sales_lines
-              WHERE customer_code = ?${importedDataFilter.clause}
+              WHERE customer_code = ?
+                AND ${importedExpressions.customerActivityFilter}${importedDataFilter.clause}
               GROUP BY customer_code
             `,
             [code, ...importedDataFilter.params],
@@ -458,10 +484,11 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 SELECT
                   document_no,
                   order_date AS created_at,
-                  COALESCE(SUM(qty_base), 0) AS total_pieces,
-                  COALESCE(SUM(net_value), 0) AS total_net_value
+                  COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
+                  COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value
                 FROM imported_sales_lines
-                WHERE customer_code = ?${importedDataFilter.clause}
+                WHERE customer_code = ?
+                  AND ${importedExpressions.analyticsFilter}${importedDataFilter.clause}
                 GROUP BY document_no, order_date
               ) order_totals
             `,
@@ -472,11 +499,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         : await db.get(
             `
               SELECT
-                COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_3m,
-                COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_6m,
-                COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN net_value ELSE 0 END), 0) AS revenue_12m
+                COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN ${importedExpressions.effectiveRevenue} ELSE 0 END), 0) AS revenue_3m,
+                COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN ${importedExpressions.effectiveRevenue} ELSE 0 END), 0) AS revenue_6m,
+                COALESCE(SUM(CASE WHEN SUBSTR(order_date, 1, 10) >= ? THEN ${importedExpressions.effectiveRevenue} ELSE 0 END), 0) AS revenue_12m
               FROM imported_sales_lines
-              WHERE customer_code = ?${importedDataFilter.clause}
+              WHERE customer_code = ?
+                AND ${importedExpressions.analyticsFilter}${importedDataFilter.clause}
             `,
             [
               buildCutoffDateString(now, 90),
@@ -508,15 +536,20 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               SELECT
                 item_code AS code,
                 MAX(item_description) AS description,
-                COALESCE(SUM(qty_base), 0) AS pieces,
-                COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
-                COALESCE(SUM(net_value), 0) AS revenue,
+                COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS pieces,
+                COUNT(DISTINCT CASE
+                  WHEN ${importedExpressions.countInOrderTotals} = 1 THEN CONCAT(customer_code, '::', order_date, '::', document_no)
+                  ELSE NULL
+                END) AS orders,
+                COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS revenue,
                 CASE
-                  WHEN COALESCE(SUM(qty_base), 0) > 0 THEN COALESCE(SUM(net_value), 0) / SUM(qty_base)
+                  WHEN COALESCE(SUM(${importedExpressions.effectivePieces}), 0) > 0
+                    THEN COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) / SUM(${importedExpressions.effectivePieces})
                   ELSE 0
                 END AS avg_unit_price
               FROM imported_sales_lines
-              WHERE customer_code = ?${importedDataFilter.clause}
+              WHERE customer_code = ?
+                AND ${importedExpressions.analyticsFilter}${importedDataFilter.clause}
               GROUP BY item_code
               ORDER BY item_code ASC
             `,
@@ -572,11 +605,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 document_no,
                 order_date AS created_at,
                 COUNT(*) AS total_lines,
-                COALESCE(SUM(qty_base), 0) AS total_pieces,
-                COALESCE(SUM(net_value), 0) AS total_net_value,
-                0 AS average_discount_pct
+                COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
+                COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value,
+                COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
               FROM imported_sales_lines
-              WHERE customer_code = ?${importedDataFilter.clause}
+              WHERE customer_code = ?
+                AND ${importedExpressions.countInOrderTotals} = 1${importedDataFilter.clause}
               GROUP BY customer_code, document_no, order_date
               ORDER BY order_date DESC, document_no DESC
               LIMIT 10
@@ -591,11 +625,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             document_no,
             order_date AS created_at,
             COUNT(*) AS total_lines,
-            COALESCE(SUM(qty_base), 0) AS total_pieces,
-            COALESCE(SUM(net_value), 0) AS total_net_value,
-            0 AS average_discount_pct
+            COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
+            COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value,
+            COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
           FROM imported_sales_lines
-          WHERE customer_code = ?${importedDataFilter.clause}
+          WHERE customer_code = ?
+            AND ${importedExpressions.countInOrderTotals} = 1${importedDataFilter.clause}
           GROUP BY customer_code, document_no, order_date
           ORDER BY order_date DESC, document_no DESC
           LIMIT 6
@@ -610,12 +645,13 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             SELECT
               item_code AS code,
               item_description AS description,
-              qty_base AS qty,
+              ${importedExpressions.effectivePieces} AS qty,
               unit_price,
-              0 AS discount_pct,
-              net_value AS line_net_value
+              ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
+              ${importedExpressions.effectiveRevenue} AS line_net_value
             FROM imported_sales_lines
             WHERE customer_code = ?
+              AND ${importedExpressions.countInOrderTotals} = 1
               ${importedDataFilter.clause}
               AND document_no = ?
               AND order_date = ?
@@ -631,13 +667,13 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           total_lines: asInteger(order.total_lines),
           total_pieces: asInteger(order.total_pieces),
           total_net_value: asMoney(order.total_net_value),
-          average_discount_pct: asMoney(order.average_discount_pct),
+          average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
           lines: lines.map((line) => ({
             code: line.code,
             description: line.description,
             qty: asInteger(line.qty),
             unit_price: asMoney(line.unit_price),
-            discount_pct: asMoney(line.discount_pct),
+            discount_pct: asRoundedUpPercent(line.discount_pct),
             line_net_value: asMoney(line.line_net_value),
           })),
         });
@@ -669,11 +705,12 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 `
                   SELECT
                     order_month AS month,
-                    COALESCE(SUM(net_value), 0) AS revenue,
-                    COALESCE(SUM(qty_base), 0) AS pieces
+                    COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS revenue,
+                    COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS pieces
                   FROM imported_sales_lines
                   WHERE customer_code = ?
-                    AND order_year = ?${importedDataFilter.clause}
+                    AND order_year = ?
+                    AND ${importedExpressions.analyticsFilter}${importedDataFilter.clause}
                   GROUP BY order_month
                   ORDER BY order_month ASC
                 `,
@@ -750,7 +787,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           total_lines: asInteger(order.total_lines),
           total_pieces: asInteger(order.total_pieces),
           total_net_value: asMoney(order.total_net_value),
-          average_discount_pct: asMoney(order.average_discount_pct),
+          average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
         })),
         detailed_orders: detailedOrders,
       };

@@ -7,6 +7,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
 
+from document_type_rules import (
+    build_analytics_line_filter,
+    build_count_in_order_totals_case,
+    build_customer_activity_filter,
+    build_effective_pieces_expression,
+    build_effective_revenue_expression,
+)
 from mysql_db import get_conn, init_schema
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -32,12 +39,36 @@ LEGACY_DORMANT_TABLES = [
     "customer_receivables",
 ]
 
+IMPORTED_DISCOUNT_PERCENT_EXPRESSION = """
+CASE
+  WHEN COALESCE(discount_pct_total, 0) <> 0 THEN discount_pct_total
+  WHEN COALESCE(qty_base, 0) > 0 AND COALESCE(unit_price, 0) > 0 THEN
+    CASE
+      WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) < 0 THEN 0
+      WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) > 100 THEN 100
+      ELSE (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100))
+    END
+  ELSE 0
+END
+""".strip()
+
 
 def parse_decimal(value):
     text = str(value or "").strip().replace(".", "").replace(",", ".")
     if not text:
         return 0.0
     return float(text)
+
+
+def get_row_value(row, *keys):
+    for key in keys:
+        try:
+            value = row.get(key)
+        except Exception:
+            continue
+        if value not in (None, ""):
+            return value
+    return ""
 
 
 def parse_date(value):
@@ -263,7 +294,7 @@ def rebuild_customers_from_sales(cur) -> None:
     execute_step(
         cur,
         "rebuild imported_customer_branches from sales",
-        """
+        f"""
         INSERT INTO imported_customer_branches(
           customer_code,
           customer_name,
@@ -279,11 +310,18 @@ def rebuild_customers_from_sales(cur) -> None:
           COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
           COALESCE(branch_code, '') AS branch_code,
           COALESCE(branch_description, '') AS branch_description,
-          COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
-          COALESCE(SUM(net_value), 0) AS revenue,
-          MAX(order_date) AS last_order_date,
+          COUNT(DISTINCT CASE
+            WHEN {build_count_in_order_totals_case()} = 1 THEN CONCAT(customer_code, '::', order_date, '::', document_no)
+            ELSE NULL
+          END) AS orders,
+          COALESCE(SUM({build_effective_revenue_expression()}), 0) AS revenue,
+          MAX(CASE
+            WHEN {build_customer_activity_filter()} THEN order_date
+            ELSE NULL
+          END) AS last_order_date,
           MAX(source_file) AS source_file
         FROM imported_sales_lines
+        WHERE {build_customer_activity_filter()}
         GROUP BY customer_code, COALESCE(branch_code, ''), COALESCE(branch_description, '')
         """,
     )
@@ -291,7 +329,7 @@ def rebuild_customers_from_sales(cur) -> None:
     execute_step(
         cur,
         "rebuild imported_customers from sales",
-        """
+        f"""
         INSERT INTO imported_customers(
           customer_code,
           customer_name,
@@ -310,6 +348,7 @@ def rebuild_customers_from_sales(cur) -> None:
           MAX(branch_description) AS branch_description,
           MAX(source_file) AS source_file
         FROM imported_sales_lines
+        WHERE {build_customer_activity_filter()}
         GROUP BY customer_code
         """,
     )
@@ -341,7 +380,7 @@ def rebuild_sales_aggregates(cur) -> None:
     execute_step(
         cur,
         "build imported_orders",
-        """
+        f"""
         INSERT INTO imported_orders(
           order_id, document_no, customer_code, customer_name, created_at, total_lines, total_pieces,
           total_net_value, average_discount_pct, document_type, delivery_code,
@@ -354,14 +393,15 @@ def rebuild_sales_aggregates(cur) -> None:
           MAX(customer_name),
           order_date,
           COUNT(*) AS total_lines,
-          COALESCE(SUM(qty_base), 0) AS total_pieces,
-          COALESCE(SUM(net_value), 0) AS total_net_value,
-          0 AS average_discount_pct,
+          COALESCE(SUM({build_effective_pieces_expression()}), 0) AS total_pieces,
+          COALESCE(SUM({build_effective_revenue_expression()}), 0) AS total_net_value,
+          COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
           MAX(document_type),
           MAX(delivery_code),
           MAX(delivery_description),
           MAX(source_file)
         FROM imported_sales_lines
+        WHERE {build_count_in_order_totals_case()} = 1
         GROUP BY document_no, customer_code, order_date
         """
     )
@@ -369,15 +409,16 @@ def rebuild_sales_aggregates(cur) -> None:
     execute_step(
         cur,
         "build imported_monthly_sales",
-        """
+        f"""
         INSERT INTO imported_monthly_sales(customer_code, order_year, order_month, revenue, pieces)
         SELECT
           customer_code,
           order_year,
           order_month,
-          COALESCE(SUM(net_value), 0) AS revenue,
-          COALESCE(SUM(qty_base), 0) AS pieces
+          COALESCE(SUM({build_effective_revenue_expression()}), 0) AS revenue,
+          COALESCE(SUM({build_effective_pieces_expression()}), 0) AS pieces
         FROM imported_sales_lines
+        WHERE {build_analytics_line_filter()}
         GROUP BY customer_code, order_year, order_month
         """
     )
@@ -385,7 +426,7 @@ def rebuild_sales_aggregates(cur) -> None:
     execute_step(
         cur,
         "build imported_product_sales",
-        """
+        f"""
         INSERT INTO imported_product_sales(
           customer_code, item_code, item_description, revenue, pieces, orders, avg_unit_price
         )
@@ -393,14 +434,19 @@ def rebuild_sales_aggregates(cur) -> None:
           customer_code,
           item_code,
           MAX(item_description),
-          COALESCE(SUM(net_value), 0) AS revenue,
-          COALESCE(SUM(qty_base), 0) AS pieces,
-          COUNT(DISTINCT CONCAT(customer_code, '::', order_date, '::', document_no)) AS orders,
+          COALESCE(SUM({build_effective_revenue_expression()}), 0) AS revenue,
+          COALESCE(SUM({build_effective_pieces_expression()}), 0) AS pieces,
+          COUNT(DISTINCT CASE
+            WHEN {build_count_in_order_totals_case()} = 1 THEN CONCAT(customer_code, '::', order_date, '::', document_no)
+            ELSE NULL
+          END) AS orders,
           CASE
-            WHEN COALESCE(SUM(qty_base), 0) > 0 THEN COALESCE(SUM(net_value), 0) / SUM(qty_base)
+            WHEN COALESCE(SUM({build_effective_pieces_expression()}), 0) > 0
+              THEN COALESCE(SUM({build_effective_revenue_expression()}), 0) / SUM({build_effective_pieces_expression()})
             ELSE 0
           END AS avg_unit_price
         FROM imported_sales_lines
+        WHERE {build_analytics_line_filter()}
         GROUP BY customer_code, item_code
         """
     )
@@ -455,6 +501,10 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                     branch_description = str(row.get("Περ.υποκ.", "")).strip()
                     note_1 = str(row.get("Σχόλιο 1", "")).strip()
 
+                    discount_pct_1 = parse_decimal(get_row_value(row, "% έκπτ.1"))
+                    discount_pct_2 = parse_decimal(get_row_value(row, "% έκπτ.2"))
+                    discount_pct_total = discount_pct_1 + discount_pct_2
+
                     execute_step(
                         cur,
                         "insert imported_sales_lines row",
@@ -462,10 +512,11 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                         INSERT IGNORE INTO imported_sales_lines(
                           source_file, order_date, order_year, order_month, document_no, document_type,
                           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
+                          discount_pct_1, discount_pct_2, discount_pct_total,
                           customer_code, customer_name, delivery_code, delivery_description, account_code,
                           account_description, branch_code, branch_description, note_1
                         )
-                        SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                         FROM DUAL
                         WHERE NOT EXISTS (
                           SELECT 1
@@ -480,6 +531,9 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             AND existing.qty_base = %s
                             AND existing.unit_price = %s
                             AND existing.net_value = %s
+                            AND existing.discount_pct_1 = %s
+                            AND existing.discount_pct_2 = %s
+                            AND existing.discount_pct_total = %s
                             AND existing.customer_code = %s
                             AND existing.customer_name = %s
                             AND existing.delivery_code = %s
@@ -505,6 +559,9 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             qty_base,
                             unit_price,
                             net_value,
+                            discount_pct_1,
+                            discount_pct_2,
+                            discount_pct_total,
                             customer_code,
                             customer_name,
                             delivery_code,
@@ -524,6 +581,9 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             qty_base,
                             unit_price,
                             net_value,
+                            discount_pct_1,
+                            discount_pct_2,
+                            discount_pct_total,
                             customer_code,
                             customer_name,
                             delivery_code,
