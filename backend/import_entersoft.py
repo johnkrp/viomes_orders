@@ -96,6 +96,8 @@ class ImportStats:
         self.rows_in = 0
         self.rows_upserted = 0
         self.rows_skipped_duplicate = 0
+        self.rows_replaced = 0
+        self.rows_skipped_ambiguous = 0
         self.rows_rejected = 0
         self.rebuild_started_at = None
         self.rebuild_finished_at = None
@@ -242,6 +244,98 @@ def execute_step(cur, label: str, sql: str, params=None) -> None:
                 flush=True,
             )
         raise
+
+
+def find_matching_sales_line_ids(cur, *, order_date, document_no, document_type, item_code, customer_code, delivery_code, branch_code, qty, qty_base, unit_price):
+    execute_step(
+        cur,
+        "lookup imported_sales_lines business-key matches",
+        """
+        SELECT id
+        FROM imported_sales_lines
+        WHERE order_date = %s
+          AND document_no = %s
+          AND document_type = %s
+          AND item_code = %s
+          AND customer_code = %s
+          AND delivery_code = %s
+          AND branch_code = %s
+          AND qty = %s
+          AND qty_base = %s
+          AND unit_price = %s
+        ORDER BY id ASC
+        """,
+        (
+            order_date,
+            document_no,
+            document_type,
+            item_code,
+            customer_code,
+            delivery_code,
+            branch_code,
+            qty,
+            qty_base,
+            unit_price,
+        ),
+    )
+    return [row[0] for row in cur.fetchall()]
+
+
+def replace_sales_line_by_id(
+    cur,
+    *,
+    row_id,
+    source_file,
+    item_description,
+    unit_code,
+    net_value,
+    discount_pct_1,
+    discount_pct_2,
+    discount_pct_total,
+    customer_name,
+    delivery_description,
+    account_code,
+    account_description,
+    branch_description,
+    note_1,
+):
+    execute_step(
+        cur,
+        "replace imported_sales_lines row by business key",
+        """
+        UPDATE imported_sales_lines
+        SET source_file = %s,
+            item_description = %s,
+            unit_code = %s,
+            net_value = %s,
+            discount_pct_1 = %s,
+            discount_pct_2 = %s,
+            discount_pct_total = %s,
+            customer_name = %s,
+            delivery_description = %s,
+            account_code = %s,
+            account_description = %s,
+            branch_description = %s,
+            note_1 = %s
+        WHERE id = %s
+        """,
+        (
+            source_file,
+            item_description,
+            unit_code,
+            net_value,
+            discount_pct_1,
+            discount_pct_2,
+            discount_pct_total,
+            customer_name,
+            delivery_description,
+            account_code,
+            account_description,
+            branch_description,
+            note_1,
+            row_id,
+        ),
+    )
 
 
 def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success", error_text: Optional[str] = None) -> None:
@@ -505,105 +599,104 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                     discount_pct_2 = parse_decimal(get_row_value(row, "% έκπτ.2"))
                     discount_pct_total = discount_pct_1 + discount_pct_2
 
-                    execute_step(
+                    matching_ids = find_matching_sales_line_ids(
                         cur,
-                        "insert imported_sales_lines row",
-                        """
-                        INSERT IGNORE INTO imported_sales_lines(
-                          source_file, order_date, order_year, order_month, document_no, document_type,
-                          item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
-                          discount_pct_1, discount_pct_2, discount_pct_total,
-                          customer_code, customer_name, delivery_code, delivery_description, account_code,
-                          account_description, branch_code, branch_description, note_1
-                        )
-                        SELECT %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                        FROM DUAL
-                        WHERE NOT EXISTS (
-                          SELECT 1
-                          FROM imported_sales_lines existing
-                          WHERE existing.order_date = %s
-                            AND existing.document_no = %s
-                            AND existing.document_type = %s
-                            AND existing.item_code = %s
-                            AND existing.item_description = %s
-                            AND existing.unit_code = %s
-                            AND existing.qty = %s
-                            AND existing.qty_base = %s
-                            AND existing.unit_price = %s
-                            AND existing.net_value = %s
-                            AND existing.discount_pct_1 = %s
-                            AND existing.discount_pct_2 = %s
-                            AND existing.discount_pct_total = %s
-                            AND existing.customer_code = %s
-                            AND existing.customer_name = %s
-                            AND existing.delivery_code = %s
-                            AND existing.delivery_description = %s
-                            AND existing.account_code = %s
-                            AND existing.account_description = %s
-                            AND existing.branch_code = %s
-                            AND existing.branch_description = %s
-                            AND existing.note_1 = %s
-                        )
-                        """,
-                        (
-                            sales_file.name,
-                            order_date,
-                            order_dt.year,
-                            order_dt.month,
-                            document_no,
-                            document_type,
-                            item_code,
-                            item_description,
-                            unit_code,
-                            qty,
-                            qty_base,
-                            unit_price,
-                            net_value,
-                            discount_pct_1,
-                            discount_pct_2,
-                            discount_pct_total,
-                            customer_code,
-                            customer_name,
-                            delivery_code,
-                            delivery_description,
-                            account_code,
-                            account_description,
-                            branch_code,
-                            branch_description,
-                            note_1,
-                            order_date,
-                            document_no,
-                            document_type,
-                            item_code,
-                            item_description,
-                            unit_code,
-                            qty,
-                            qty_base,
-                            unit_price,
-                            net_value,
-                            discount_pct_1,
-                            discount_pct_2,
-                            discount_pct_total,
-                            customer_code,
-                            customer_name,
-                            delivery_code,
-                            delivery_description,
-                            account_code,
-                            account_description,
-                            branch_code,
-                            branch_description,
-                            note_1,
-                        ),
+                        order_date=order_date,
+                        document_no=document_no,
+                        document_type=document_type,
+                        item_code=item_code,
+                        customer_code=customer_code,
+                        delivery_code=delivery_code,
+                        branch_code=branch_code,
+                        qty=qty,
+                        qty_base=qty_base,
+                        unit_price=unit_price,
                     )
-                    if cur.rowcount:
-                        stats.rows_upserted += cur.rowcount
+
+                    if len(matching_ids) > 1:
+                        stats.rows_skipped_ambiguous += 1
+                        stats.rows_rejected += 1
+                        print(
+                            "[import] sales_lines: ambiguous business-key match skipped "
+                            f"(order_date={order_date}, document_no={document_no}, document_type={document_type}, "
+                            f"item_code={item_code}, customer_code={customer_code}, matches={len(matching_ids)})",
+                            flush=True,
+                        )
+                        continue
+
+                    if len(matching_ids) == 1:
+                        replace_sales_line_by_id(
+                            cur,
+                            row_id=matching_ids[0],
+                            source_file=sales_file.name,
+                            item_description=item_description,
+                            unit_code=unit_code,
+                            net_value=net_value,
+                            discount_pct_1=discount_pct_1,
+                            discount_pct_2=discount_pct_2,
+                            discount_pct_total=discount_pct_total,
+                            customer_name=customer_name,
+                            delivery_description=delivery_description,
+                            account_code=account_code,
+                            account_description=account_description,
+                            branch_description=branch_description,
+                            note_1=note_1,
+                        )
+                        if cur.rowcount:
+                            stats.rows_upserted += 1
+                            stats.rows_replaced += 1
+                        else:
+                            stats.rows_skipped_duplicate += 1
                     else:
-                        stats.rows_skipped_duplicate += 1
+                        execute_step(
+                            cur,
+                            "insert imported_sales_lines row",
+                            """
+                            INSERT INTO imported_sales_lines(
+                              source_file, order_date, order_year, order_month, document_no, document_type,
+                              item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
+                              discount_pct_1, discount_pct_2, discount_pct_total,
+                              customer_code, customer_name, delivery_code, delivery_description, account_code,
+                              account_description, branch_code, branch_description, note_1
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (
+                                sales_file.name,
+                                order_date,
+                                order_dt.year,
+                                order_dt.month,
+                                document_no,
+                                document_type,
+                                item_code,
+                                item_description,
+                                unit_code,
+                                qty,
+                                qty_base,
+                                unit_price,
+                                net_value,
+                                discount_pct_1,
+                                discount_pct_2,
+                                discount_pct_total,
+                                customer_code,
+                                customer_name,
+                                delivery_code,
+                                delivery_description,
+                                account_code,
+                                account_description,
+                                branch_code,
+                                branch_description,
+                                note_1,
+                            ),
+                        )
+                        stats.rows_upserted += cur.rowcount
                     if stats.rows_in % PROGRESS_EVERY_ROWS == 0:
                         print(
                             f"[import] sales_lines: rows_in={stats.rows_in}, "
                             f"rows_upserted={stats.rows_upserted}, "
+                            f"rows_replaced={stats.rows_replaced}, "
                             f"rows_skipped_duplicate={stats.rows_skipped_duplicate}, "
+                            f"rows_skipped_ambiguous={stats.rows_skipped_ambiguous}, "
                             f"rows_rejected={stats.rows_rejected}",
                             flush=True,
                         )
@@ -611,7 +704,8 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
             print(
                 f"[import] sales_lines: finished {sales_file.name} "
                 f"(rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}, "
-                f"rows_skipped_duplicate={stats.rows_skipped_duplicate}, rows_rejected={stats.rows_rejected})",
+                f"rows_replaced={stats.rows_replaced}, rows_skipped_duplicate={stats.rows_skipped_duplicate}, "
+                f"rows_skipped_ambiguous={stats.rows_skipped_ambiguous}, rows_rejected={stats.rows_rejected})",
                 flush=True,
             )
 
@@ -624,7 +718,8 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
         finish_import(cur, run_id, stats)
         print(
             f"[import] sales_lines: completed rows_in={stats.rows_in}, rows_upserted={stats.rows_upserted}, "
-            f"rows_skipped_duplicate={stats.rows_skipped_duplicate}, rows_rejected={stats.rows_rejected}",
+            f"rows_replaced={stats.rows_replaced}, rows_skipped_duplicate={stats.rows_skipped_duplicate}, "
+            f"rows_skipped_ambiguous={stats.rows_skipped_ambiguous}, rows_rejected={stats.rows_rejected}",
             flush=True,
         )
         return stats

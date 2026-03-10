@@ -60,9 +60,10 @@ class FakeCursor:
     def __init__(self):
         self.lastrowid = 0
         self.rowcount = 0
-        self.imported_rows = set()
+        self.imported_rows = []
         self.import_run_insert_params = None
         self.import_run_update_params = None
+        self._fetchall_result = []
 
     def execute(self, sql, params=None):
         normalized = " ".join(sql.split())
@@ -79,15 +80,69 @@ class FakeCursor:
             self.imported_rows.clear()
             self.rowcount = 0
             return
-        if "INSERT IGNORE INTO imported_sales_lines" in normalized:
-            logical_key = tuple(params[25:])
-            if logical_key in self.imported_rows:
+        if "SELECT id FROM imported_sales_lines" in normalized:
+            business_key = tuple(params)
+            matches = [row for row in self.imported_rows if row["business_key"] == business_key]
+            self._fetchall_result = [(row["id"],) for row in matches]
+            self.rowcount = len(self._fetchall_result)
+            return
+        if normalized.startswith("UPDATE imported_sales_lines SET"):
+            row_id = params[-1]
+            row = next((item for item in self.imported_rows if item["id"] == row_id), None)
+            if row is None:
+                self.rowcount = 0
+                return
+            mutable_values = tuple(params[:-1])
+            if row["mutable_values"] == mutable_values:
                 self.rowcount = 0
             else:
-                self.imported_rows.add(logical_key)
+                row["mutable_values"] = mutable_values
+                row["source_file"] = params[0]
                 self.rowcount = 1
             return
+        if normalized.startswith("INSERT INTO imported_sales_lines"):
+            self.lastrowid += 1
+            business_key = (
+                params[1],
+                params[4],
+                params[5],
+                params[6],
+                params[16],
+                params[18],
+                params[22],
+                params[9],
+                params[10],
+                params[11],
+            )
+            mutable_values = (
+                params[0],
+                params[7],
+                params[8],
+                params[12],
+                params[13],
+                params[14],
+                params[15],
+                params[17],
+                params[19],
+                params[20],
+                params[21],
+                params[23],
+                params[24],
+            )
+            self.imported_rows.append(
+                {
+                    "id": self.lastrowid,
+                    "business_key": business_key,
+                    "mutable_values": mutable_values,
+                    "source_file": params[0],
+                }
+            )
+            self.rowcount = 1
+            return
         self.rowcount = 0
+
+    def fetchall(self):
+        return list(self._fetchall_result)
 
 
 class ImportEntersoftHelpersTest(unittest.TestCase):
@@ -130,9 +185,71 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         rebuild_customers.assert_called_once()
         rebuild_aggregates.assert_called_once()
 
+    def test_import_sales_lines_replaces_single_business_key_match(self):
+        cursor = FakeCursor()
+        existing_row = sample_sales_row()
+        updated_row = sample_sales_row()
+        updated_row["% Ξ­ΞΊΟ€Ο„.1"] = "30,00"
+        updated_row["Ξ£Ο‡ΟΞ»ΞΉΞΏ 1"] = "Promo"
+        existing_file = create_temp_sales_file()
+        updated_file = create_temp_sales_file()
+        try:
+            with patch("import_entersoft.csv.DictReader", return_value=[existing_row]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                import_sales_lines(cursor, [existing_file], "incremental")
+            with patch("import_entersoft.csv.DictReader", return_value=[updated_row]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                stats = import_sales_lines(cursor, [updated_file], "incremental")
+        finally:
+            existing_file.unlink(missing_ok=True)
+            updated_file.unlink(missing_ok=True)
+
+        self.assertEqual(stats.rows_in, 1)
+        self.assertEqual(stats.rows_upserted, 1)
+        self.assertEqual(stats.rows_replaced, 1)
+        self.assertEqual(stats.rows_skipped_duplicate, 0)
+        self.assertEqual(stats.rows_skipped_ambiguous, 0)
+        self.assertEqual(len(cursor.imported_rows), 1)
+        self.assertEqual(cursor.imported_rows[0]["source_file"], updated_file.name)
+
+    def test_import_sales_lines_rejects_ambiguous_business_key_match(self):
+        cursor = FakeCursor()
+        row = sample_sales_row()
+        business_key = (
+            "2026-03-08",
+            "INV-1",
+            "TI",
+            "P001",
+            "C001",
+            "D1",
+            "B1",
+            10.0,
+            10.0,
+            12.5,
+        )
+        cursor.imported_rows = [
+            {"id": 1, "business_key": business_key, "mutable_values": tuple(), "source_file": "a.csv"},
+            {"id": 2, "business_key": business_key, "mutable_values": tuple(), "source_file": "b.csv"},
+        ]
+        sales_file = create_temp_sales_file()
+        try:
+            with patch("import_entersoft.csv.DictReader", return_value=[row]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                stats = import_sales_lines(cursor, [sales_file], "incremental")
+        finally:
+            sales_file.unlink(missing_ok=True)
+
+        self.assertEqual(stats.rows_in, 1)
+        self.assertEqual(stats.rows_upserted, 0)
+        self.assertEqual(stats.rows_skipped_ambiguous, 1)
+        self.assertEqual(stats.rows_rejected, 1)
+
     def test_import_sales_lines_full_refresh_clears_previous_imported_rows(self):
         cursor = FakeCursor()
-        cursor.imported_rows.add(("stale",))
+        cursor.imported_rows.append({"id": 999, "business_key": ("stale",), "mutable_values": tuple(), "source_file": "stale.csv"})
         sales_file = create_temp_sales_file()
         try:
             with patch("import_entersoft.csv.DictReader", return_value=[sample_sales_row()]), \
