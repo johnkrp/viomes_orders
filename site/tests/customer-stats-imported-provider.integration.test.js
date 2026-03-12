@@ -177,6 +177,30 @@ test("SQLite-backed imported stats integration returns the expected contract", a
 
     await db.run(
       `
+        INSERT INTO imported_customer_ledgers(
+          customer_code, customer_name, opening_balance, debit, credit, ledger_balance,
+          pending_instruments, commercial_balance, email, is_inactive, salesperson_code, source_file
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "C001",
+        "Alpha Store",
+        0,
+        0,
+        0,
+        321.45,
+        0,
+        321.45,
+        "alpha@example.com",
+        0,
+        "90",
+        "karteles.csv",
+      ],
+    );
+
+    await db.run(
+      `
         INSERT INTO imported_sales_lines(
           source_file, order_date, order_year, order_month, document_no, document_type,
           item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
@@ -271,6 +295,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     const payload = await provider.getCustomerStats("C001");
 
     assert.equal(payload.customer.code, "C001");
+    assert.equal(payload.customer.email, "alpha@example.com");
     assert.equal(payload.customer.aggregation_level, "customer");
     assert.equal(payload.customer.branch_code, null);
     assert.equal(payload.customer.branch_description, null);
@@ -287,6 +312,9 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
     assert.equal(payload.detailed_orders[0].lines[0].code, "P1");
     assert.equal(payload.detailed_orders[0].lines[0].discount_pct, 7);
+    assert.equal(payload.receivables.open_balance, 321.45);
+    assert.equal(payload.receivables.overdue_balance, 0);
+    assert.deepEqual(payload.receivables.items, []);
 
     const branchPayload = await provider.getCustomerStats("C001", { branchCode: "B1" });
     assert.equal(branchPayload.customer.aggregation_level, "branch");

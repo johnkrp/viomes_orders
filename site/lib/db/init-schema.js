@@ -178,6 +178,23 @@ async function initSqliteSchema(db) {
       )
     `,
     `
+      CREATE TABLE IF NOT EXISTS imported_customer_ledgers (
+        customer_code TEXT PRIMARY KEY,
+        customer_name TEXT NOT NULL,
+        opening_balance REAL NOT NULL DEFAULT 0,
+        debit REAL NOT NULL DEFAULT 0,
+        credit REAL NOT NULL DEFAULT 0,
+        ledger_balance REAL NOT NULL DEFAULT 0,
+        pending_instruments REAL NOT NULL DEFAULT 0,
+        commercial_balance REAL NOT NULL DEFAULT 0,
+        email TEXT,
+        is_inactive INTEGER NOT NULL DEFAULT 0,
+        salesperson_code TEXT,
+        source_file TEXT,
+        imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+    `
       CREATE TABLE IF NOT EXISTS imported_sales_lines (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         source_file TEXT NOT NULL,
@@ -460,6 +477,83 @@ export async function initDatabaseSchema({ db, kind }) {
     kind === "mysql"
       ? "(customer_name(191), branch_description(191))"
       : "(customer_name, branch_description)",
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "customer_name",
+    `customer_name ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"} NOT NULL DEFAULT ''`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "opening_balance",
+    `opening_balance ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "debit",
+    `debit ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "credit",
+    `credit ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "ledger_balance",
+    `ledger_balance ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "pending_instruments",
+    `pending_instruments ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "commercial_balance",
+    `commercial_balance ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "email",
+    `email ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "is_inactive",
+    `is_inactive ${kind === "mysql" ? "TINYINT(1)" : "INTEGER"} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "salesperson_code",
+    `salesperson_code ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledgers",
+    "source_file",
+    `source_file ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"}`,
   );
   await ensureColumn(
     db,

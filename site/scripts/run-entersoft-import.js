@@ -85,6 +85,7 @@ const effectiveEnv = {
   ENTERSOFT_IMPORT_MODE: requestedMode,
   ENTERSOFT_SALES_FILES: cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
   ENTERSOFT_DAILY_INFO_FILE: cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
+  ENTERSOFT_LEDGER_FILE: cli["ledger-file"] || process.env.ENTERSOFT_LEDGER_FILE,
   IMPORT_TRIGGER_SOURCE: cli["trigger-source"] || process.env.IMPORT_TRIGGER_SOURCE,
   ENTERSOFT_IMPORT_LOG_FILE: logFile,
 };

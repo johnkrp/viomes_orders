@@ -161,6 +161,28 @@ def build_import_metadata_json(import_mode: str) -> str:
     )
 
 
+def build_ledger_snapshot_metadata_json() -> str:
+    return json.dumps(
+        {
+            "snapshot_table": "imported_customer_ledgers",
+            "snapshot_strategy": "truncate_and_replace",
+            "customer_projection_table": "customers",
+            "balance_metric": "commercial_balance",
+            "dataset": "customer_ledgers",
+        },
+        ensure_ascii=True,
+        separators=(",", ":"),
+    )
+
+
+def has_explicit_sales_config() -> bool:
+    env = os.environ
+    return bool(
+        str(env.get("ENTERSOFT_SALES_FILES", "")).strip()
+        or str(env.get("ENTERSOFT_DAILY_INFO_FILE", "")).strip()
+    )
+
+
 def resolve_sales_files():
     env = os.environ
     explicit = str(env.get("ENTERSOFT_SALES_FILES", "")).strip()
@@ -174,6 +196,13 @@ def resolve_sales_files():
         return [Path(daily)]
 
     return list(DEFAULT_SALES_FILES)
+
+
+def resolve_ledger_file() -> Optional[Path]:
+    explicit = str(os.getenv("ENTERSOFT_LEDGER_FILE", "")).strip()
+    if explicit:
+        return Path(explicit)
+    return None
 
 
 def resolve_import_mode() -> str:
@@ -448,8 +477,14 @@ def rebuild_customers_from_sales(cur) -> None:
     )
     execute_step(
         cur,
-        "delete mirrored customers",
-        "DELETE FROM customers WHERE source = 'entersoft_import'",
+        "delete stale mirrored customers",
+        """
+        DELETE FROM customers
+        WHERE source = 'entersoft_import'
+          AND code NOT IN (
+            SELECT customer_code FROM imported_customers
+          )
+        """,
     )
     execute_step(
         cur,
@@ -460,7 +495,7 @@ def rebuild_customers_from_sales(cur) -> None:
         FROM imported_customers
         ON DUPLICATE KEY UPDATE
           name = VALUES(name),
-          email = VALUES(email),
+          email = COALESCE(email, VALUES(email)),
           source = VALUES(source)
         """,
     )
@@ -729,6 +764,98 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
         raise
 
 
+def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
+    source_files_json, source_checksum = describe_source_files([ledger_file])
+    stats = ImportStats(
+        dataset="customer_ledgers",
+        file_name=ledger_file.name,
+        import_mode="snapshot_replace",
+        source_files_json=source_files_json,
+        source_checksum=source_checksum,
+        trigger_source=resolve_trigger_source(),
+        metadata_json=build_ledger_snapshot_metadata_json(),
+    )
+    print(f"[import] customer_ledgers: starting ({ledger_file.name})", flush=True)
+    run_id = begin_import(cur, stats)
+    try:
+        execute_step(cur, "truncate imported_customer_ledgers", "DELETE FROM imported_customer_ledgers")
+        with ledger_file.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            for row in reader:
+                stats.source_row_count += 1
+                stats.rows_in += 1
+                customer_code = str(get_row_value(row, "Κωδικός")).strip()
+                customer_name = str(get_row_value(row, "Επωνυμία")).strip()
+                if not customer_code or not customer_name:
+                    stats.rows_rejected += 1
+                    continue
+
+                execute_step(
+                    cur,
+                    "insert imported_customer_ledgers row",
+                    """
+                    INSERT INTO imported_customer_ledgers(
+                      customer_code,
+                      customer_name,
+                      opening_balance,
+                      debit,
+                      credit,
+                      ledger_balance,
+                      pending_instruments,
+                      commercial_balance,
+                      email,
+                      is_inactive,
+                      salesperson_code,
+                      source_file
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        customer_code,
+                        customer_name,
+                        parse_decimal(get_row_value(row, "Εκ μεταφοράς")),
+                        parse_decimal(get_row_value(row, "Χρέωση ")),
+                        parse_decimal(get_row_value(row, "Πίστωση ")),
+                        parse_decimal(get_row_value(row, "Λογιστικό υπόλοιπο")),
+                        parse_decimal(get_row_value(row, "Εκκρεμή αξιόγραφα")),
+                        parse_decimal(get_row_value(row, "Εμπορικό υπόλοιπο")),
+                        str(get_row_value(row, "Ηλεκτρονική διεύθυνση")).strip() or None,
+                        1 if str(get_row_value(row, "Ανενεργός")).strip() in {"1", "true", "True"} else 0,
+                        str(get_row_value(row, "Πωλητής")).strip() or None,
+                        ledger_file.name,
+                    ),
+                )
+                stats.rows_upserted += cur.rowcount
+
+        execute_step(
+            cur,
+            "sync customer emails from imported_customer_ledgers",
+            """
+            INSERT INTO customers(code, name, email, source)
+            SELECT customer_code, customer_name, email, 'entersoft_import'
+            FROM imported_customer_ledgers
+            ON DUPLICATE KEY UPDATE
+              name = VALUES(name),
+              email = CASE
+                WHEN VALUES(email) IS NOT NULL AND VALUES(email) <> '' THEN VALUES(email)
+                ELSE email
+              END
+            """,
+        )
+
+        finish_import(cur, run_id, stats)
+        print(
+            f"[import] customer_ledgers: completed rows_in={stats.rows_in}, "
+            f"rows_upserted={stats.rows_upserted}, rows_rejected={stats.rows_rejected}",
+            flush=True,
+        )
+        return stats
+    except Exception as exc:
+        finish_import(cur, run_id, stats, status="failed", error_text=str(exc))
+        print(f"[import] customer_ledgers: failed ({exc})", flush=True)
+        raise
+
+
 def main() -> None:
     init_schema()
     conn = get_conn()
@@ -737,25 +864,48 @@ def main() -> None:
     print(f"[import] session lock wait timeout set to {LOCK_WAIT_TIMEOUT_SECONDS}s", flush=True)
     import_mode = resolve_import_mode()
     print(f"[import] mode: {import_mode}", flush=True)
-    sales_files = resolve_sales_files()
+    ledger_file = resolve_ledger_file()
+    if ledger_file and not ledger_file.exists():
+        raise FileNotFoundError(f"Ledger snapshot file not found: {ledger_file}")
 
-    if not sales_files:
-        raise RuntimeError("No sales files configured. Set ENTERSOFT_SALES_FILES or ENTERSOFT_DAILY_INFO_FILE.")
+    explicit_sales_config = has_explicit_sales_config()
+    sales_files = resolve_sales_files() if (explicit_sales_config or not ledger_file) else []
 
     for sales_file in sales_files:
         if not sales_file.exists():
             raise FileNotFoundError(f"Sales file not found: {sales_file}")
 
-    print(f"[import] using sales files: {', '.join(str(p) for p in sales_files)}", flush=True)
+    if sales_files:
+        print(f"[import] using sales files: {', '.join(str(p) for p in sales_files)}", flush=True)
+    if ledger_file:
+        print(f"[import] using ledger snapshot: {ledger_file}", flush=True)
+    if not sales_files and not ledger_file:
+        raise RuntimeError(
+            "No import input configured. Set ENTERSOFT_SALES_FILES, ENTERSOFT_DAILY_INFO_FILE, or ENTERSOFT_LEDGER_FILE."
+        )
 
     try:
-        sales_stats = import_sales_lines(cur, sales_files, import_mode)
+        if sales_files:
+            sales_stats = import_sales_lines(cur, sales_files, import_mode)
+        else:
+            sales_stats = None
+        if ledger_file:
+            ledger_stats = import_customer_ledgers(cur, ledger_file)
+        else:
+            ledger_stats = None
         conn.commit()
-        print(
-            "Imported sales_lines="
-            f"{sales_stats.rows_upserted} "
-            f"(duplicates_skipped={sales_stats.rows_skipped_duplicate}, rejected={sales_stats.rows_rejected})"
-        )
+        if sales_stats:
+            print(
+                "Imported sales_lines="
+                f"{sales_stats.rows_upserted} "
+                f"(duplicates_skipped={sales_stats.rows_skipped_duplicate}, rejected={sales_stats.rows_rejected})"
+            )
+        if ledger_stats:
+            print(
+                "Imported customer_ledgers="
+                f"{ledger_stats.rows_upserted} "
+                f"(rejected={ledger_stats.rows_rejected})"
+            )
     except Exception:
         conn.rollback()
         raise

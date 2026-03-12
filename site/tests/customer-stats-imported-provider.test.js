@@ -11,7 +11,7 @@ function createImportedDbFixture() {
     async get(sql, params = []) {
       if (sql.includes("SELECT COUNT(*) AS n FROM imported_sales_lines")) return { n: 3 };
       if (sql.includes("FROM imported_customers")) {
-        if (params[0] === "MISS") return undefined;
+        if (params[1] === "MISS") return undefined;
         return {
           code: "C001",
           name: "Alpha Store",
@@ -23,7 +23,7 @@ function createImportedDbFixture() {
         };
       }
       if (sql.includes("MAX(delivery_code) AS delivery_code") && sql.includes("FROM imported_sales_lines")) {
-        if (params[0] === "MISS") return undefined;
+        if (params[1] === "MISS") return undefined;
         return {
           code: "C001",
           name: "Alpha Store",
@@ -62,6 +62,18 @@ function createImportedDbFixture() {
           revenue_3m: 200,
           revenue_6m: 245.6,
           revenue_12m: 245.6,
+        };
+      }
+      if (sql.includes("FROM imported_customer_ledgers")) {
+        return {
+          customer_code: "C001",
+          customer_name: "Alpha Store",
+          commercial_balance: 321.45,
+          ledger_balance: 321.45,
+          pending_instruments: 0,
+          email: "alpha@example.com",
+          is_inactive: 0,
+          salesperson_code: "90",
         };
       }
       throw new Error(`Unexpected db.get SQL: ${sql}`);
@@ -221,6 +233,7 @@ test("imported-data provider builds the customer stats contract from imported ta
 
   assert.equal(payload.customer.code, "C001");
   assert.equal(payload.customer.name, "Alpha Store");
+  assert.equal(payload.customer.email, "alpha@example.com");
   assert.equal(payload.customer.aggregation_level, "customer");
   assert.equal(payload.customer.branch_code, null);
   assert.equal(payload.customer.branch_description, null);
@@ -240,6 +253,9 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.monthly_sales.yearly_series.length, 3);
   assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
   assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
+  assert.equal(payload.receivables.open_balance, 321.45);
+  assert.equal(payload.receivables.overdue_balance, 0);
+  assert.deepEqual(payload.receivables.items, []);
 });
 
 test("imported-data provider returns 404 when imported customer is missing", async () => {
@@ -253,4 +269,23 @@ test("imported-data provider returns 404 when imported customer is missing", asy
     assert.match(error.message, /Customer not found/);
     return true;
   });
+});
+
+test("imported-data provider falls back to zero receivables when no ledger snapshot exists", async () => {
+  const db = createImportedDbFixture();
+  const originalGet = db.get.bind(db);
+  db.get = async (sql, params = []) => {
+    if (sql.includes("FROM imported_customer_ledgers")) return undefined;
+    return originalGet(sql, params);
+  };
+
+  const provider = createSqliteCustomerStatsProvider({
+    db,
+    sqlDialect: "mysql",
+  });
+
+  const payload = await provider.getCustomerStats("C001");
+  assert.equal(payload.receivables.open_balance, 0);
+  assert.equal(payload.receivables.overdue_balance, 0);
+  assert.deepEqual(payload.receivables.items, []);
 });

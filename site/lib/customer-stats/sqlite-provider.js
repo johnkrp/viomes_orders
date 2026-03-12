@@ -94,6 +94,29 @@ async function hasImportedData(db) {
   }
 }
 
+async function loadImportedLedgerSnapshot(db, customerCode) {
+  try {
+    return await db.get(
+      `
+        SELECT
+          customer_code,
+          customer_name,
+          commercial_balance,
+          ledger_balance,
+          pending_instruments,
+          email,
+          is_inactive,
+          salesperson_code
+        FROM imported_customer_ledgers
+        WHERE customer_code = ?
+      `,
+      [customerCode],
+    );
+  } catch {
+    return null;
+  }
+}
+
 function buildImportedBranchClause(branchCode, alias = "") {
   const prefix = alias ? `${alias}.` : "";
   if (!String(branchCode || "").trim()) {
@@ -413,6 +436,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         branchCode: branchScopeCode,
         branchDescription: branchScopeDescription,
       });
+      const importedLedger = await loadImportedLedgerSnapshot(db, code);
       const availableBranches = await loadImportedCustomerBranches(db, code, {
         branchCode: branchScopeCode,
         branchDescription: branchScopeDescription,
@@ -428,7 +452,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               SELECT
                 customer_code AS code,
                 customer_name AS name,
-                NULL AS email,
+                ? AS email,
                 delivery_code,
                 delivery_description,
                 NULL AS branch_code,
@@ -436,14 +460,14 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               FROM imported_customers
               WHERE customer_code = ?
             `,
-            [code],
+            [importedLedger?.email || null, code],
           )
         : await db.get(
             `
               SELECT
                 customer_code AS code,
                 COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS name,
-                NULL AS email,
+                ? AS email,
                 MAX(delivery_code) AS delivery_code,
                 MAX(delivery_description) AS delivery_description,
                 ${selectedBranchCode ? "MAX(branch_code)" : "NULL"} AS branch_code,
@@ -453,7 +477,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 AND ${importedExpressions.customerActivityFilter}${importedDataFilter.clause}
               GROUP BY customer_code
             `,
-            [code, ...importedDataFilter.params],
+            [importedLedger?.email || null, code, ...importedDataFilter.params],
           );
 
       if (!customer) {
@@ -728,7 +752,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         customer: {
           code: customer.code,
           name: customer.name,
-          email: null,
+          email: customer.email || importedLedger?.email || null,
           aggregation_level: selectedBranchCode ? "branch" : "customer",
           branch_code: selectedBranchCode ? customer.branch_code || selectedBranchCode : null,
           branch_description: selectedBranchCode ? customer.branch_description || null : null,
@@ -767,7 +791,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         },
         receivables: {
           currency: "EUR",
-          open_balance: 0,
+          open_balance: asMoney(importedLedger?.commercial_balance),
           overdue_balance: 0,
           items: [],
         },

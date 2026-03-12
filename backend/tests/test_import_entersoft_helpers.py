@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from import_entersoft import import_sales_lines, parse_date, parse_decimal, resolve_import_mode
+from import_entersoft import import_customer_ledgers, import_sales_lines, parse_date, parse_decimal, resolve_import_mode
 
 TEST_TMP_DIR = Path(__file__).resolve().parents[2] / ".tmp"
 
@@ -56,11 +56,44 @@ def create_temp_sales_file():
     return sales_file
 
 
+def sample_ledger_row():
+    return {
+        "Κωδικός": "C001",
+        "Επωνυμία": "Alpha Store",
+        "Εκ μεταφοράς": "10,00",
+        "Χρέωση ": "50,00",
+        "Πίστωση ": "25,00",
+        "Λογιστικό υπόλοιπο": "35,00",
+        "Εκκρεμή αξιόγραφα": "5,00",
+        "Εμπορικό υπόλοιπο": "40,00",
+        "Ηλεκτρονική διεύθυνση": "alpha@example.com",
+        "Ανενεργός": "0",
+        "Πωλητής": "90",
+    }
+
+
+def invalid_ledger_row():
+    return {
+        "Κωδικός": "",
+        "Επωνυμία": "",
+    }
+
+
+def create_temp_ledger_file():
+    TEST_TMP_DIR.mkdir(exist_ok=True)
+    fd, temp_path = tempfile.mkstemp(prefix="ledger-", suffix=".csv", dir=TEST_TMP_DIR)
+    os.close(fd)
+    ledger_file = Path(temp_path)
+    ledger_file.write_text("unused", encoding="utf-8")
+    return ledger_file
+
+
 class FakeCursor:
     def __init__(self):
         self.lastrowid = 0
         self.rowcount = 0
         self.imported_rows = []
+        self.imported_ledgers = {}
         self.import_run_insert_params = None
         self.import_run_update_params = None
         self._fetchall_result = []
@@ -78,6 +111,10 @@ class FakeCursor:
             return
         if normalized == "DELETE FROM imported_sales_lines":
             self.imported_rows.clear()
+            self.rowcount = 0
+            return
+        if normalized == "DELETE FROM imported_customer_ledgers":
+            self.imported_ledgers.clear()
             self.rowcount = 0
             return
         if "SELECT id FROM imported_sales_lines" in normalized:
@@ -138,6 +175,26 @@ class FakeCursor:
                 }
             )
             self.rowcount = 1
+            return
+        if normalized.startswith("INSERT INTO imported_customer_ledgers"):
+            self.imported_ledgers[params[0]] = {
+                "customer_code": params[0],
+                "customer_name": params[1],
+                "opening_balance": params[2],
+                "debit": params[3],
+                "credit": params[4],
+                "ledger_balance": params[5],
+                "pending_instruments": params[6],
+                "commercial_balance": params[7],
+                "email": params[8],
+                "is_inactive": params[9],
+                "salesperson_code": params[10],
+                "source_file": params[11],
+            }
+            self.rowcount = 1
+            return
+        if normalized.startswith("INSERT INTO customers(code, name, email, source) SELECT customer_code, customer_name, email, 'entersoft_import' FROM imported_customer_ledgers"):
+            self.rowcount = len(self.imported_ledgers)
             return
         self.rowcount = 0
 
@@ -289,6 +346,29 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertIn("manual_or_cli", cursor.import_run_insert_params)
         self.assertIn(2, cursor.import_run_update_params)
         self.assertIn(1, cursor.import_run_update_params)
+
+    def test_import_customer_ledgers_replaces_snapshot_and_records_run(self):
+        cursor = FakeCursor()
+        cursor.imported_ledgers["OLD"] = {"customer_code": "OLD"}
+        ledger_file = create_temp_ledger_file()
+        try:
+            with patch("import_entersoft.csv.DictReader", return_value=[sample_ledger_row(), invalid_ledger_row()]):
+                stats = import_customer_ledgers(cursor, ledger_file)
+        finally:
+            ledger_file.unlink(missing_ok=True)
+
+        self.assertEqual(stats.dataset, "customer_ledgers")
+        self.assertEqual(stats.import_mode, "snapshot_replace")
+        self.assertEqual(stats.source_row_count, 2)
+        self.assertEqual(stats.rows_in, 2)
+        self.assertEqual(stats.rows_upserted, 1)
+        self.assertEqual(stats.rows_rejected, 1)
+        self.assertEqual(list(cursor.imported_ledgers.keys()), ["C001"])
+        self.assertEqual(cursor.imported_ledgers["C001"]["commercial_balance"], 40.0)
+        self.assertEqual(cursor.imported_ledgers["C001"]["email"], "alpha@example.com")
+        self.assertIn('"snapshot_table":"imported_customer_ledgers"', stats.metadata_json)
+        self.assertIsNotNone(cursor.import_run_insert_params)
+        self.assertIsNotNone(cursor.import_run_update_params)
 
 
 if __name__ == "__main__":

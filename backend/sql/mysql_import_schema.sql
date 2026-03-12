@@ -33,6 +33,22 @@ CREATE TABLE IF NOT EXISTS imported_customer_branches (
   KEY idx_imported_customer_branches_name_lookup(customer_name(191), branch_description(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS imported_customer_ledgers (
+  customer_code VARCHAR(128) PRIMARY KEY,
+  customer_name VARCHAR(255) NOT NULL,
+  opening_balance DOUBLE NOT NULL DEFAULT 0,
+  debit DOUBLE NOT NULL DEFAULT 0,
+  credit DOUBLE NOT NULL DEFAULT 0,
+  ledger_balance DOUBLE NOT NULL DEFAULT 0,
+  pending_instruments DOUBLE NOT NULL DEFAULT 0,
+  commercial_balance DOUBLE NOT NULL DEFAULT 0,
+  email VARCHAR(255),
+  is_inactive TINYINT(1) NOT NULL DEFAULT 0,
+  salesperson_code VARCHAR(128),
+  source_file VARCHAR(255),
+  imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS imported_sales_lines (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   source_file VARCHAR(255) NOT NULL,
