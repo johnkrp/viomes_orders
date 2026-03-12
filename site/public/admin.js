@@ -911,16 +911,6 @@ function renderMonthlySales(monthlySales) {
 }
 
 function renderReceivablesTable() {
-  const receivablesHeadRow = document.querySelector(".admin-top-qty-table thead tr");
-  if (receivablesHeadRow) {
-    receivablesHeadRow.innerHTML = `
-      <th>Ημερομηνία</th>
-      <th>Παραστατικό</th>
-      <th>Αιτιολογία</th>
-      <th class="admin-table-number">Χρέωση</th>
-      <th class="admin-table-number">Πίστωση</th>
-    `;
-  }
   const totalPages = Math.max(1, Math.ceil(currentReceivables.length / RECEIVABLES_PAGE_SIZE));
   currentReceivablesPage = Math.min(currentReceivablesPage, totalPages);
   const start = (currentReceivablesPage - 1) * RECEIVABLES_PAGE_SIZE;
@@ -936,13 +926,14 @@ function renderReceivablesTable() {
               <td>${escapeHtml(item.reason || "-")}</td>
               <td>${escapeHtml(formatMoney(item.debit))}</td>
               <td>${escapeHtml(formatMoney(item.credit))}</td>
+              <td>${escapeHtml(formatMoney(item.ledger_balance))}</td>
             </tr>
           `;
         })
         .join("")
     : `
         <tr>
-          <td colspan="5" class="admin-table-empty">\u0394\u03b5\u03bd \u03c5\u03c0\u03ac\u03c1\u03c7\u03bf\u03c5\u03bd \u03ba\u03b9\u03bd\u03ae\u03c3\u03b5\u03b9\u03c2 \u03ba\u03b1\u03c1\u03c4\u03ad\u03bb\u03b1\u03c2 \u03b3\u03b9\u03b1 \u03b1\u03c5\u03c4\u03cc\u03bd \u03c4\u03bf\u03bd \u03c0\u03b5\u03bb\u03ac\u03c4\u03b7.</td>
+          <td colspan="6" class="admin-table-empty">\u0394\u03b5\u03bd \u03c5\u03c0\u03ac\u03c1\u03c7\u03bf\u03c5\u03bd \u03ba\u03b9\u03bd\u03ae\u03c3\u03b5\u03b9\u03c2 \u03ba\u03b1\u03c1\u03c4\u03ad\u03bb\u03b1\u03c2 \u03b3\u03b9\u03b1 \u03b1\u03c5\u03c4\u03cc\u03bd \u03c4\u03bf\u03bd \u03c0\u03b5\u03bb\u03ac\u03c4\u03b7.</td>
         </tr>
       `;
 
@@ -970,7 +961,6 @@ function renderReceivables(receivables) {
 }
 function renderProductSales() {
   const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
-  const secondaryMetric = metric === "pieces" ? "revenue" : "pieces";
   const sortedItems = [...currentProductSales].sort((a, b) => {
     if (metric === "pieces") {
       return Number(b.pieces || 0) - Number(a.pieces || 0) || Number(b.revenue || 0) - Number(a.revenue || 0);
@@ -980,10 +970,6 @@ function renderProductSales() {
 
   if (els.productSalesMetricHeading) {
     els.productSalesMetricHeading.textContent = metric === "pieces" ? "Τεμάχια" : "Τζίρος";
-  }
-  const productSalesSecondaryHeading = document.querySelector("#productSalesMetricHeading + th");
-  if (productSalesSecondaryHeading) {
-    productSalesSecondaryHeading.textContent = secondaryMetric === "pieces" ? "Τεμάχια" : "Τζίρος";
   }
 
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / PRODUCT_SALES_PAGE_SIZE));
@@ -995,14 +981,12 @@ function renderProductSales() {
     ? pageItems
         .map((item) => {
           const metricValue = metric === "pieces" ? formatNumber(item.pieces) : formatMoney(item.revenue);
-          const secondaryMetricValue =
-            secondaryMetric === "pieces" ? formatNumber(item.pieces) : formatMoney(item.revenue);
           return `
             <tr>
               <td>${escapeHtml(item.code)}</td>
               <td>${escapeHtml(item.description)}</td>
               <td class="admin-table-number">${escapeHtml(metricValue)}</td>
-              <td class="admin-table-number">${escapeHtml(secondaryMetricValue)}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.pieces))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.orders))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.avg_unit_price))}</td>
             </tr>
@@ -1011,7 +995,7 @@ function renderProductSales() {
         .join("")
     : `
         <tr>
-          <td colspan="6" class="admin-table-empty">Δεν υπάρχουν διαθέσιμες πωλήσεις ειδών για την τρέχουσα επιλογή.</td>
+          <td colspan="7" class="admin-table-empty">Δεν υπάρχουν διαθέσιμες πωλήσεις ειδών για την τρέχουσα επιλογή.</td>
         </tr>
       `;
 
