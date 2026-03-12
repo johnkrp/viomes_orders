@@ -218,7 +218,7 @@ export const REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL = `
     customer_code,
     COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS customer_name,
     COALESCE(branch_code, '') AS branch_code,
-    COALESCE(branch_description, '') AS branch_description,
+    COALESCE(MAX(branch_description), '') AS branch_description,
     COUNT(DISTINCT CASE
       WHEN ${buildCountInOrderTotalsCase()} = 1 THEN CONCAT(customer_code, '::', order_date, '::', document_no)
       ELSE NULL
@@ -231,9 +231,10 @@ export const REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL = `
     MAX(source_file) AS source_file
   FROM imported_sales_lines
   WHERE ${buildCustomerActivityFilter()}
-  GROUP BY customer_code, COALESCE(branch_code, ''), COALESCE(branch_description, '')
+  GROUP BY customer_code, COALESCE(branch_code, '')
   ON DUPLICATE KEY UPDATE
     customer_name = VALUES(customer_name),
+    branch_description = VALUES(branch_description),
     orders = VALUES(orders),
     revenue = VALUES(revenue),
     last_order_date = VALUES(last_order_date),

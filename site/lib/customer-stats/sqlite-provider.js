@@ -226,14 +226,15 @@ async function loadImportedCustomerBranches(db, customerCode, scope = {}) {
     `
       SELECT
         branch_code,
-        branch_description,
-        orders,
-        revenue,
-        last_order_date
+        COALESCE(NULLIF(MAX(branch_description), ''), '') AS branch_description,
+        SUM(orders) AS orders,
+        SUM(revenue) AS revenue,
+        MAX(last_order_date) AS last_order_date
       FROM imported_customer_branches
       WHERE customer_code = ?
         ${branchScope.clause}
         AND (branch_code <> '' OR branch_description <> '')
+      GROUP BY branch_code
       ORDER BY branch_description ASC, branch_code ASC
     `,
     [customerCode, ...branchScope.params],

@@ -67,13 +67,13 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
       SELECT
         customer_code AS code,
         COALESCE(NULLIF(MAX(customer_name), ''), customer_code) AS name,
-        COUNT(*) AS branch_count,
+        COUNT(DISTINCT branch_code) AS branch_count,
         CASE
-          WHEN COUNT(*) = 1 THEN MAX(branch_code)
+          WHEN COUNT(DISTINCT branch_code) = 1 THEN MAX(branch_code)
           ELSE ''
         END AS branch_code,
         CASE
-          WHEN COUNT(*) = 1 THEN MAX(branch_description)
+          WHEN COUNT(DISTINCT branch_code) = 1 THEN COALESCE(NULLIF(MAX(branch_description), ''), '')
           ELSE ''
         END AS branch_description
       FROM imported_customer_branches
