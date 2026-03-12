@@ -307,7 +307,14 @@ def find_matching_sales_line_ids(cur, *, order_date, document_no, document_type,
             unit_price,
         ),
     )
-    return [row[0] for row in cur.fetchall()]
+    rows = cur.fetchall()
+    ids = []
+    for row in rows:
+        if isinstance(row, dict):
+            ids.append(row.get("id"))
+        else:
+            ids.append(row[0])
+    return [row_id for row_id in ids if row_id is not None]
 
 
 def replace_sales_line_by_id(
