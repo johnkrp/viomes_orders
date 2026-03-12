@@ -132,6 +132,47 @@ const els = {
   detailedOrdersList: document.getElementById("detailedOrdersList"),
 };
 
+function getSalesTimeRangeControls() {
+  return Array.from(document.querySelectorAll(".sales-time-range-control"));
+}
+
+function syncSalesTimeRangeControls(value) {
+  getSalesTimeRangeControls().forEach((control) => {
+    if (control) control.value = value;
+  });
+}
+
+function getSelectedSalesTimeRange() {
+  const firstControl = getSalesTimeRangeControls()[0];
+  return String(firstControl?.value || currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE)
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeSalesTimeRangeControlsText() {
+  const labelsByValue = {
+    "1w": "Τελευταίες 7 ημέρες",
+    "2w": "Τελευταίες 14 ημέρες",
+    "1m": "Τελευταίος 1 μήνας",
+    "3m": "Τελευταίοι 3 μήνες",
+    "6m": "Τελευταίοι 6 μήνες",
+    "12m": "Τελευταίοι 12 μήνες",
+    all: "Από την αρχή",
+  };
+
+  getSalesTimeRangeControls().forEach((control) => {
+    const labelText = control.closest("label")?.querySelector("span");
+    if (labelText) labelText.textContent = "Περίοδος";
+
+    Array.from(control.options).forEach((option) => {
+      const normalizedValue = String(option.value || "").trim().toLowerCase();
+      if (labelsByValue[normalizedValue]) option.textContent = labelsByValue[normalizedValue];
+    });
+  });
+}
+
+normalizeSalesTimeRangeControlsText();
+
 function setStatus(text, type = "info") {
   const el = els.adminStatus;
   if (!el) return;
@@ -184,7 +225,7 @@ function buildImportMessage(latestRun, username) {
   if (!latestRun) return `${base}. Τελευταία εισαγωγή δεδομένων: μη διαθέσιμη`;
 
   const dataset = formatImportDatasetLabel(latestRun.dataset);
-  const finishedAt = formatDateTime(latestRun.finished_at || latestRun.started_at);
+  const finishedAt = formatDate(latestRun.finished_at || latestRun.started_at);
   return `${base}. Τελευταία εισαγωγή δεδομένων: ${dataset}, στις ${finishedAt}`;
 }
 
@@ -600,7 +641,7 @@ function resetReceivables() {
 function resetStats() {
   void setStatsLoading(false);
   resetBranchSelector();
-  currentSalesTimeRange = els.salesTimeRange?.value || currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE;
+  currentSalesTimeRange = getSelectedSalesTimeRange();
   els.customerNameHeading.textContent = "Πελάτης";
   els.customerMeta.textContent = "-";
   els.totalOrdersValue.textContent = "0";
@@ -764,7 +805,7 @@ function renderSelectedOrderDetails() {
       <div class="admin-order-head">
         <div>
           <h3>Παραγγελία #${escapeHtml(formatDisplayOrderId(selectedOrder.order_id))}</h3>
-          <p>Παραγγελία: ${escapeHtml(formatDateTime(selectedOrder.ordered_at || selectedOrder.created_at))}</p>
+          <p>Παραγγελία: ${escapeHtml(formatDate(selectedOrder.ordered_at || selectedOrder.created_at))}</p>
         </div>
         <div class="admin-order-kpis">
           <span>${escapeHtml(formatNumber(selectedOrder.total_lines))} γραμμές</span>
@@ -774,7 +815,7 @@ function renderSelectedOrderDetails() {
       </div>
       <div class="admin-order-note">${escapeHtml(selectedOrder.notes || "Χωρίς σημειώσεις")}</div>
       <div class="admin-order-meta">
-        <span>Αποστολή: ${escapeHtml(formatDateTime(selectedOrder.sent_at))}</span>
+        <span>Αποστολή: ${escapeHtml(formatDate(selectedOrder.sent_at))}</span>
         <span>Μέση έκπτωση: ${escapeHtml(formatPercentRoundedUp(selectedOrder.average_discount_pct))}</span>
       </div>
       <div class="admin-table-wrap admin-order-table-wrap">
@@ -1007,7 +1048,7 @@ function renderStats(data) {
   els.revenue3mValue.textContent = formatMoney(summary.revenue_3m);
   els.revenue6mValue.textContent = formatMoney(summary.revenue_6m);
   els.revenue12mValue.textContent = formatMoney(summary.revenue_12m);
-  els.lastOrderDateValue.textContent = formatDateTime(summary.last_order_date);
+  els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
   renderBranchSelector(customer.code, availableBranches, customer.branch_code || "");
 
   renderMonthlySales(monthlySales);
@@ -1064,8 +1105,8 @@ function renderStats(data) {
           return `
             <tr>
               <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
-              <td>${escapeHtml(formatDateTime(item.ordered_at || item.created_at))}</td>
-              <td>${escapeHtml(formatDateTime(item.sent_at))}</td>
+              <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
+              <td>${escapeHtml(formatDate(item.sent_at))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
@@ -1200,12 +1241,9 @@ async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = 
     if (normalizedScopeFilters.branch_description) {
       params.set("filter_branch_description", normalizedScopeFilters.branch_description);
     }
-    const normalizedSalesTimeRange = String(
-      els.salesTimeRange?.value || currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE,
-    )
-      .trim()
-      .toLowerCase();
+    const normalizedSalesTimeRange = getSelectedSalesTimeRange();
     currentSalesTimeRange = normalizedSalesTimeRange || DEFAULT_SALES_TIME_RANGE;
+    syncSalesTimeRangeControls(currentSalesTimeRange);
     params.set("sales_time_range", currentSalesTimeRange);
     const payload = await apiFetch(
       `/api/admin/customers/${encodeURIComponent(customerCode)}/stats${params.toString() ? `?${params.toString()}` : ""}`,
@@ -1277,7 +1315,7 @@ function clearCustomerStats() {
   if (els.branchCodeQuery) els.branchCodeQuery.value = "";
   if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = "";
   currentSalesTimeRange = DEFAULT_SALES_TIME_RANGE;
-  if (els.salesTimeRange) els.salesTimeRange.value = DEFAULT_SALES_TIME_RANGE;
+  syncSalesTimeRangeControls(DEFAULT_SALES_TIME_RANGE);
   setCurrentCustomerSearchFilters({});
   resetSearchSuggestions();
   resetSearchResults();
@@ -1359,10 +1397,13 @@ els.productSalesMetric?.addEventListener("change", () => {
   currentProductSalesPage = 1;
   renderProductSales();
 });
-els.salesTimeRange?.addEventListener("change", () => {
-  currentSalesTimeRange = String(els.salesTimeRange.value || DEFAULT_SALES_TIME_RANGE).trim().toLowerCase();
-  if (!currentCustomerCode) return;
-  fetchCustomerStats(currentCustomerCode, currentBranchCode, currentCustomerSearchFilters);
+getSalesTimeRangeControls().forEach((control) => {
+  control.addEventListener("change", () => {
+    currentSalesTimeRange = String(control.value || DEFAULT_SALES_TIME_RANGE).trim().toLowerCase();
+    syncSalesTimeRangeControls(currentSalesTimeRange);
+    if (!currentCustomerCode) return;
+    fetchCustomerStats(currentCustomerCode, currentBranchCode, currentCustomerSearchFilters);
+  });
 });
 els.receivablesPrevBtn?.addEventListener("click", () => {
   if (currentReceivablesPage <= 1) return;
