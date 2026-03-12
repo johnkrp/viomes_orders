@@ -108,6 +108,7 @@ class FakeCursor:
         self.rowcount = 0
         self.imported_rows = []
         self.imported_ledgers = {}
+        self.imported_ledger_lines = []
         self.import_run_insert_params = None
         self.import_run_update_params = None
         self._fetchall_result = []
@@ -129,6 +130,10 @@ class FakeCursor:
             return
         if normalized == "DELETE FROM imported_customer_ledgers":
             self.imported_ledgers.clear()
+            self.rowcount = 0
+            return
+        if normalized == "DELETE FROM imported_customer_ledger_lines":
+            self.imported_ledger_lines.clear()
             self.rowcount = 0
             return
         if "SELECT id FROM imported_sales_lines" in normalized:
@@ -205,6 +210,24 @@ class FakeCursor:
                 "salesperson_code": params[10],
                 "source_file": params[11],
             }
+            self.rowcount = 1
+            return
+        if normalized.startswith("INSERT INTO imported_customer_ledger_lines"):
+            self.imported_ledger_lines.append(
+                {
+                    "customer_code": params[0],
+                    "customer_name": params[1],
+                    "document_date": params[2],
+                    "document_no": params[3],
+                    "reason": params[4],
+                    "debit": params[5],
+                    "credit": params[6],
+                    "running_debit": params[7],
+                    "running_credit": params[8],
+                    "ledger_balance": params[9],
+                    "source_file": params[10],
+                }
+            )
             self.rowcount = 1
             return
         if normalized.startswith("INSERT INTO customers(code, name, email, source) SELECT customer_code, customer_name, email, 'entersoft_import' FROM imported_customer_ledgers"):
@@ -364,6 +387,7 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
     def test_import_customer_ledgers_replaces_snapshot_and_records_run(self):
         cursor = FakeCursor()
         cursor.imported_ledgers["OLD"] = {"customer_code": "OLD"}
+        cursor.imported_ledger_lines.append({"customer_code": "OLD"})
         ledger_file = create_temp_ledger_file()
         try:
             with patch(
@@ -381,6 +405,10 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(stats.rows_upserted, 1)
         self.assertEqual(stats.rows_rejected, 1)
         self.assertEqual(list(cursor.imported_ledgers.keys()), ["C001"])
+        self.assertEqual(len(cursor.imported_ledger_lines), 2)
+        self.assertTrue(cursor.imported_ledger_lines[0]["reason"])
+        self.assertEqual(cursor.imported_ledger_lines[1]["document_no"], "INV-1")
+        self.assertEqual(cursor.imported_ledger_lines[1]["running_credit"], 10.0)
         self.assertEqual(cursor.imported_ledgers["C001"]["ledger_balance"], 40.0)
         self.assertEqual(cursor.imported_ledgers["C001"]["commercial_balance"], 40.0)
         self.assertEqual(cursor.imported_ledgers["C001"]["debit"], 50.0)
@@ -388,6 +416,7 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(cursor.imported_ledgers["C001"]["opening_balance"], 10.0)
         self.assertEqual(cursor.imported_ledgers["C001"]["email"], None)
         self.assertIn('"snapshot_table":"imported_customer_ledgers"', stats.metadata_json)
+        self.assertIn('"lines_table":"imported_customer_ledger_lines"', stats.metadata_json)
         self.assertIn('"balance_metric":"ledger_balance"', stats.metadata_json)
         self.assertIsNotNone(cursor.import_run_insert_params)
         self.assertIsNotNone(cursor.import_run_update_params)

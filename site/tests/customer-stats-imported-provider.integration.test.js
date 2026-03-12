@@ -188,7 +188,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         "Alpha Store",
         0,
         0,
-        0,
+        120.5,
         321.45,
         0,
         999.99,
@@ -196,6 +196,41 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         0,
         "90",
         "karteles.csv",
+      ],
+    );
+
+    await db.run(
+      `
+        INSERT INTO imported_customer_ledger_lines(
+          customer_code, customer_name, document_date, document_no, reason,
+          debit, credit, running_debit, running_credit, ledger_balance, source_file
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+               (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "C001",
+        "Alpha Store",
+        `${currentYear}-02-15`,
+        "INV-2",
+        "Ledger movement",
+        175.6,
+        0,
+        50,
+        10,
+        321.45,
+        "new-kart.csv",
+        "C001",
+        "Alpha Store",
+        `${previousYear}-12-10`,
+        "INV-1",
+        "Older movement",
+        70,
+        0,
+        25,
+        5,
+        145.85,
+        "new-kart.csv",
       ],
     );
 
@@ -314,7 +349,11 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.detailed_orders[0].lines[0].discount_pct, 7);
     assert.equal(payload.receivables.open_balance, 321.45);
     assert.equal(payload.receivables.overdue_balance, 0);
-    assert.deepEqual(payload.receivables.items, []);
+    assert.equal(payload.receivables.progressive_credit, 120.5);
+    assert.equal(payload.receivables.items.length, 2);
+    assert.equal(payload.receivables.items[0].document_no, "INV-2");
+    assert.equal(payload.receivables.items[0].reason, "Ledger movement");
+    assert.equal(payload.receivables.items[0].ledger_balance, 321.45);
 
     const branchPayload = await provider.getCustomerStats("C001", { branchCode: "B1" });
     assert.equal(branchPayload.customer.aggregation_level, "branch");

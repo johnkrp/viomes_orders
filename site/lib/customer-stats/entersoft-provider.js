@@ -206,6 +206,12 @@ function mapPayload(rawPayload, customerCode, responseShape) {
           getByPath(root, "receivables.overdue_balance") ??
           getByPath(root, "ledger.overdue_balance") ??
           0,
+        progressive_credit:
+          getByPath(root, "receivables.progressive_credit") ??
+          getByPath(root, "receivables.total_credit") ??
+          getByPath(root, "ledger.progressive_credit") ??
+          getByPath(root, "ledger.total_credit") ??
+          0,
         items: mapReceivableItems(
           getByPath(root, "receivables.items") ?? getByPath(root, "ledger.items"),
         ),

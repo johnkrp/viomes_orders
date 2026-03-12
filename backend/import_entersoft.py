@@ -165,6 +165,7 @@ def build_ledger_snapshot_metadata_json() -> str:
     return json.dumps(
         {
             "snapshot_table": "imported_customer_ledgers",
+            "lines_table": "imported_customer_ledger_lines",
             "snapshot_strategy": "truncate_and_replace",
             "customer_projection_table": "customers",
             "balance_metric": "ledger_balance",
@@ -792,7 +793,9 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
     run_id = begin_import(cur, stats)
     try:
         snapshots = {}
+        ledger_rows = []
         execute_step(cur, "truncate imported_customer_ledgers", "DELETE FROM imported_customer_ledgers")
+        execute_step(cur, "truncate imported_customer_ledger_lines", "DELETE FROM imported_customer_ledger_lines")
         with ledger_file.open("r", encoding="utf-8-sig", newline="") as handle:
             reader = csv.DictReader(handle, delimiter="\t")
             for row in reader:
@@ -823,6 +826,21 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
                 opening_balance = parse_decimal(
                     get_row_value(row, "Εκ μεταφοράς", "Ξ•ΞΊ ΞΌΞµΟ„Ξ±Ο†ΞΏΟΞ¬Ο‚")
                 )
+                document_date = parse_date(
+                    get_row_value(row, "Ημ/νία", "Ξ—ΞΌ/Ξ½Ξ―Ξ±")
+                ) if str(get_row_value(row, "Ημ/νία", "Ξ—ΞΌ/Ξ½Ξ―Ξ±")).strip() else None
+                document_no = str(
+                    get_row_value(row, "Παραστατικό", "Ξ Ξ±ΟΞ±ΟƒΟ„Ξ±Ο„ΞΉΞΊΟ")
+                ).strip()
+                reason = str(
+                    get_row_value(row, "Αιτιολογία", "Ξ‘ΞΉΟ„ΞΉΞΏΞ»ΞΏΞ³Ξ―Ξ±")
+                ).strip()
+                debit = parse_decimal(
+                    get_row_value(row, "Χρέωση", "Ξ§ΟΞ­Ο‰ΟƒΞ·")
+                )
+                credit = parse_decimal(
+                    get_row_value(row, "Πίστωση", "Ξ Ξ―ΟƒΟ„Ο‰ΟƒΞ·")
+                )
                 progressive_debit = parse_decimal(
                     get_row_value(row, "Προοδ. Χρέωση", "Ξ ΟΞΏΞΏΞ΄. Ξ§ΟΞ­Ο‰ΟƒΞ·")
                 )
@@ -851,6 +869,22 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
                     1 if str(get_row_value(row, "Ανενεργός", "Ξ‘Ξ½ΞµΞ½ΞµΟΞ³ΟΟ‚")).strip() in {"1", "true", "True"} else 0
                 )
                 salesperson_code = str(get_row_value(row, "Πωλητής", "Ξ Ο‰Ξ»Ξ·Ο„Ξ®Ο‚")).strip() or None
+
+                has_ledger_content = any(
+                    [
+                        document_date,
+                        document_no,
+                        reason,
+                        debit,
+                        credit,
+                        progressive_debit,
+                        progressive_credit,
+                        ledger_balance,
+                    ]
+                )
+                if not has_ledger_content:
+                    stats.rows_rejected += 1
+                    continue
 
                 if not commercial_balance:
                     commercial_balance = ledger_balance
@@ -882,6 +916,45 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
                     snapshot["email"] = email
                 if not snapshot.get("salesperson_code"):
                     snapshot["salesperson_code"] = salesperson_code
+
+                ledger_rows.append(
+                    (
+                        customer_code,
+                        customer_name,
+                        document_date,
+                        document_no,
+                        reason,
+                        debit,
+                        credit,
+                        progressive_debit,
+                        progressive_credit,
+                        ledger_balance,
+                        ledger_file.name,
+                    )
+                )
+
+        for ledger_row in ledger_rows:
+            execute_step(
+                cur,
+                "insert imported_customer_ledger_lines row",
+                """
+                INSERT INTO imported_customer_ledger_lines(
+                  customer_code,
+                  customer_name,
+                  document_date,
+                  document_no,
+                  reason,
+                  debit,
+                  credit,
+                  running_debit,
+                  running_credit,
+                  ledger_balance,
+                  source_file
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                ledger_row,
+            )
 
         for snapshot in snapshots.values():
             execute_step(

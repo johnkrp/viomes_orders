@@ -146,6 +146,16 @@ def init_schema() -> None:
     _ensure_column(cur, "imported_customer_ledgers", "is_inactive", "is_inactive TINYINT(1) NOT NULL DEFAULT 0")
     _ensure_column(cur, "imported_customer_ledgers", "salesperson_code", "salesperson_code VARCHAR(128)")
     _ensure_column(cur, "imported_customer_ledgers", "source_file", "source_file VARCHAR(255)")
+    _ensure_column(cur, "imported_customer_ledger_lines", "customer_name", "customer_name VARCHAR(255) NOT NULL DEFAULT ''")
+    _ensure_column(cur, "imported_customer_ledger_lines", "document_date", "document_date DATE")
+    _ensure_column(cur, "imported_customer_ledger_lines", "document_no", "document_no VARCHAR(128) NOT NULL DEFAULT ''")
+    _ensure_column(cur, "imported_customer_ledger_lines", "reason", "reason VARCHAR(255) NOT NULL DEFAULT ''")
+    _ensure_column(cur, "imported_customer_ledger_lines", "debit", "debit DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_customer_ledger_lines", "credit", "credit DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_customer_ledger_lines", "running_debit", "running_debit DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_customer_ledger_lines", "running_credit", "running_credit DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_customer_ledger_lines", "ledger_balance", "ledger_balance DOUBLE NOT NULL DEFAULT 0")
+    _ensure_column(cur, "imported_customer_ledger_lines", "source_file", "source_file VARCHAR(255)")
     _ensure_column(cur, "import_runs", "import_mode", "import_mode VARCHAR(32) NOT NULL DEFAULT 'incremental'")
     _ensure_column(cur, "import_runs", "source_files_json", "source_files_json LONGTEXT")
     _ensure_column(cur, "import_runs", "source_checksum", "source_checksum VARCHAR(64)")
@@ -166,6 +176,12 @@ def init_schema() -> None:
         "imported_customer_branches",
         "idx_imported_customer_branches_customer_lookup",
         "(customer_code, branch_code, branch_description)",
+    )
+    _ensure_index(
+        cur,
+        "imported_customer_ledger_lines",
+        "idx_imported_customer_ledger_lines_customer_date",
+        "(customer_code, document_date, id)",
     )
     _ensure_index(
         cur,

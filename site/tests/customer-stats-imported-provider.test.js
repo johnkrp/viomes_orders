@@ -70,6 +70,7 @@ function createImportedDbFixture() {
           customer_name: "Alpha Store",
           commercial_balance: 999.99,
           ledger_balance: 321.45,
+          credit: 120.5,
           pending_instruments: 0,
           email: "alpha@example.com",
           is_inactive: 0,
@@ -95,6 +96,30 @@ function createImportedDbFixture() {
             orders: 1,
             revenue: 70,
             last_order_date: `${previousYear}-12-10`,
+          },
+        ];
+      }
+      if (sql.includes("FROM imported_customer_ledger_lines")) {
+        return [
+          {
+            document_date: `${currentYear}-02-15`,
+            document_no: "INV-2",
+            reason: "Ledger movement",
+            debit: 175.6,
+            credit: 0,
+            running_debit: 50,
+            running_credit: 10,
+            ledger_balance: 321.45,
+          },
+          {
+            document_date: `${previousYear}-12-10`,
+            document_no: "INV-1",
+            reason: "Older movement",
+            debit: 70,
+            credit: 0,
+            running_debit: 25,
+            running_credit: 5,
+            ledger_balance: 145.85,
           },
         ];
       }
@@ -223,6 +248,7 @@ function createImportedDbFixture() {
 }
 
 test("imported-data provider builds the customer stats contract from imported tables", async () => {
+  const currentYear = new Date().getUTCFullYear();
   const olderYear = new Date().getUTCFullYear() - 2;
   const provider = createSqliteCustomerStatsProvider({
     db: createImportedDbFixture(),
@@ -255,7 +281,16 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
   assert.equal(payload.receivables.open_balance, 321.45);
   assert.equal(payload.receivables.overdue_balance, 0);
-  assert.deepEqual(payload.receivables.items, []);
+  assert.equal(payload.receivables.progressive_credit, 120.5);
+  assert.equal(payload.receivables.items.length, 2);
+  assert.deepEqual(payload.receivables.items[0], {
+    document_date: `${currentYear}-02-15`,
+    document_no: "INV-2",
+    reason: "Ledger movement",
+    debit: 175.6,
+    credit: 0,
+    ledger_balance: 321.45,
+  });
 });
 
 test("imported-data provider returns 404 when imported customer is missing", async () => {
@@ -287,5 +322,6 @@ test("imported-data provider falls back to zero receivables when no ledger snaps
   const payload = await provider.getCustomerStats("C001");
   assert.equal(payload.receivables.open_balance, 0);
   assert.equal(payload.receivables.overdue_balance, 0);
+  assert.equal(payload.receivables.progressive_credit, 0);
   assert.deepEqual(payload.receivables.items, []);
 });

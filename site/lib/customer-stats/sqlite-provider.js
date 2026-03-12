@@ -103,6 +103,7 @@ async function loadImportedLedgerSnapshot(db, customerCode) {
           customer_name,
           commercial_balance,
           ledger_balance,
+          credit,
           pending_instruments,
           email,
           is_inactive,
@@ -114,6 +115,30 @@ async function loadImportedLedgerSnapshot(db, customerCode) {
     );
   } catch {
     return null;
+  }
+}
+
+async function loadImportedLedgerLines(db, customerCode) {
+  try {
+    return await db.all(
+      `
+        SELECT
+          document_date,
+          document_no,
+          reason,
+          debit,
+          credit,
+          running_debit,
+          running_credit,
+          ledger_balance
+        FROM imported_customer_ledger_lines
+        WHERE customer_code = ?
+        ORDER BY COALESCE(document_date, '') DESC, id DESC
+      `,
+      [customerCode],
+    );
+  } catch {
+    return [];
   }
 }
 
@@ -412,12 +437,13 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               avg_unit_price: asMoney(row.avg_unit_price),
             })),
           },
-          receivables: {
-            currency: "EUR",
-            open_balance: 0,
-            overdue_balance: 0,
-            items: [],
-          },
+        receivables: {
+          currency: "EUR",
+          open_balance: 0,
+          overdue_balance: 0,
+          progressive_credit: 0,
+          items: [],
+        },
           top_products_by_qty: topProductsByQty.map(productStatRow),
           top_products_by_value: topProductsByValue.map(productStatRow),
           recent_orders: recentOrders.map((order) => ({
@@ -437,6 +463,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         branchDescription: branchScopeDescription,
       });
       const importedLedger = await loadImportedLedgerSnapshot(db, code);
+      const importedLedgerLines = importedLedger ? await loadImportedLedgerLines(db, code) : [];
       const availableBranches = await loadImportedCustomerBranches(db, code, {
         branchCode: branchScopeCode,
         branchDescription: branchScopeDescription,
@@ -793,7 +820,16 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           currency: "EUR",
           open_balance: asMoney(importedLedger?.ledger_balance),
           overdue_balance: 0,
-          items: [],
+          progressive_credit: asMoney(importedLedger?.credit),
+          total_credit: asMoney(importedLedger?.credit),
+          items: importedLedgerLines.map((row) => ({
+            document_date: row.document_date || null,
+            document_no: row.document_no || "",
+            reason: row.reason || "",
+            debit: asMoney(row.debit),
+            credit: asMoney(row.credit),
+            ledger_balance: asMoney(row.ledger_balance),
+          })),
         },
         top_products_by_qty: topProductsByQty.map(productStatRow),
         top_products_by_value: topProductsByValue.map(productStatRow),
@@ -818,3 +854,5 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
     },
   };
 }
+
+

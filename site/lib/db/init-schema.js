@@ -195,6 +195,23 @@ async function initSqliteSchema(db) {
       )
     `,
     `
+      CREATE TABLE IF NOT EXISTS imported_customer_ledger_lines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_code TEXT NOT NULL,
+        customer_name TEXT NOT NULL,
+        document_date TEXT,
+        document_no TEXT NOT NULL DEFAULT '',
+        reason TEXT NOT NULL DEFAULT '',
+        debit REAL NOT NULL DEFAULT 0,
+        credit REAL NOT NULL DEFAULT 0,
+        running_debit REAL NOT NULL DEFAULT 0,
+        running_credit REAL NOT NULL DEFAULT 0,
+        ledger_balance REAL NOT NULL DEFAULT 0,
+        source_file TEXT,
+        imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+    `
       CREATE TABLE IF NOT EXISTS imported_sales_lines (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         source_file TEXT NOT NULL,
@@ -558,6 +575,76 @@ export async function initDatabaseSchema({ db, kind }) {
   await ensureColumn(
     db,
     kind,
+    "imported_customer_ledger_lines",
+    "customer_name",
+    `customer_name ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"} NOT NULL DEFAULT ''`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "document_date",
+    `document_date ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "document_no",
+    `document_no ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"} NOT NULL DEFAULT ''`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "reason",
+    `reason ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"} NOT NULL DEFAULT ''`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "debit",
+    `debit ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "credit",
+    `credit ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "running_debit",
+    `running_debit ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "running_credit",
+    `running_credit ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "ledger_balance",
+    `ledger_balance ${typeReal} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "source_file",
+    `source_file ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
     "orders",
     "total_qty_pieces",
     `total_qty_pieces ${typeInt} NOT NULL DEFAULT 0`,
@@ -746,5 +833,12 @@ export async function initDatabaseSchema({ db, kind }) {
     "imported_orders",
     "idx_imported_orders_customer_document_date",
     "(customer_code, document_no, created_at)",
+  );
+  await ensureIndex(
+    db,
+    kind,
+    "imported_customer_ledger_lines",
+    "idx_imported_customer_ledger_lines_customer_date",
+    "(customer_code, document_date, id)",
   );
 }

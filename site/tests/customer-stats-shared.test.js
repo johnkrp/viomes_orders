@@ -30,7 +30,8 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
         items: [{ code: "P1", description: "Prod", pieces: 4, orders: 2, revenue: 99.995 }],
       },
       receivables: {
-        items: [{ document: "INV-1", amount: 10, balance: 3 }],
+        progressive_credit: 55.25,
+        items: [{ document: "INV-1", amount: 10, balance: 3, reason: "Movement", debit: 10, credit: 7 }],
       },
       available_branches: [
         { branch_code: "B1", branch_description: "Branch 1", orders: 2, revenue: 123.456, raw_rows: 4 },
@@ -71,13 +72,18 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
   assert.deepEqual(payload.receivables.items[0], {
     document_no: "INV-1",
     document_date: null,
+    reason: "Movement",
     due_date: null,
     amount_total: 10,
-    amount_paid: 0,
+    amount_paid: 7,
     open_balance: 3,
+    debit: 10,
+    credit: 7,
+    ledger_balance: 3,
     is_overdue: false,
     status: "",
   });
+  assert.equal(payload.receivables.progressive_credit, 55.25);
   assert.deepEqual(payload.available_branches[0], {
     branch_code: "B1",
     branch_description: "Branch 1",

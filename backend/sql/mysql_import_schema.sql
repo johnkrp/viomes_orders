@@ -49,6 +49,23 @@ CREATE TABLE IF NOT EXISTS imported_customer_ledgers (
   imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS imported_customer_ledger_lines (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  customer_code VARCHAR(128) NOT NULL,
+  customer_name VARCHAR(255) NOT NULL,
+  document_date DATE NULL,
+  document_no VARCHAR(128) NOT NULL DEFAULT '',
+  reason VARCHAR(255) NOT NULL DEFAULT '',
+  debit DOUBLE NOT NULL DEFAULT 0,
+  credit DOUBLE NOT NULL DEFAULT 0,
+  running_debit DOUBLE NOT NULL DEFAULT 0,
+  running_credit DOUBLE NOT NULL DEFAULT 0,
+  ledger_balance DOUBLE NOT NULL DEFAULT 0,
+  source_file VARCHAR(255),
+  imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_imported_customer_ledger_lines_customer_date(customer_code, document_date, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS imported_sales_lines (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   source_file VARCHAR(255) NOT NULL,
