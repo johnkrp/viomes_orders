@@ -1492,6 +1492,37 @@ button.secondary:hover,
   padding-top: 0;
 }
 
+.admin-runtime-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-runtime-summary {
+  padding: 0 18px 18px;
+}
+
+.admin-runtime-summary-text {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(42, 105, 184, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#importHealthStatusCard[data-state="ok"] strong {
+  color: #166534;
+}
+
+#importHealthStatusCard[data-state="warn"] strong {
+  color: #b45309;
+}
+
+#importHealthStatusCard[data-state="error"] strong {
+  color: #b91c1c;
+}
+
 .admin-inline-controls {
   display: flex;
   align-items: center;
@@ -1519,6 +1550,7 @@ button.secondary:hover,
 
 .admin-monthly-table th,
 .admin-monthly-table td {
+  padding: 12px 14px;
   white-space: nowrap;
 }
 
@@ -1601,8 +1633,51 @@ button.secondary:hover,
 
 .admin-top-qty-table,
 .admin-top-value-table,
+.admin-product-sales-table,
+.admin-order-table,
 .admin-recent-orders-table {
   table-layout: auto;
+}
+
+.admin-results-grid > .admin-panel-subtle > .panel-head.panel-head-inline {
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 12px;
+}
+
+.admin-results-grid > .admin-panel-subtle > .panel-head.panel-head-inline .admin-inline-controls {
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+.admin-results-grid > .admin-panel-subtle > .panel-head.panel-head-inline .admin-compact-field {
+  min-width: 210px;
+}
+
+.admin-top-qty-table th,
+.admin-top-qty-table td,
+.admin-top-value-table th,
+.admin-top-value-table td {
+  padding: 12px 14px;
+}
+
+.admin-top-qty-table td:nth-child(2),
+.admin-top-value-table td:nth-child(3) {
+  line-height: 1.45;
+}
+
+.admin-top-qty-table th:first-child,
+.admin-top-qty-table td:first-child,
+.admin-top-value-table th:first-child,
+.admin-top-value-table td:first-child {
+  padding-left: 16px;
+}
+
+.admin-top-qty-table th:last-child,
+.admin-top-qty-table td:last-child,
+.admin-top-value-table th:last-child,
+.admin-top-value-table td:last-child {
+  padding-right: 16px;
 }
 
 .admin-top-qty-table th:nth-child(1),
@@ -1649,36 +1724,136 @@ button.secondary:hover,
   width: 15%;
 }
 
+.admin-ledger-table {
+  table-layout: fixed;
+}
+
+.admin-ledger-table th,
+.admin-ledger-table td {
+  padding: 12px 16px;
+}
+
+.admin-ledger-table th:nth-child(1),
+.admin-ledger-table td:nth-child(1) {
+  width: 14%;
+}
+
+.admin-ledger-table th:nth-child(2),
+.admin-ledger-table td:nth-child(2) {
+  width: 18%;
+}
+
+.admin-ledger-table th:nth-child(3),
+.admin-ledger-table td:nth-child(3) {
+  width: 42%;
+}
+
+.admin-ledger-table th:nth-child(4),
+.admin-ledger-table td:nth-child(4),
+.admin-ledger-table th:nth-child(5),
+.admin-ledger-table td:nth-child(5) {
+  width: 13%;
+}
+
+.admin-ledger-table td:nth-child(4),
+.admin-ledger-table td:nth-child(5) {
+  white-space: nowrap;
+}
+
+.admin-product-sales-table th,
+.admin-product-sales-table td,
+.admin-recent-orders-table th,
+.admin-recent-orders-table td,
+.admin-order-table th,
+.admin-order-table td {
+  padding: 12px 14px;
+}
+
+.admin-product-sales-table th:nth-child(1),
+.admin-product-sales-table td:nth-child(1) {
+  width: 12%;
+}
+
+.admin-product-sales-table th:nth-child(2),
+.admin-product-sales-table td:nth-child(2) {
+  width: 36%;
+}
+
+.admin-product-sales-table th:nth-child(3),
+.admin-product-sales-table td:nth-child(3),
+.admin-product-sales-table th:nth-child(4),
+.admin-product-sales-table td:nth-child(4),
+.admin-product-sales-table th:nth-child(5),
+.admin-product-sales-table td:nth-child(5) {
+  width: 12%;
+}
+
+.admin-product-sales-table th:nth-child(6),
+.admin-product-sales-table td:nth-child(6) {
+  width: 16%;
+}
+
+.admin-product-sales-table td:nth-child(2),
+.admin-order-table td:nth-child(2) {
+  line-height: 1.45;
+}
+
 .admin-recent-orders-table th:nth-child(1),
 .admin-recent-orders-table td:nth-child(1) {
-  width: 24%;
+  width: 18%;
 }
 
 .admin-recent-orders-table th:nth-child(2),
 .admin-recent-orders-table td:nth-child(2) {
-  width: 18%;
+  width: 13%;
 }
 
 .admin-recent-orders-table th:nth-child(3),
 .admin-recent-orders-table td:nth-child(3),
 .admin-recent-orders-table th:nth-child(4),
 .admin-recent-orders-table td:nth-child(4) {
-  width: 10%;
+  width: 11%;
 }
 
 .admin-recent-orders-table th:nth-child(5),
 .admin-recent-orders-table td:nth-child(5) {
-  width: 14%;
+  width: 9%;
 }
 
 .admin-recent-orders-table th:nth-child(6),
 .admin-recent-orders-table td:nth-child(6) {
-  width: 10%;
+  width: 11%;
 }
 
 .admin-recent-orders-table th:nth-child(7),
 .admin-recent-orders-table td:nth-child(7) {
-  width: 14%;
+  width: 11%;
+}
+
+.admin-recent-orders-table th:nth-child(8),
+.admin-recent-orders-table td:nth-child(8) {
+  width: 16%;
+}
+
+.admin-order-table th:nth-child(1),
+.admin-order-table td:nth-child(1) {
+  width: 12%;
+}
+
+.admin-order-table th:nth-child(2),
+.admin-order-table td:nth-child(2) {
+  width: 40%;
+}
+
+.admin-order-table th:nth-child(3),
+.admin-order-table td:nth-child(3),
+.admin-order-table th:nth-child(4),
+.admin-order-table td:nth-child(4),
+.admin-order-table th:nth-child(5),
+.admin-order-table td:nth-child(5),
+.admin-order-table th:nth-child(6),
+.admin-order-table td:nth-child(6) {
+  width: 12%;
 }
 
 .admin-table tbody tr:nth-child(even) {

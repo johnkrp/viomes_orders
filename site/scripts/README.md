@@ -17,7 +17,7 @@ Operational scripts used by Plesk/local maintenance.
 
 - `nightly-import.sh`
   - Plesk scheduled-task entrypoint.
-  - Reads `backend/today.csv`.
+  - Historically reads a daily sales file such as `backend/today.csv`.
   - Runs importer with `--mode=incremental`.
   - Exports `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
   - Requires `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` to be set by the environment or scheduler.
@@ -44,10 +44,26 @@ Operational scripts used by Plesk/local maintenance.
 - default: `incremental`
 - optional: `full_refresh`
 
-In incremental mode, history is preserved in `imported_sales_lines` and duplicate logical sales lines are skipped even if the source filename changes.
+In incremental mode, history is preserved in `imported_sales_lines`.
+
+Current practical daily workflow:
+
+- import daily factual sales CSVs with `--sales-files=...`
+- import `backend/new-kart.csv` with `--ledger-file=...`
+
+Sales overlap handling:
+
+- exact logical duplicates are skipped
+- revised overlapping rows can replace older rows by business key when the importer can resolve a single match safely
 
 The daily file does not need to contain only one day.
 It may contain several recent days or overlap with yearly files as long as overlapping rows are logically identical.
+
+Daily ledger note:
+
+- `new-kart.csv` is now the current daily ledger source
+- it populates both `imported_customer_ledgers` and `imported_customer_ledger_lines`
+- the admin balances panel depends on that ledger import, not only on the old snapshot table
 
 If bad history already exists in `imported_sales_lines`, run:
 
@@ -65,6 +81,18 @@ Use `full_refresh` instead when you want to rebuild from canonical yearly files.
 
 `npm run reload:sales -- ...` now does this automatically and records the run as `full_refresh` in `import_runs`.
 
+Typical daily server commands:
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
+
 ## Operational Notes
 
 - Long imports should be run through these shell scripts, SSH, or Plesk Scheduled Tasks, not interactive web requests.
@@ -73,6 +101,72 @@ Use `full_refresh` instead when you want to rebuild from canonical yearly files.
 - `manual-reload-sales.sh` is the preferred script for a clean rebuild because it creates a timestamped log file and then runs integrity checks.
 - Ad hoc `npm run import:entersoft` executions also create a dedicated importer log file under `site/logs/imports/`.
 - Do not commit server credentials into these shell wrappers; keep DB configuration in host-level environment variables or scheduler configuration.
+
+## Daily Upload Workflow
+
+If the daily export runs on another computer and direct SSH access is not available there, use this pattern:
+
+1. Upload the latest CSVs to the server `backend` folder over SFTP/FTP.
+2. Keep stable server-side filenames:
+   - `yearly-factuals.csv`
+   - `yearly-receivables.csv`
+3. Let Plesk Scheduled Tasks run the importer commands on the server.
+
+Known hosting details from current production setup:
+
+- SFTP/SSH system user: `viomesad`
+- Server IP: `213.158.90.203`
+- Plesk shows shell access as `/bin/bash (chrooted)`
+
+Because the account is chrooted, confirm the visible SFTP path once manually before automating uploads. The intended target folder is the project `backend` directory for `orders.viomes.gr`.
+
+Example PowerShell + WinSCP upload flow on the export machine:
+
+```powershell
+param(
+  [string]$WinScpPath = "C:\Program Files (x86)\WinSCP\WinSCP.com",
+  [string]$HostName = "213.158.90.203",
+  [int]$Port = 22,
+  [string]$UserName = "viomesad",
+  [string]$Password = "YOUR_PLESK_SYSTEM_USER_PASSWORD",
+  [string]$RemoteDir = "/var/www/vhosts/viomes.gr/orders.viomes.gr/backend",
+  [string]$FactualsFile = "C:\Exports\yearly-factuals.csv",
+  [string]$ReceivablesFile = "C:\Exports\yearly-receivables.csv"
+)
+
+$scriptFile = Join-Path $env:TEMP "winscp-upload-viomes.txt"
+$winscpScript = @"
+open sftp://$UserName`:$Password@$HostName`:$Port -hostkey=*
+cd "$RemoteDir"
+put "$FactualsFile" "yearly-factuals.csv"
+put "$ReceivablesFile" "yearly-receivables.csv"
+exit
+"@
+
+Set-Content -Path $scriptFile -Value $winscpScript -Encoding ASCII
+& $WinScpPath "/script=$scriptFile"
+Remove-Item $scriptFile -Force -ErrorAction SilentlyContinue
+```
+
+Recommended Plesk Scheduled Tasks:
+
+Factuals import:
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && node scripts/run-entersoft-import.js --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_DB_PASSWORD'
+```
+
+Receivables import:
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && node scripts/run-entersoft-import.js --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-receivables.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_DB_PASSWORD'
+```
+
+Recommended timing:
+
+- run factuals first
+- run receivables a few minutes later
+- use `Errors only` notifications in Plesk
 
 ## Typical Plesk command
 

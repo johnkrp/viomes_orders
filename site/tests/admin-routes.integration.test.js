@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
+import { mkdtemp, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createApp, buildRuntimeSettings } from "../app.js";
 import { hashPassword } from "../lib/admin-auth.js";
@@ -135,6 +137,7 @@ function createDbFixture() {
 
 async function startTestApp() {
   const db = createDbFixture();
+  const backendDir = await mkdtemp(path.join(os.tmpdir(), "viomes-admin-upload-"));
   const settings = buildRuntimeSettings({
     env: {
       NODE_ENV: "test",
@@ -142,9 +145,16 @@ async function startTestApp() {
       SESSION_MAX_AGE_SECONDS: "60",
       COOKIE_SECURE_MODE: "off",
       CORS_ALLOWED_ORIGINS: "http://localhost:3000",
+      MYSQL_HOST: "127.0.0.1",
+      MYSQL_PORT: "3306",
+      MYSQL_DATABASE: "test_db",
+      MYSQL_USER: "tester",
+      MYSQL_PASSWORD: "secret",
+      ADMIN_UPLOAD_API_KEY: "upload-key",
     },
     publicDir: path.join(siteDir, "public"),
     imagesDir: path.join(siteDir, "images"),
+    backendDir,
   });
   const customerStatsProvider = {
     name: "test-provider",
@@ -172,11 +182,22 @@ async function startTestApp() {
     },
   };
 
+  const importRuns = [];
+
   const app = createApp({
     settings,
     db,
     dbClient: { kind: "mysql", description: "test" },
     customerStatsProvider,
+    async importRunner(context) {
+      importRuns.push(context);
+      return {
+        code: 0,
+        signal: null,
+        stdout: `[import] ok ${context.uploadTarget.kind}`,
+        stderr: "",
+      };
+    },
   });
 
   const server = http.createServer(app);
@@ -187,6 +208,8 @@ async function startTestApp() {
   return {
     baseUrl,
     db,
+    backendDir,
+    importRuns,
     async close() {
       await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
     },
@@ -315,6 +338,53 @@ test("order export endpoint validates payloads and returns an xlsx file for vali
     assert.match(response.headers.get("content-disposition") || "", /attachment; filename="order_/i);
     const buffer = Buffer.from(await response.arrayBuffer());
     assert.ok(buffer.length > 0);
+  } finally {
+    await app.close();
+  }
+});
+
+test("admin import upload endpoint stores files and runs the existing importer path", async () => {
+  const app = await startTestApp();
+
+  try {
+    let response = await fetch(`${app.baseUrl}/api/admin/import-upload/factuals`, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer upload-key",
+        "Content-Type": "text/csv",
+        "X-Upload-Filename": "yearly-factuals.csv",
+      },
+      body: "date,document\n2026-01-01,A-1\n",
+    });
+
+    assert.equal(response.status, 200);
+    const uploadPayload = await response.json();
+    assert.equal(uploadPayload.ok, true);
+    assert.equal(uploadPayload.dataset, "sales");
+    assert.equal(uploadPayload.file_name, "yearly-factuals.csv");
+
+    const storedFactuals = await readFile(path.join(app.backendDir, "yearly-factuals.csv"), "utf8");
+    assert.match(storedFactuals, /A-1/);
+    assert.equal(app.importRuns.length, 1);
+    assert.match(app.importRuns[0].args.join(" "), /--sales-files=/);
+
+    response = await fetch(`${app.baseUrl}/api/admin/import-upload/receivables`, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer upload-key",
+        "Content-Type": "application/octet-stream",
+        "X-Upload-Filename": "yearly-receivables.csv",
+      },
+      body: "customer,balance\nC001,120.55\n",
+    });
+
+    assert.equal(response.status, 200);
+    const ledgerPayload = await response.json();
+    assert.equal(ledgerPayload.ok, true);
+    assert.equal(ledgerPayload.dataset, "ledger");
+    assert.equal(app.importRuns.length, 2);
+    assert.match(app.importRuns[1].args.join(" "), /--ledger-file=/);
+    assert.match(app.importRuns[1].args.join(" "), /--trigger-source=admin_upload:upload-api:yearly-receivables\.csv/);
   } finally {
     await app.close();
   }

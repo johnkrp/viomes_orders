@@ -2,7 +2,9 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import ExcelJS from "exceljs";
 import express from "express";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { spawn } from "node:child_process";
 import { hashPassword, newSessionToken, verifyPassword } from "./lib/admin-auth.js";
 import { searchImportedCustomers } from "./lib/admin-customer-search.js";
 import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
@@ -22,6 +24,8 @@ const ORDER_EXPORT_MAX_ITEMS = 500;
 const ORDER_EXPORT_MAX_TEXT_LENGTH = 500;
 const ORDER_EXPORT_MAX_COMMENT_LENGTH = 4000;
 const ORDER_EXPORT_FILENAME_PREFIX = "order";
+const ADMIN_IMPORT_UPLOAD_MAX_BYTES = 250 * 1024 * 1024;
+const ADMIN_IMPORT_OUTPUT_SNIPPET_MAX = 4000;
 
 const ORDER_EXPORT_SHEET_COLUMNS = [
   { header: "\u039a\u03a9\u0394\u0399\u039a\u039f\u03a3", key: "code", width: 15 },
@@ -141,7 +145,45 @@ function normGr(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir } = {}) {
+function sanitizeUploadedFilename(value, fallbackName) {
+  const raw = String(value || "").trim();
+  const base = path.basename(raw || fallbackName || "upload.csv");
+  const normalized = base.replace(/[^A-Za-z0-9._-]/g, "_");
+  return normalized || fallbackName || "upload.csv";
+}
+
+function resolveImportUploadTarget(datasetName) {
+  const normalized = String(datasetName || "").trim().toLowerCase();
+  if (["sales", "factuals", "yearly-factuals"].includes(normalized)) {
+    return {
+      kind: "sales",
+      defaultFilename: "yearly-factuals.csv",
+      importerFlag: "sales-files",
+    };
+  }
+  if (["ledger", "receivables", "yearly-receivables"].includes(normalized)) {
+    return {
+      kind: "ledger",
+      defaultFilename: "yearly-receivables.csv",
+      importerFlag: "ledger-file",
+    };
+  }
+  return null;
+}
+
+function formatImportCommandArgs(args = {}) {
+  return Object.entries(args)
+    .filter(([, value]) => String(value || "").trim())
+    .map(([key, value]) => `--${key}=${value}`);
+}
+
+function trimCommandOutput(text, maxLength = ADMIN_IMPORT_OUTPUT_SNIPPET_MAX) {
+  const normalized = String(text || "").trim();
+  if (!normalized || normalized.length <= maxLength) return normalized;
+  return normalized.slice(normalized.length - maxLength);
+}
+
+export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir, backendDir } = {}) {
   const port = Number(env.PORT || 3001);
   const nodeEnv = String(env.NODE_ENV || "development").trim().toLowerCase();
   const adminUsernameEnv = String(env.ADMIN_USERNAME || "").trim();
@@ -162,6 +204,7 @@ export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir }
     syncAdminPasswordOnStartup: String(env.SYNC_ADMIN_PASSWORD_ON_STARTUP || "0")
       .trim()
       .toLowerCase(),
+    adminUploadApiKey: String(env.ADMIN_UPLOAD_API_KEY || "").trim(),
     cookieSecureMode: String(
       env.COOKIE_SECURE_MODE || (nodeEnv === "production" ? "auto" : "off"),
     )
@@ -169,6 +212,8 @@ export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir }
       .toLowerCase(),
     publicDir,
     imagesDir,
+    siteDir: path.resolve(publicDir, ".."),
+    backendDir: backendDir ? path.resolve(backendDir) : path.resolve(publicDir, "..", "..", "backend"),
     corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS,
   };
 }
@@ -245,6 +290,7 @@ export function createApp({
   db,
   dbClient,
   customerStatsProvider,
+  importRunner,
 } = {}) {
   if (!settings) {
     throw new Error("createApp requires runtime settings.");
@@ -279,27 +325,32 @@ export function createApp({
   app.use(express.static(settings.publicDir));
   app.get("/", (req, res) => res.sendFile(path.join(settings.publicDir, "index.html")));
 
+  async function getAuthenticatedAdmin(req) {
+    const bearerToken = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+    if (settings.adminUploadApiKey && bearerToken === settings.adminUploadApiKey) {
+      return { id: null, username: "upload-api" };
+    }
+
+    const token = req.cookies?.[settings.sessionCookieName];
+    if (!token) return null;
+
+    const now = new Date().toISOString();
+    return db.get(
+      `
+        SELECT u.id, u.username
+        FROM admin_sessions s
+        JOIN admin_users u ON u.id = s.admin_user_id
+        WHERE s.token = ?
+          AND s.expires_at > ?
+          AND u.is_active = 1
+      `,
+      [token, now],
+    );
+  }
+
   async function requireAdmin(req, res, next) {
     try {
-      const token = req.cookies?.[settings.sessionCookieName];
-      if (!token) {
-        res.status(401).json({ detail: "Unauthorized" });
-        return;
-      }
-
-      const now = new Date().toISOString();
-      const admin = await db.get(
-        `
-          SELECT u.id, u.username
-          FROM admin_sessions s
-          JOIN admin_users u ON u.id = s.admin_user_id
-          WHERE s.token = ?
-            AND s.expires_at > ?
-            AND u.is_active = 1
-        `,
-        [token, now],
-      );
-
+      const admin = await getAuthenticatedAdmin(req);
       if (!admin) {
         res.status(401).json({ detail: "Unauthorized" });
         return;
@@ -311,6 +362,44 @@ export function createApp({
       console.error(error);
       res.status(500).json({ error: String(error) });
     }
+  }
+
+  async function runAdminImport({ uploadTarget, filePath, originalFilename, adminUsername }) {
+    const args = formatImportCommandArgs({
+      [uploadTarget.importerFlag]: filePath,
+      "mysql-host": settings.env.MYSQL_HOST,
+      "mysql-port": settings.env.MYSQL_PORT,
+      "mysql-database": settings.env.MYSQL_DATABASE,
+      "mysql-user": settings.env.MYSQL_USER,
+      "mysql-password": settings.env.MYSQL_PASSWORD,
+      "trigger-source": `admin_upload:${adminUsername || "unknown"}:${originalFilename}`,
+    });
+
+    if (typeof importRunner === "function") {
+      return importRunner({ args, settings, uploadTarget, filePath, originalFilename, adminUsername });
+    }
+
+    const scriptPath = path.join(settings.siteDir, "scripts", "run-entersoft-import.js");
+    return new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [scriptPath, ...args], {
+        cwd: settings.siteDir,
+        env: settings.env,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (chunk) => {
+        stdout += chunk.toString();
+      });
+      child.stderr.on("data", (chunk) => {
+        stderr += chunk.toString();
+      });
+      child.on("error", reject);
+      child.on("close", (code, signal) => {
+        resolve({ code: code ?? 1, signal: signal || null, stdout, stderr, args });
+      });
+    });
   }
 
   app.get("/api/health", async (req, res) => {
@@ -346,6 +435,76 @@ export function createApp({
       res.status(500).json({ error: String(error) });
     }
   });
+
+  app.put(
+    "/api/admin/import-upload/:dataset",
+    requireAdmin,
+    express.raw({
+      type: ["application/octet-stream", "text/csv", "text/plain", "application/vnd.ms-excel"],
+      limit: ADMIN_IMPORT_UPLOAD_MAX_BYTES,
+    }),
+    async (req, res) => {
+      try {
+        const uploadTarget = resolveImportUploadTarget(req.params.dataset);
+        if (!uploadTarget) {
+          res.status(400).json({ error: "Unsupported import dataset. Use sales/factuals or ledger/receivables." });
+          return;
+        }
+
+        const bodyBuffer = Buffer.isBuffer(req.body)
+          ? req.body
+          : Buffer.from(req.body || "");
+        if (!bodyBuffer.length) {
+          res.status(400).json({ error: "Upload body is empty." });
+          return;
+        }
+
+        const requestedFilename =
+          req.headers["x-upload-filename"] || req.query.filename || uploadTarget.defaultFilename;
+        const filename = sanitizeUploadedFilename(requestedFilename, uploadTarget.defaultFilename);
+
+        await mkdir(settings.backendDir, { recursive: true });
+        const filePath = path.join(settings.backendDir, filename);
+        await writeFile(filePath, bodyBuffer);
+
+        const result = await runAdminImport({
+          uploadTarget,
+          filePath,
+          originalFilename: filename,
+          adminUsername: req.admin?.username || "unknown",
+        });
+
+        const stdout = trimCommandOutput(result?.stdout);
+        const stderr = trimCommandOutput(result?.stderr);
+        const exitCode = Number(result?.code ?? 1);
+        if (exitCode !== 0) {
+          res.status(500).json({
+            ok: false,
+            dataset: uploadTarget.kind,
+            file_name: filename,
+            exit_code: exitCode,
+            signal: result?.signal || null,
+            stdout,
+            stderr,
+          });
+          return;
+        }
+
+        res.json({
+          ok: true,
+          dataset: uploadTarget.kind,
+          file_name: filename,
+          bytes_received: bodyBuffer.length,
+          exit_code: exitCode,
+          stdout,
+          stderr,
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message || String(error) });
+      }
+    },
+  );
 
   app.get("/api/catalog", async (req, res) => {
     try {
