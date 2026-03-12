@@ -457,7 +457,6 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             FROM orders o
             WHERE o.customer_code = ?
               AND ${yearExpr} = ?
-              ${orderDateWindowFilter.clause}
             GROUP BY ${monthExpr}
             ORDER BY month ASC
           `;
@@ -465,7 +464,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           db,
           monthlyYearQuery,
           code,
-          [olderYear, previousYear, currentYear].map((year) => [year, ...orderDateWindowFilter.params]),
+          [olderYear, previousYear, currentYear],
         );
 
         const totalOrders = asInteger(summary.total_orders);
@@ -865,11 +864,11 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               FROM imported_sales_lines
               WHERE customer_code = ?
                 AND order_year = ?
-                AND ${importedExpressions.analyticsFilter}${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+                AND ${importedExpressions.analyticsFilter}${importedDataFilter.clause}
               GROUP BY order_month
               ORDER BY order_month ASC
             `,
-            [code, year, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
+            [code, year, ...importedDataFilter.params],
           );
           series.push({ year, months: mergeMonthlyRows(rows) });
         }

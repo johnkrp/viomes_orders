@@ -13,8 +13,8 @@
     <div id="rotateOverlay" class="rotate-overlay" aria-hidden="true">
       <div class="rotate-card">
         <div class="rotate-icon" aria-hidden="true">&#8635;</div>
-        <h2>??????????? ?? tablet</h2>
-        <p>?? admin ?????????? ???? ?????????? ??? ????????? ???????.</p>
+        <h2>Περιστρέψτε το tablet</h2>
+        <p>Ο πίνακας διαχείρισης λειτουργεί καλύτερα σε οριζόντιο προσανατολισμό.</p>
       </div>
     </div>
 
@@ -22,21 +22,19 @@
       <div class="wrap">
         <div class="header-bar admin-topbar">
           <div class="header-slot" aria-hidden="true"></div>
-        <div class="brand">
-          <img
-            class="brand-logo"
-            src="https://viomes.gr/images/viomes-logo.png"
-            alt="VIOMES"
-            onerror="this.style.display = 'none'"
-          />
-        </div>
+          <div class="brand">
+            <img
+              class="brand-logo"
+              src="https://viomes.gr/images/viomes-logo.png"
+              alt="VIOMES"
+              onerror="this.style.display = 'none'"
+            />
+          </div>
 
-        <div class="admin-topbar-actions header-actions">
-          <a class="btn ghost admin-link-btn" href="index.html">??????? ?????</a>
-          <button id="logoutBtn" type="button" class="btn ghost" hidden>
-            ??????????
-          </button>
-        </div>
+          <div class="admin-topbar-actions header-actions">
+            <a class="btn ghost admin-link-btn" href="index.html">Άνοιγμα φόρμας παραγγελίας</a>
+            <button id="logoutBtn" type="button" class="btn ghost" hidden>Αποσύνδεση</button>
+          </div>
         </div>
       </div>
     </header>
@@ -45,7 +43,7 @@
       <div class="wrap admin-shell">
         <section class="page-head hero-inner admin-hero">
           <p class="admin-eyebrow">VIOMES Admin</p>
-          <h1 class="hero-title">?????????? ???????</h1>
+          <h1 class="hero-title">Ανάλυση πελατών</h1>
         </section>
 
         <div id="adminStatus" class="toast admin-toast" role="status" aria-live="polite"></div>
@@ -54,13 +52,13 @@
           <div class="panel-head">
             <div>
               <h2>Σύνδεση</h2>
-              <p>Η πρόσβαση στα στατιστικά είναι διαθέσιμη μόνο σε admin χρήστες.</p>
+              <p>Απαιτείται πρόσβαση διαχειριστή για την προβολή της ανάλυσης πελατών.</p>
             </div>
           </div>
 
           <form id="loginForm" class="admin-form-grid">
             <label class="field">
-              <span>Username</span>
+              <span>Όνομα χρήστη</span>
               <input
                 id="username"
                 type="text"
@@ -74,12 +72,12 @@
             </label>
 
             <label class="field">
-              <span>Password</span>
+              <span>Κωδικός πρόσβασης</span>
               <input
                 id="password"
                 type="password"
                 autocomplete="current-password"
-                placeholder="••••••••"
+                placeholder="Εισαγάγετε κωδικό"
                 required
               />
             </label>
@@ -91,45 +89,11 @@
         </section>
 
         <section id="dashboardPanel" class="admin-dashboard" hidden>
-          <section id="importHealthPanel" class="panel admin-panel admin-panel-subtle">
-            <div class="panel-head panel-head-inline">
-              <div>
-                <h2>Import Health</h2>
-                <p class="admin-panel-note">
-                  &#915;&#961;&#942;&#947;&#959;&#961;&#959;&#962; &#941;&#955;&#949;&#947;&#967;&#959;&#962; &#947;&#953;&#945; &#964;&#951;&#957; &#964;&#949;&#955;&#949;&#965;&#964;&#945;&#943;&#945; import &#949;&#954;&#964;&#941;&#955;&#949;&#963;&#951; &#954;&#945;&#953; &#964;&#945; projection invariants.
-                </p>
-              </div>
-            </div>
-            <div class="admin-stat-grid admin-runtime-grid">
-              <article class="admin-stat-card" id="importHealthStatusCard" data-state="idle">
-                <span class="admin-stat-label">Status</span>
-                <strong id="importHealthStatus">-</strong>
-              </article>
-              <article class="admin-stat-card">
-                <span class="admin-stat-label">Latest Dataset</span>
-                <strong id="importHealthDataset">-</strong>
-              </article>
-              <article class="admin-stat-card">
-                <span class="admin-stat-label">Finished At</span>
-                <strong id="importHealthFinishedAt">-</strong>
-              </article>
-              <article class="admin-stat-card">
-                <span class="admin-stat-label">Rows</span>
-                <strong id="importHealthRows">-</strong>
-              </article>
-            </div>
-            <div class="admin-runtime-summary">
-              <p id="importHealthSummary" class="admin-runtime-summary-text">
-                &#916;&#949;&#957; &#941;&#967;&#949;&#953; &#966;&#959;&#961;&#964;&#969;&#952;&#949;&#943; &#945;&#954;&#972;&#956;&#951; &#954;&#945;&#964;&#940;&#963;&#964;&#945;&#963;&#951; import.
-              </p>
-            </div>
-          </section>
-
           <section id="customerSearchPanel" class="panel admin-panel">
             <div class="panel-head panel-head-inline">
               <div>
                 <h2>Αναζήτηση πελάτη</h2>
-                <p id="sessionInfo">Συνδεδεμένος admin.</p>
+                <p id="sessionInfo">Η συνεδρία διαχειριστή είναι ενεργή.</p>
               </div>
               <div class="admin-inline-controls">
                 <button id="expandSearchPanelBtn" type="button" class="btn ghost" hidden>
@@ -139,99 +103,99 @@
             </div>
 
             <div id="searchPanelContent">
-            <form id="customerSearchForm" class="admin-searchbar">
-              <label class="field field-grow">
-                <span>Επωνυμία</span>
-                <input
-                  id="customerNameQuery"
-                  type="search"
-                  autocomplete="off"
-                  autocapitalize="off"
-                  autocorrect="off"
-                  spellcheck="false"
-                  placeholder="Αναζήτηση με επωνυμία πελάτη"
-                />
-              </label>
+              <form id="customerSearchForm" class="admin-searchbar">
+                <label class="field field-grow">
+                  <span>Επωνυμία πελάτη</span>
+                  <input
+                    id="customerNameQuery"
+                    type="search"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                    placeholder="Αναζήτηση με επωνυμία πελάτη"
+                  />
+                </label>
 
-              <label class="field field-grow">
-                <span>Κωδικός</span>
-                <input
-                  id="customerCodeQuery"
-                  type="search"
-                  autocomplete="off"
-                  autocapitalize="off"
-                  autocorrect="off"
-                  spellcheck="false"
-                  placeholder="Αναζήτηση με κωδικό πελάτη"
-                />
-              </label>
+                <label class="field field-grow">
+                  <span>Κωδικός πελάτη</span>
+                  <input
+                    id="customerCodeQuery"
+                    type="search"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                    placeholder="Αναζήτηση με κωδικό πελάτη"
+                  />
+                </label>
 
-              <label class="field field-grow">
-                <span>Κωδ. Υποκ.</span>
-                <input
-                  id="branchCodeQuery"
-                  type="search"
-                  autocomplete="off"
-                  autocapitalize="off"
-                  autocorrect="off"
-                  spellcheck="false"
-                  placeholder="Αναζήτηση με κωδικό υποκαταστήματος"
-                />
-              </label>
+                <label class="field field-grow">
+                  <span>Κωδικός υποκαταστήματος</span>
+                  <input
+                    id="branchCodeQuery"
+                    type="search"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                    placeholder="Αναζήτηση με κωδικό υποκαταστήματος"
+                  />
+                </label>
 
-              <label class="field field-grow">
-                <span>Τοποθεσία / Διεύθυνση</span>
-                <input
-                  id="branchDescriptionQuery"
-                  type="search"
-                  autocomplete="off"
-                  autocapitalize="off"
-                  autocorrect="off"
-                  spellcheck="false"
-                  placeholder="Αναζήτηση με τοποθεσία ή διεύθυνση υποκαταστήματος"
-                />
-              </label>
+                <label class="field field-grow">
+                  <span>Περιγραφή υποκαταστήματος</span>
+                  <input
+                    id="branchDescriptionQuery"
+                    type="search"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                    placeholder="Αναζήτηση με περιγραφή υποκαταστήματος"
+                  />
+                </label>
 
-              <div class="admin-search-actions">
-                <button id="searchCustomersBtn" type="submit">Αναζήτηση</button>
-                <button id="clearStatsBtn" type="button" class="btn ghost">Καθαρισμός</button>
+                <div class="admin-search-actions">
+                  <button id="searchCustomersBtn" type="submit">Αναζήτηση</button>
+                  <button id="clearStatsBtn" type="button" class="btn ghost">Καθαρισμός</button>
+                </div>
+              </form>
+
+              <div
+                id="searchLoadingNotice"
+                class="admin-loading-indicator"
+                role="status"
+                aria-live="polite"
+                hidden
+              ></div>
+
+              <div id="searchResultsPanel" class="admin-search-results" hidden>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Κωδικός</th>
+                        <th>Επωνυμία</th>
+                        <th>Κωδικός υποκαταστήματος</th>
+                        <th>Περιγραφή υποκαταστήματος</th>
+                        <th>Ενέργεια</th>
+                      </tr>
+                    </thead>
+                    <tbody id="searchResultsBody">
+                      <tr>
+                        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη αποτελέσματα.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </form>
-
-            <div
-              id="searchLoadingNotice"
-              class="admin-loading-indicator"
-              role="status"
-              aria-live="polite"
-              hidden
-            ></div>
-
-            <div id="searchResultsPanel" class="admin-search-results" hidden>
-              <div class="admin-table-wrap">
-                <table class="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Κωδικός</th>
-                      <th>Επωνυμία</th>
-                      <th>Κωδ. υποκ.</th>
-                      <th>Τοποθεσία / Διεύθυνση</th>
-                      <th>Ενέργεια</th>
-                    </tr>
-                  </thead>
-                  <tbody id="searchResultsBody">
-                    <tr>
-                      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη αποτελέσματα.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
             </div>
           </section>
 
           <section id="emptyState" class="panel admin-panel admin-empty-state">
-            <h2>Δεν έχει φορτωθεί πελάτης</h2>
-            <p>Αναζητήστε πελάτη με τα ξεχωριστά πεδία επωνυμίας, κωδικού ή στοιχείων υποκαταστήματος και επιλέξτε αποτέλεσμα.</p>
+            <h2>Δεν έχει επιλεγεί πελάτης</h2>
+            <p>Αναζητήστε πελάτη και επιλέξτε αποτέλεσμα για να φορτωθούν τα στοιχεία.</p>
           </section>
 
           <section id="statsPanel" class="admin-stats-stack" hidden>
@@ -251,7 +215,7 @@
                 </div>
                 <div id="branchSelectorPanel" class="admin-inline-controls" hidden>
                   <label class="field admin-compact-field">
-                    <span>Αναζήτηση υποκαταστήματος</span>
+                    <span>Φιλτράρισμα υποκαταστημάτων</span>
                     <input
                       id="branchSelectorSearch"
                       type="search"
@@ -259,7 +223,7 @@
                       autocapitalize="off"
                       autocorrect="off"
                       spellcheck="false"
-                      placeholder="Πληκτρολογήστε κωδικό ή τοποθεσία"
+                      placeholder="Πληκτρολογήστε κωδικό ή περιγραφή"
                     />
                   </label>
                   <label class="field admin-compact-field">
@@ -281,31 +245,31 @@
                   <strong id="totalPiecesValue">0</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Συνολική αξία</span>
+                  <span class="admin-stat-label">Σύνολο τζίρου</span>
                   <strong id="totalRevenueValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Μ.Ο. παραγγελίας</span>
+                  <span class="admin-stat-label">Μέση αξία παραγγελίας</span>
                   <strong id="averageOrderValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Μέρες από τελευταία</span>
+                  <span class="admin-stat-label">Ημέρες από την τελευταία παραγγελία</span>
                   <strong id="daysSinceLastOrderValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Μ.Ο. διάστημα</span>
+                  <span class="admin-stat-label">Μέσο διάστημα</span>
                   <strong id="averageDaysBetweenOrdersValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Αξία 3 μηνών</span>
+                  <span class="admin-stat-label">Τζίρος 3μ</span>
                   <strong id="revenue3mValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Αξία 6 μηνών</span>
+                  <span class="admin-stat-label">Τζίρος 6μ</span>
                   <strong id="revenue6mValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Αξία 12 μηνών</span>
+                  <span class="admin-stat-label">Τζίρος 12μ</span>
                   <strong id="revenue12mValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
@@ -320,18 +284,7 @@
                 <div class="panel-head panel-head-inline">
                   <div>
                     <h2>Πωλήσεις ανά μήνα</h2>
-                    <p class="admin-panel-note">Τζίρος ανά μήνα για το προηγούμενο και το τρέχον έτος.</p>
-                  </div>
-                  <div class="admin-inline-controls">
-                    <label class="field admin-compact-field">
-                      <span>Period</span>
-                      <select id="salesTimeRange">
-                        <option value="3m" selected>Last 3 months</option>
-                        <option value="6m">Last 6 months</option>
-                        <option value="12m">Last 12 months</option>
-                        <option value="all">All time</option>
-                      </select>
-                    </label>
+                    <p class="admin-panel-note">Τζίρος ανά μήνα για τα πιο πρόσφατα έτη.</p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
@@ -342,12 +295,12 @@
                         <th id="monthlyYearOneHeading" class="admin-table-number">2024</th>
                         <th id="monthlyYearTwoHeading" class="admin-table-number">2025</th>
                         <th id="monthlyYearThreeHeading" class="admin-table-number">2026</th>
-                        <th class="admin-table-number admin-monthly-total-heading">Γενικό σύνολο</th>
+                        <th class="admin-table-number admin-monthly-total-heading">Σύνολο</th>
                       </tr>
                     </thead>
                     <tbody id="monthlySalesBody">
                       <tr>
-                        <td colspan="5" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη μηνιαίες πωλήσεις.</td>
+                        <td colspan="5" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη οι μηνιαίες πωλήσεις.</td>
                       </tr>
                     </tbody>
                     <tfoot id="monthlySalesFoot">
@@ -366,13 +319,13 @@
               <section id="receivablesPanel" class="panel admin-panel admin-panel-subtle">
                 <div class="panel-head panel-head-inline">
                   <div>
-                    <h2>&#922;&#953;&#957;&#942;&#963;&#949;&#953;&#962; &#954;&#945;&#961;&#964;&#941;&#955;&#945;&#962;</h2>
-                    <p class="admin-panel-note">&#932;&#961;&#941;&#967;&#959;&#957; &#965;&#960;&#972;&#955;&#959;&#953;&#960;&#959; &#954;&#945;&#953; daily &#954;&#953;&#957;&#942;&#963;&#949;&#953;&#962; &#954;&#945;&#961;&#964;&#941;&#955;&#945;&#962; &#945;&#957;&#940; &#960;&#949;&#955;&#940;&#964;&#951;.</p>
+                    <h2>Κινήσεις καρτέλας</h2>
+                    <p class="admin-panel-note">Τρέχον υπόλοιπο και ημερήσιες κινήσεις καρτέλας ανά πελάτη.</p>
                   </div>
                 </div>
                 <div class="admin-stat-grid admin-mini-stat-grid">
                   <article class="admin-stat-card">
-                    <span class="admin-stat-label">&#913;&#957;&#959;&#953;&#967;&#964;&#972; &#965;&#960;&#972;&#955;&#959;&#953;&#960;&#959;</span>
+                    <span class="admin-stat-label">Ανοιχτό υπόλοιπο</span>
                     <strong id="receivablesOpenValue">-</strong>
                   </article>
                 </div>
@@ -380,38 +333,49 @@
                   <table class="admin-table admin-top-qty-table">
                     <thead>
                       <tr>
-                        <th>&#919;&#956;&#949;&#961;&#959;&#956;&#951;&#957;&#943;&#945;</th>
-                        <th>&#928;&#945;&#961;&#945;&#963;&#964;&#945;&#964;&#953;&#954;&#972;</th>
-                        <th>&#913;&#953;&#964;&#953;&#959;&#955;&#959;&#947;&#943;&#945;</th>
-                        <th class="admin-table-number">&#935;&#961;&#941;&#969;&#963;&#951;</th>
-                        <th class="admin-table-number">&#928;&#943;&#963;&#964;&#969;&#963;&#951;</th>
-                        <th class="admin-table-number">&#933;&#960;&#972;&#955;&#959;&#953;&#960;&#959;</th>
+                        <th>Ημερομηνία</th>
+                        <th>Παραστατικό</th>
+                        <th>Αιτιολογία</th>
+                        <th class="admin-table-number">Χρέωση</th>
+                        <th class="admin-table-number">Πίστωση</th>
+                        <th class="admin-table-number">Υπόλοιπο</th>
                       </tr>
                     </thead>
                     <tbody id="receivablesBody">
                       <tr>
-                        <td colspan="6" class="admin-table-empty">&#916;&#949;&#957; &#941;&#967;&#959;&#965;&#957; &#966;&#959;&#961;&#964;&#969;&#952;&#949;&#943; &#945;&#954;&#972;&#956;&#951; &#954;&#953;&#957;&#942;&#963;&#949;&#953;&#962; &#954;&#945;&#961;&#964;&#941;&#955;&#945;&#962;.</td>
+                        <td colspan="6" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη οι κινήσεις καρτέλας.</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
                 <div class="admin-pagination" id="receivablesPagination" hidden>
-                  <button type="button" class="btn ghost" id="receivablesPrevBtn">&#928;&#961;&#959;&#951;&#947;.</button>
-                  <span id="receivablesPageInfo" class="admin-pagination-meta">&#931;&#949;&#955;&#943;&#948;&#945; 1 &#945;&#960;&#972; 1</span>
-                  <button type="button" class="btn ghost" id="receivablesNextBtn">&#917;&#960;&#972;&#956;.</button>
+                  <button type="button" class="btn ghost" id="receivablesPrevBtn">Προηγούμενη</button>
+                  <span id="receivablesPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
+                  <button type="button" class="btn ghost" id="receivablesNextBtn">Επόμενη</button>
                 </div>
               </section>
             </div>
 
             <section class="panel admin-panel admin-panel-subtle">
-                <div class="panel-head panel-head-inline">
-                  <div>
-                  <h2>Πωλήσεις ανά κωδικό</h2>
-                  <p class="admin-panel-note">Πλήρης λίστα προϊόντων για το επιλεγμένο κατάστημα με εναλλαγή σε τζίρο ή τεμάχια.</p>
-                  </div>
+              <div class="panel-head panel-head-inline">
+                <div>
+                  <h2>Πωλήσεις ανά είδος</h2>
+                  <p class="admin-panel-note">
+                    Πλήρης λίστα ειδών για τον επιλεγμένο πελάτη ή υποκατάστημα, με ταξινόμηση ανά τζίρο ή τεμάχια.
+                  </p>
+                </div>
                 <div class="admin-inline-controls">
                   <label class="field admin-compact-field">
-                    <span>Μέτρηση</span>
+                    <span>Περίοδος</span>
+                    <select id="salesTimeRange">
+                      <option value="3m" selected>Τελευταίοι 3 μήνες</option>
+                      <option value="6m">Τελευταίοι 6 μήνες</option>
+                      <option value="12m">Τελευταίοι 12 μήνες</option>
+                      <option value="all">Από την αρχή</option>
+                    </select>
+                  </label>
+                  <label class="field admin-compact-field">
+                    <span>Μετρική</span>
                     <select id="productSalesMetric">
                       <option value="revenue">Τζίρος</option>
                       <option value="pieces">Τεμάχια</option>
@@ -428,12 +392,12 @@
                       <th id="productSalesMetricHeading" class="admin-table-number">Τζίρος</th>
                       <th class="admin-table-number">Τεμάχια</th>
                       <th class="admin-table-number">Παραγγελίες</th>
-                      <th class="admin-table-number">Μ. τιμή μονάδας</th>
+                      <th class="admin-table-number">Μέση τιμή μονάδας</th>
                     </tr>
                   </thead>
                   <tbody id="productSalesBody">
                     <tr>
-                      <td colspan="6" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη πωλήσεις προϊόντων.</td>
+                      <td colspan="6" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη οι πωλήσεις ειδών.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -449,19 +413,19 @@
               <section class="panel admin-panel admin-panel-subtle">
                 <div class="panel-head">
                   <div>
-                    <h2>Top προϊόντα σε τεμάχια</h2>
-                    <p class="admin-panel-note">Τα προϊόντα με τη μεγαλύτερη ζήτηση σε όγκο.</p>
+                    <h2>Κορυφαία είδη ανά τεμάχια</h2>
+                    <p class="admin-panel-note">Είδη με τη μεγαλύτερη ζήτηση σε όγκο.</p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
                   <table class="admin-table admin-top-value-table">
                     <thead>
                       <tr>
-                        <th>Κωδ.</th>
+                        <th>Κωδικός</th>
                         <th>Περιγραφή</th>
                         <th class="admin-table-number">Τεμάχια</th>
                         <th class="admin-table-number">Παραγγελίες</th>
-                        <th class="admin-table-number">Αξία</th>
+                        <th class="admin-table-number">Τζίρος</th>
                       </tr>
                     </thead>
                     <tbody id="topProductsQtyBody">
@@ -476,8 +440,8 @@
               <section class="panel admin-panel admin-panel-subtle">
                 <div class="panel-head">
                   <div>
-                    <h2>Top προϊόντα σε αξία</h2>
-                    <p class="admin-panel-note">Προϊόντα που έχουν αποδώσει το μεγαλύτερο revenue.</p>
+                    <h2>Κορυφαία είδη ανά τζίρο</h2>
+                    <p class="admin-panel-note">Είδη με τη μεγαλύτερη συνεισφορά στον τζίρο.</p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
@@ -485,10 +449,10 @@
                     <thead>
                       <tr>
                         <th class="admin-table-number">Τεμάχια</th>
-                        <th>Κωδ.</th>
+                        <th>Κωδικός</th>
                         <th>Περιγραφή</th>
-                        <th class="admin-table-number">Αξία</th>
-                        <th class="admin-table-number">Μ.Τιμή</th>
+                        <th class="admin-table-number">Τζίρος</th>
+                        <th class="admin-table-number">Μέση τιμή μονάδας</th>
                       </tr>
                     </thead>
                     <tbody id="topProductsValueBody">
@@ -505,7 +469,7 @@
               <div class="panel-head">
                 <div>
                   <h2>Πρόσφατες παραγγελίες</h2>
-                  <p class="admin-panel-note">Γρήγορη εικόνα για τα πιο πρόσφατα orders με αξία και μέση έκπτωση.</p>
+                  <p class="admin-panel-note">Πρόσφατες παραγγελίες με αξία, τεμάχια και έκπτωση.</p>
                 </div>
               </div>
               <div class="admin-table-wrap">
@@ -513,17 +477,18 @@
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>Ημερομηνία</th>
+                      <th>Ημερομηνία παραγγελίας</th>
+                      <th>Ημερομηνία αποστολής</th>
                       <th class="admin-table-number">Γραμμές</th>
-                      <th class="admin-table-number">???????</th>
+                      <th class="admin-table-number">Τεμάχια</th>
                       <th class="admin-table-number">Αξία</th>
-                      <th class="admin-table-number">Μ.Έκπτωση</th>
+                      <th class="admin-table-number">Μέση έκπτωση</th>
                       <th>Ενέργεια</th>
                     </tr>
                   </thead>
                   <tbody id="recentOrdersBody">
                     <tr>
-                      <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                      <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν πρόσφατες παραγγελίες.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -533,13 +498,15 @@
             <section class="panel admin-panel admin-panel-subtle">
               <div class="panel-head">
                 <div>
-                  <h2>Ανάλυση παραγγελιών</h2>
-                  <p class="admin-panel-note">Επιλέξτε παραγγελία από τον πίνακα για να προβάλετε γραμμές, τιμές, εκπτώσεις και καθαρή αξία.</p>
+                  <h2>Ανάλυση παραγγελίας</h2>
+                  <p class="admin-panel-note">
+                    Επιλέξτε παραγγελία για να δείτε γραμμές, τιμές, εκπτώσεις και καθαρή αξία.
+                  </p>
                 </div>
               </div>
               <div id="detailedOrdersList" class="admin-order-stack" aria-live="polite">
                 <article class="admin-order-card admin-order-empty">
-                  Επιλέξτε μια παραγγελία για να εμφανιστεί η αναλυτική προβολή.
+                  Επιλέξτε παραγγελία για να δείτε την αναλυτική ανάλυση.
                 </article>
               </div>
             </section>
@@ -549,7 +516,7 @@
 
       <footer class="site-footer">
         <div class="wrap footer-inner">
-          <span class="footer-text">&copy; VIOMES | Admin tools</span>
+          <span class="footer-text">&copy; VIOMES | Εργαλεία διαχείρισης</span>
         </div>
       </footer>
     </main>
@@ -584,4 +551,3 @@
     <script src="admin.js"></script>
   </body>
 </html>
-

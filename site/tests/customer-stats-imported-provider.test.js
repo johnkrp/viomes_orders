@@ -318,10 +318,10 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.detailed_orders[0].lines.length, 1);
   assert.equal(payload.available_branches.length, 2);
   assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
-  assert.equal(payload.monthly_sales.previous_year[11].revenue, 0);
+  assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
   assert.equal(payload.monthly_sales.yearly_series.length, 3);
   assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
-  assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 0);
+  assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
   assert.equal(payload.receivables.open_balance, 321.45);
   assert.equal(payload.receivables.overdue_balance, 0);
   assert.equal(payload.receivables.progressive_credit, 120.5);

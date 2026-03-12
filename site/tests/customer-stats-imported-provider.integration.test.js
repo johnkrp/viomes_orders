@@ -347,7 +347,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.product_sales.items.length, 1);
     assert.equal(payload.recent_orders.length, 1);
     assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
-    assert.equal(payload.monthly_sales.previous_year[11].revenue, 0);
+    assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
     assert.equal(payload.monthly_sales.yearly_series.length, 3);
     assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
     assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 0);
