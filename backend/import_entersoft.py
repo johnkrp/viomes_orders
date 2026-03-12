@@ -495,7 +495,7 @@ def rebuild_customers_from_sales(cur) -> None:
         FROM imported_customers
         ON DUPLICATE KEY UPDATE
           name = VALUES(name),
-          email = COALESCE(email, VALUES(email)),
+          email = COALESCE(customers.email, VALUES(email)),
           source = VALUES(source)
         """,
     )
@@ -838,7 +838,7 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
               name = VALUES(name),
               email = CASE
                 WHEN VALUES(email) IS NOT NULL AND VALUES(email) <> '' THEN VALUES(email)
-                ELSE email
+                ELSE customers.email
               END
             """,
         )
