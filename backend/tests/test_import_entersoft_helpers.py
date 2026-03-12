@@ -58,24 +58,38 @@ def create_temp_sales_file():
 
 def sample_ledger_row():
     return {
-        "Κωδικός": "C001",
-        "Επωνυμία": "Alpha Store",
-        "Εκ μεταφοράς": "10,00",
-        "Χρέωση ": "50,00",
-        "Πίστωση ": "25,00",
-        "Λογιστικό υπόλοιπο": "35,00",
-        "Εκκρεμή αξιόγραφα": "5,00",
-        "Εμπορικό υπόλοιπο": "40,00",
-        "Ηλεκτρονική διεύθυνση": "alpha@example.com",
-        "Ανενεργός": "0",
-        "Πωλητής": "90",
+        "Συναλλασσόμενος": "C001",
+        "Ημ/νία": "",
+        "Παραστατικό": "",
+        "Αιτιολογία": "Εξ απογραφής",
+        "Χρέωση": "0",
+        "Πίστωση": "0",
+        "Προοδ. Χρέωση": "10,00",
+        "Προοδ. Πίστωση": "0,00",
+        "Υπόλοιπο": "10,00",
+        "Συν/νος": "Alpha Store",
+    }
+
+
+def sample_ledger_latest_row():
+    return {
+        "Συναλλασσόμενος": "C001",
+        "Ημ/νία": "12/03/2026",
+        "Παραστατικό": "INV-1",
+        "Αιτιολογία": "Latest movement",
+        "Χρέωση": "5,00",
+        "Πίστωση": "0,00",
+        "Προοδ. Χρέωση": "50,00",
+        "Προοδ. Πίστωση": "10,00",
+        "Υπόλοιπο": "40,00",
+        "Συν/νος": "Alpha Store",
     }
 
 
 def invalid_ledger_row():
     return {
-        "Κωδικός": "",
-        "Επωνυμία": "",
+        "Συναλλασσόμενος": "",
+        "Συν/νος": "",
     }
 
 
@@ -246,8 +260,8 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         cursor = FakeCursor()
         existing_row = sample_sales_row()
         updated_row = sample_sales_row()
-        updated_row["% Ξ­ΞΊΟ€Ο„.1"] = "30,00"
-        updated_row["Ξ£Ο‡ΟΞ»ΞΉΞΏ 1"] = "Promo"
+        updated_row["% έκπτ.1"] = "30,00"
+        updated_row["Σχόλιο 1"] = "Promo"
         existing_file = create_temp_sales_file()
         updated_file = create_temp_sales_file()
         try:
@@ -352,21 +366,29 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         cursor.imported_ledgers["OLD"] = {"customer_code": "OLD"}
         ledger_file = create_temp_ledger_file()
         try:
-            with patch("import_entersoft.csv.DictReader", return_value=[sample_ledger_row(), invalid_ledger_row()]):
+            with patch(
+                "import_entersoft.csv.DictReader",
+                return_value=[sample_ledger_row(), sample_ledger_latest_row(), invalid_ledger_row()],
+            ):
                 stats = import_customer_ledgers(cursor, ledger_file)
         finally:
             ledger_file.unlink(missing_ok=True)
 
         self.assertEqual(stats.dataset, "customer_ledgers")
         self.assertEqual(stats.import_mode, "snapshot_replace")
-        self.assertEqual(stats.source_row_count, 2)
-        self.assertEqual(stats.rows_in, 2)
+        self.assertEqual(stats.source_row_count, 3)
+        self.assertEqual(stats.rows_in, 3)
         self.assertEqual(stats.rows_upserted, 1)
         self.assertEqual(stats.rows_rejected, 1)
         self.assertEqual(list(cursor.imported_ledgers.keys()), ["C001"])
+        self.assertEqual(cursor.imported_ledgers["C001"]["ledger_balance"], 40.0)
         self.assertEqual(cursor.imported_ledgers["C001"]["commercial_balance"], 40.0)
-        self.assertEqual(cursor.imported_ledgers["C001"]["email"], "alpha@example.com")
+        self.assertEqual(cursor.imported_ledgers["C001"]["debit"], 50.0)
+        self.assertEqual(cursor.imported_ledgers["C001"]["credit"], 10.0)
+        self.assertEqual(cursor.imported_ledgers["C001"]["opening_balance"], 10.0)
+        self.assertEqual(cursor.imported_ledgers["C001"]["email"], None)
         self.assertIn('"snapshot_table":"imported_customer_ledgers"', stats.metadata_json)
+        self.assertIn('"balance_metric":"ledger_balance"', stats.metadata_json)
         self.assertIsNotNone(cursor.import_run_insert_params)
         self.assertIsNotNone(cursor.import_run_update_params)
 

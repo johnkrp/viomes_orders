@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import hashlib
 import json
 import os
@@ -167,7 +167,7 @@ def build_ledger_snapshot_metadata_json() -> str:
             "snapshot_table": "imported_customer_ledgers",
             "snapshot_strategy": "truncate_and_replace",
             "customer_projection_table": "customers",
-            "balance_metric": "commercial_balance",
+            "balance_metric": "ledger_balance",
             "dataset": "customer_ledgers",
         },
         ensure_ascii=True,
@@ -612,33 +612,39 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                 for row in reader:
                     stats.source_row_count += 1
                     stats.rows_in += 1
-                    customer_code = str(row.get("Κωδικός", "")).strip()
-                    document_no = str(row.get("Παραστατικό", "")).strip()
-                    item_code = str(row.get("Είδος", "")).strip()
-                    order_date = parse_date(row.get("Ημ/νία "))
+                    customer_code = str(get_row_value(row, "Κωδικός", "ΞΟ‰Ξ΄ΞΉΞΊΟΟ‚")).strip()
+                    document_no = str(get_row_value(row, "Παραστατικό", "Ξ Ξ±ΟΞ±ΟƒΟ„Ξ±Ο„ΞΉΞΊΟ")).strip()
+                    item_code = str(get_row_value(row, "Είδος", "Ξ•Ξ―Ξ΄ΞΏΟ‚")).strip()
+                    order_date = parse_date(get_row_value(row, "Ημ/νία ", "Ξ—ΞΌ/Ξ½Ξ―Ξ± "))
                     if not (customer_code and document_no and item_code and order_date):
                         stats.rows_rejected += 1
                         continue
 
                     order_dt = datetime.strptime(order_date, "%Y-%m-%d")
-                    document_type = str(row.get("Τύπος Παραστατικών", "")).strip()
-                    item_description = str(row.get("Περιγραφή", "")).strip()
-                    unit_code = str(row.get("ΜΜ", "")).strip()
-                    qty = parse_decimal(row.get("Ποσότητα"))
-                    qty_base = parse_decimal(row.get("Ποσότητα σε βασική ΜΜ"))
-                    unit_price = parse_decimal(row.get("Τιμή"))
-                    net_value = parse_decimal(row.get("Καθαρή  αξία "))
-                    customer_name = str(row.get("Επωνυμία/Ονοματεπώνυμο", "")).strip()
-                    delivery_code = str(row.get("Κωδικός1", "")).strip()
-                    delivery_description = str(row.get("Περιγραφή1", "")).strip()
-                    account_code = str(row.get("Κωδ. ΑΧ ", "")).strip()
-                    account_description = str(row.get("Περ. ΑΧ", "")).strip()
-                    branch_code = str(row.get("Κωδ.υποκ.", "")).strip()
-                    branch_description = str(row.get("Περ.υποκ.", "")).strip()
-                    note_1 = str(row.get("Σχόλιο 1", "")).strip()
+                    document_type = str(
+                        get_row_value(row, "Τύπος Παραστατικών", "Ξ¤ΟΟ€ΞΏΟ‚ Ξ Ξ±ΟΞ±ΟƒΟ„Ξ±Ο„ΞΉΞΊΟΞ½")
+                    ).strip()
+                    item_description = str(get_row_value(row, "Περιγραφή", "Ξ ΞµΟΞΉΞ³ΟΞ±Ο†Ξ®")).strip()
+                    unit_code = str(get_row_value(row, "ΜΜ", "ΞΞ")).strip()
+                    qty = parse_decimal(get_row_value(row, "Ποσότητα", "Ξ ΞΏΟƒΟΟ„Ξ·Ο„Ξ±"))
+                    qty_base = parse_decimal(
+                        get_row_value(row, "Ποσότητα σε βασική ΜΜ", "Ξ ΞΏΟƒΟΟ„Ξ·Ο„Ξ± ΟƒΞµ Ξ²Ξ±ΟƒΞΉΞΊΞ® ΞΞ")
+                    )
+                    unit_price = parse_decimal(get_row_value(row, "Τιμή", "Ξ¤ΞΉΞΌΞ®"))
+                    net_value = parse_decimal(get_row_value(row, "Καθαρή  αξία ", "ΞΞ±ΞΈΞ±ΟΞ®  Ξ±ΞΎΞ―Ξ± "))
+                    customer_name = str(
+                        get_row_value(row, "Επωνυμία/Ονοματεπώνυμο", "Ξ•Ο€Ο‰Ξ½Ο…ΞΌΞ―Ξ±/ΞΞ½ΞΏΞΌΞ±Ο„ΞµΟ€ΟΞ½Ο…ΞΌΞΏ")
+                    ).strip()
+                    delivery_code = str(get_row_value(row, "Κωδικός1", "ΞΟ‰Ξ΄ΞΉΞΊΟΟ‚1")).strip()
+                    delivery_description = str(get_row_value(row, "Περιγραφή1", "Ξ ΞµΟΞΉΞ³ΟΞ±Ο†Ξ®1")).strip()
+                    account_code = str(get_row_value(row, "Κωδ. ΑΧ ", "ΞΟ‰Ξ΄. Ξ‘Ξ§ ")).strip()
+                    account_description = str(get_row_value(row, "Περ. ΑΧ", "Ξ ΞµΟ. Ξ‘Ξ§")).strip()
+                    branch_code = str(get_row_value(row, "Κωδ.υποκ.", "ΞΟ‰Ξ΄.Ο…Ο€ΞΏΞΊ.")).strip()
+                    branch_description = str(get_row_value(row, "Περ.υποκ.", "Ξ ΞµΟ.Ο…Ο€ΞΏΞΊ.")).strip()
+                    note_1 = str(get_row_value(row, "Σχόλιο 1", "Ξ£Ο‡ΟΞ»ΞΉΞΏ 1")).strip()
 
-                    discount_pct_1 = parse_decimal(get_row_value(row, "% έκπτ.1"))
-                    discount_pct_2 = parse_decimal(get_row_value(row, "% έκπτ.2"))
+                    discount_pct_1 = parse_decimal(get_row_value(row, "% Ξ­ΞΊΟ€Ο„.1"))
+                    discount_pct_2 = parse_decimal(get_row_value(row, "% Ξ­ΞΊΟ€Ο„.2"))
                     discount_pct_total = discount_pct_1 + discount_pct_2
 
                     matching_ids = find_matching_sales_line_ids(
@@ -785,54 +791,135 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
     print(f"[import] customer_ledgers: starting ({ledger_file.name})", flush=True)
     run_id = begin_import(cur, stats)
     try:
+        snapshots = {}
         execute_step(cur, "truncate imported_customer_ledgers", "DELETE FROM imported_customer_ledgers")
         with ledger_file.open("r", encoding="utf-8-sig", newline="") as handle:
             reader = csv.DictReader(handle, delimiter="\t")
             for row in reader:
                 stats.source_row_count += 1
                 stats.rows_in += 1
-                customer_code = str(get_row_value(row, "Κωδικός")).strip()
-                customer_name = str(get_row_value(row, "Επωνυμία")).strip()
+                customer_code = str(
+                    get_row_value(
+                        row,
+                        "Συναλλασσόμενος",
+                        "Ξ£Ο…Ξ½Ξ±Ξ»Ξ»Ξ±ΟƒΟƒΟΞΌΞµΞ½ΞΏΟ‚",
+                        "Κωδικός",
+                        "ΞΟ‰Ξ΄ΞΉΞΊΟΟ‚",
+                    )
+                ).strip()
+                customer_name = str(
+                    get_row_value(
+                        row,
+                        "Συν/νος",
+                        "Ξ£Ο…Ξ½/Ξ½ΞΏΟ‚",
+                        "Επωνυμία",
+                        "Ξ•Ο€Ο‰Ξ½Ο…ΞΌΞ―Ξ±",
+                    )
+                ).strip()
                 if not customer_code or not customer_name:
                     stats.rows_rejected += 1
                     continue
 
-                execute_step(
-                    cur,
-                    "insert imported_customer_ledgers row",
-                    """
-                    INSERT INTO imported_customer_ledgers(
-                      customer_code,
-                      customer_name,
-                      opening_balance,
-                      debit,
-                      credit,
-                      ledger_balance,
-                      pending_instruments,
-                      commercial_balance,
-                      email,
-                      is_inactive,
-                      salesperson_code,
-                      source_file
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (
-                        customer_code,
-                        customer_name,
-                        parse_decimal(get_row_value(row, "Εκ μεταφοράς")),
-                        parse_decimal(get_row_value(row, "Χρέωση ")),
-                        parse_decimal(get_row_value(row, "Πίστωση ")),
-                        parse_decimal(get_row_value(row, "Λογιστικό υπόλοιπο")),
-                        parse_decimal(get_row_value(row, "Εκκρεμή αξιόγραφα")),
-                        parse_decimal(get_row_value(row, "Εμπορικό υπόλοιπο")),
-                        str(get_row_value(row, "Ηλεκτρονική διεύθυνση")).strip() or None,
-                        1 if str(get_row_value(row, "Ανενεργός")).strip() in {"1", "true", "True"} else 0,
-                        str(get_row_value(row, "Πωλητής")).strip() or None,
-                        ledger_file.name,
-                    ),
+                opening_balance = parse_decimal(
+                    get_row_value(row, "Εκ μεταφοράς", "Ξ•ΞΊ ΞΌΞµΟ„Ξ±Ο†ΞΏΟΞ¬Ο‚")
                 )
-                stats.rows_upserted += cur.rowcount
+                progressive_debit = parse_decimal(
+                    get_row_value(row, "Προοδ. Χρέωση", "Ξ ΟΞΏΞΏΞ΄. Ξ§ΟΞ­Ο‰ΟƒΞ·")
+                )
+                progressive_credit = parse_decimal(
+                    get_row_value(row, "Προοδ. Πίστωση", "Ξ ΟΞΏΞΏΞ΄. Ξ Ξ―ΟƒΟ„Ο‰ΟƒΞ·")
+                )
+                ledger_balance = parse_decimal(
+                    get_row_value(
+                        row,
+                        "Υπόλοιπο",
+                        "Ξ¥Ο€ΟΞ»ΞΏΞΉΟ€ΞΏ",
+                        "Λογιστικό υπόλοιπο",
+                        "Ξ›ΞΏΞ³ΞΉΟƒΟ„ΞΉΞΊΟ Ο…Ο€ΟΞ»ΞΏΞΉΟ€ΞΏ",
+                    )
+                )
+                commercial_balance = parse_decimal(
+                    get_row_value(row, "Εμπορικό Υπόλοιπο", "Ξ•ΞΌΟ€ΞΏΟΞΉΞΊΟ Ο…Ο€ΟΞ»ΞΏΞΉΟ€ΞΏ")
+                )
+                pending_instruments = parse_decimal(
+                    get_row_value(row, "Εκκρεμή αξιόγραφα", "Ξ•ΞΊΞΊΟΞµΞΌΞ® Ξ±ΞΎΞΉΟΞ³ΟΞ±Ο†Ξ±")
+                )
+                email = str(
+                    get_row_value(row, "Ηλεκτρονική διεύθυνση", "Ξ—Ξ»ΞµΞΊΟ„ΟΞΏΞ½ΞΉΞΊΞ® Ξ΄ΞΉΞµΟΞΈΟ…Ξ½ΟƒΞ·")
+                ).strip() or None
+                is_inactive = (
+                    1 if str(get_row_value(row, "Ανενεργός", "Ξ‘Ξ½ΞµΞ½ΞµΟΞ³ΟΟ‚")).strip() in {"1", "true", "True"} else 0
+                )
+                salesperson_code = str(get_row_value(row, "Πωλητής", "Ξ Ο‰Ξ»Ξ·Ο„Ξ®Ο‚")).strip() or None
+
+                if not commercial_balance:
+                    commercial_balance = ledger_balance
+
+                snapshot = snapshots.get(customer_code)
+                if not snapshot:
+                    snapshot = {
+                        "customer_code": customer_code,
+                        "customer_name": customer_name,
+                        "opening_balance": opening_balance or ledger_balance,
+                        "debit": progressive_debit,
+                        "credit": progressive_credit,
+                        "ledger_balance": ledger_balance,
+                        "pending_instruments": pending_instruments,
+                        "commercial_balance": commercial_balance,
+                        "email": email,
+                        "is_inactive": is_inactive,
+                        "salesperson_code": salesperson_code,
+                    }
+                    snapshots[customer_code] = snapshot
+
+                snapshot["customer_name"] = customer_name or snapshot["customer_name"]
+                snapshot["debit"] = progressive_debit
+                snapshot["credit"] = progressive_credit
+                snapshot["ledger_balance"] = ledger_balance
+                snapshot["pending_instruments"] = pending_instruments
+                snapshot["commercial_balance"] = commercial_balance
+                if not snapshot.get("email"):
+                    snapshot["email"] = email
+                if not snapshot.get("salesperson_code"):
+                    snapshot["salesperson_code"] = salesperson_code
+
+        for snapshot in snapshots.values():
+            execute_step(
+                cur,
+                "insert imported_customer_ledgers row",
+                """
+                INSERT INTO imported_customer_ledgers(
+                  customer_code,
+                  customer_name,
+                  opening_balance,
+                  debit,
+                  credit,
+                  ledger_balance,
+                  pending_instruments,
+                  commercial_balance,
+                  email,
+                  is_inactive,
+                  salesperson_code,
+                  source_file
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    snapshot["customer_code"],
+                    snapshot["customer_name"],
+                    snapshot["opening_balance"],
+                    snapshot["debit"],
+                    snapshot["credit"],
+                    snapshot["ledger_balance"],
+                    snapshot["pending_instruments"],
+                    snapshot["commercial_balance"],
+                    snapshot["email"],
+                    snapshot["is_inactive"],
+                    snapshot["salesperson_code"],
+                    ledger_file.name,
+                ),
+            )
+            stats.rows_upserted += cur.rowcount
 
         execute_step(
             cur,
@@ -861,7 +948,6 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
         finish_import(cur, run_id, stats, status="failed", error_text=str(exc))
         print(f"[import] customer_ledgers: failed ({exc})", flush=True)
         raise
-
 
 def main() -> None:
     init_schema()
@@ -926,3 +1012,4 @@ if __name__ == "__main__":
     except Exception as exc:
         print(f"Import failed: {exc}", file=sys.stderr)
         raise
+
