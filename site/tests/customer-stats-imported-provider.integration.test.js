@@ -191,7 +191,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         0,
         321.45,
         0,
-        321.45,
+        999.99,
         "alpha@example.com",
         0,
         "90",

@@ -68,7 +68,7 @@ function createImportedDbFixture() {
         return {
           customer_code: "C001",
           customer_name: "Alpha Store",
-          commercial_balance: 321.45,
+          commercial_balance: 999.99,
           ledger_balance: 321.45,
           pending_instruments: 0,
           email: "alpha@example.com",

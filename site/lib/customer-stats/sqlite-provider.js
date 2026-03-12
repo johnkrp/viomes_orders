@@ -791,7 +791,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         },
         receivables: {
           currency: "EUR",
-          open_balance: asMoney(importedLedger?.commercial_balance),
+          open_balance: asMoney(importedLedger?.ledger_balance),
           overdue_balance: 0,
           items: [],
         },
