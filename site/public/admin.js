@@ -31,6 +31,7 @@ const API_BASE = resolveApiBase();
 const MONTH_LABELS = ["Ιαν", "Φεβ", "Μαρ", "Απρ", "Μαϊ", "Ιουν", "Ιουλ", "Αυγ", "Σεπ", "Οκτ", "Νοε", "Δεκ"];
 const PRODUCT_SALES_PAGE_SIZE = 10;
 const RECEIVABLES_PAGE_SIZE = 5;
+const RECENT_ORDERS_PAGE_SIZE = 10;
 const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
@@ -48,6 +49,7 @@ let selectedOrderId = null;
 let currentReceivables = [];
 let currentProductSalesPage = 1;
 let currentReceivablesPage = 1;
+let currentRecentOrdersPage = 1;
 let currentCustomerCode = null;
 let currentBranchCode = "";
 let currentAvailableBranches = [];
@@ -129,6 +131,10 @@ const els = {
   topProductsQtyBody: document.getElementById("topProductsQtyBody"),
   topProductsValueBody: document.getElementById("topProductsValueBody"),
   recentOrdersBody: document.getElementById("recentOrdersBody"),
+  recentOrdersPagination: document.getElementById("recentOrdersPagination"),
+  recentOrdersPrevBtn: document.getElementById("recentOrdersPrevBtn"),
+  recentOrdersNextBtn: document.getElementById("recentOrdersNextBtn"),
+  recentOrdersPageInfo: document.getElementById("recentOrdersPageInfo"),
   detailedOrdersList: document.getElementById("detailedOrdersList"),
 };
 
@@ -685,6 +691,9 @@ function resetStats() {
       <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
     </tr>
   `;
+  currentRecentOrdersPage = 1;
+  if (els.recentOrdersPagination) els.recentOrdersPagination.hidden = true;
+  if (els.recentOrdersPageInfo) els.recentOrdersPageInfo.textContent = "Σελίδα 1 από 1";
   currentDetailedOrders = [];
   selectedOrderId = null;
   els.detailedOrdersList.innerHTML = `
@@ -1006,6 +1015,69 @@ function renderProductSales() {
   }
 }
 
+function getRecentOrdersForTable() {
+  return [...currentDetailedOrders].sort((a, b) => {
+    const aKey = Date.parse(String(a?.sent_at || a?.ordered_at || a?.created_at || "")) || 0;
+    const bKey = Date.parse(String(b?.sent_at || b?.ordered_at || b?.created_at || "")) || 0;
+    return bKey - aKey || String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
+  });
+}
+
+function renderRecentOrdersTable() {
+  const recentOrders = getRecentOrdersForTable();
+  const totalPages = Math.max(1, Math.ceil(recentOrders.length / RECENT_ORDERS_PAGE_SIZE));
+  currentRecentOrdersPage = Math.min(currentRecentOrdersPage, totalPages);
+  const start = (currentRecentOrdersPage - 1) * RECENT_ORDERS_PAGE_SIZE;
+  const pageItems = recentOrders.slice(start, start + RECENT_ORDERS_PAGE_SIZE);
+
+  els.recentOrdersBody.innerHTML = pageItems.length
+    ? pageItems
+        .map((item) => {
+          const isActive = String(selectedOrderId || "") === String(item.order_id || "");
+          return `
+            <tr>
+              <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
+              <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
+              <td>${escapeHtml(formatDate(item.sent_at))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
+              <td class="admin-table-number">${escapeHtml(formatPercentRoundedUp(item.average_discount_pct))}</td>
+              <td class="admin-table-action">
+                <button
+                  type="button"
+                  class="btn ghost admin-order-select${isActive ? " is-active" : ""}"
+                  data-order-id="${escapeHtml(item.order_id)}"
+                >
+                  Προβολή
+                </button>
+              </td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν πρόσφατες παραγγελίες.</td>
+        </tr>
+      `;
+
+  if (els.recentOrdersPagination) {
+    els.recentOrdersPagination.hidden = !recentOrders.length;
+  }
+  if (els.recentOrdersPageInfo) {
+    els.recentOrdersPageInfo.textContent = recentOrders.length
+      ? `Σελίδα ${currentRecentOrdersPage} από ${totalPages}`
+      : "Σελίδα 1 από 1";
+  }
+  if (els.recentOrdersPrevBtn) {
+    els.recentOrdersPrevBtn.disabled = currentRecentOrdersPage <= 1;
+  }
+  if (els.recentOrdersNextBtn) {
+    els.recentOrdersNextBtn.disabled = currentRecentOrdersPage >= totalPages;
+  }
+}
+
 function renderStats(data) {
   const customer = data?.customer || {};
   const summary = data?.summary || {};
@@ -1015,13 +1087,13 @@ function renderStats(data) {
   const availableBranches = Array.isArray(data?.available_branches) ? data.available_branches : [];
   const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
-  const recentOrders = Array.isArray(data?.recent_orders) ? data.recent_orders : [];
   const isBranchView = customer.aggregation_level === "branch";
 
   currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
   currentProductSales = Array.isArray(productSales.items) ? productSales.items : [];
   selectedOrderId = null;
   currentProductSalesPage = 1;
+  currentRecentOrdersPage = 1;
 
   const metaParts = [customer.code, customer.email];
   if (customer.branch_code) {
@@ -1099,37 +1171,7 @@ function renderStats(data) {
         </tr>
       `;
 
-  els.recentOrdersBody.innerHTML = recentOrders.length
-    ? recentOrders
-        .map((item) => {
-          return `
-            <tr>
-              <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
-              <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
-              <td>${escapeHtml(formatDate(item.sent_at))}</td>
-              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
-              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
-              <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
-              <td class="admin-table-number">${escapeHtml(formatPercentRoundedUp(item.average_discount_pct))}</td>
-              <td class="admin-table-action">
-                <button
-                  type="button"
-                  class="btn ghost admin-order-select"
-                  data-order-id="${escapeHtml(item.order_id)}"
-                >
-                  Προβολή
-                </button>
-              </td>
-            </tr>
-          `;
-        })
-        .join("")
-    : `
-        <tr>
-          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν πρόσφατες παραγγελίες.</td>
-        </tr>
-      `;
-
+  renderRecentOrdersTable();
   renderSelectedOrderDetails();
   els.emptyState.hidden = true;
   els.statsPanel.hidden = false;
@@ -1427,17 +1469,24 @@ els.productSalesNextBtn?.addEventListener("click", () => {
   currentProductSalesPage += 1;
   renderProductSales();
 });
+els.recentOrdersPrevBtn?.addEventListener("click", () => {
+  if (currentRecentOrdersPage <= 1) return;
+  currentRecentOrdersPage -= 1;
+  renderRecentOrdersTable();
+});
+els.recentOrdersNextBtn?.addEventListener("click", () => {
+  const totalPages = Math.max(1, Math.ceil(getRecentOrdersForTable().length / RECENT_ORDERS_PAGE_SIZE));
+  if (currentRecentOrdersPage >= totalPages) return;
+  currentRecentOrdersPage += 1;
+  renderRecentOrdersTable();
+});
 els.recentOrdersBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-order-id]");
   if (!button) return;
 
   selectedOrderId = button.getAttribute("data-order-id");
   renderSelectedOrderDetails();
-
-  els.recentOrdersBody.querySelectorAll("[data-order-id]").forEach((candidate) => {
-    const isActive = candidate.getAttribute("data-order-id") === String(selectedOrderId);
-    candidate.classList.toggle("is-active", isActive);
-  });
+  renderRecentOrdersTable();
 });
 window.addEventListener("focus", () => {
   if (!els.dashboardPanel?.hidden) {

@@ -354,7 +354,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             WHERE o.customer_code = ?
             GROUP BY o.id, o.created_at, o.total_net_value
             ORDER BY o.created_at DESC
-            LIMIT 10
+            LIMIT 100
           `,
           [code],
         );
@@ -376,7 +376,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               ${orderDateWindowFilter.clause}
             GROUP BY o.id, o.created_at, o.total_net_value
             ORDER BY o.created_at DESC
-            LIMIT 10
+            LIMIT 100
           `,
           [code, ...orderDateWindowFilter.params],
         );
@@ -399,7 +399,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               ${orderDateWindowFilter.clause}
             GROUP BY o.id, o.created_at, o.notes, o.total_net_value
             ORDER BY o.created_at DESC
-            LIMIT 6
+            LIMIT 100
           `,
           [code, ...orderDateWindowFilter.params],
         );
@@ -754,8 +754,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               FROM imported_orders
               WHERE customer_code = ?
                 ${importedOrdersDateWindowFilter.clause}
-              ORDER BY created_at DESC, document_no DESC
-              LIMIT 10
+              ORDER BY COALESCE(NULLIF(sent_at, ''), NULLIF(ordered_at, ''), created_at) DESC, document_no DESC
+              LIMIT 100
             `,
             [code, ...importedOrdersDateWindowFilter.params],
           )
@@ -775,8 +775,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               WHERE customer_code = ?
                 AND ${importedExpressions.countInOrderTotals} = 1${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
               GROUP BY customer_code, document_no, order_date
-              ORDER BY order_date DESC, document_no DESC
-              LIMIT 10
+              ORDER BY COALESCE(MAX(sent_at), MAX(ordered_at), order_date) DESC, document_no DESC
+              LIMIT 100
             `,
             [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
           );
@@ -797,8 +797,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           WHERE customer_code = ?
             AND ${importedExpressions.countInOrderTotals} = 1${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
           GROUP BY customer_code, document_no, order_date
-          ORDER BY order_date DESC, document_no DESC
-          LIMIT 6
+          ORDER BY COALESCE(MAX(sent_at), MAX(ordered_at), order_date) DESC, document_no DESC
+          LIMIT 100
         `,
         [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
       );
