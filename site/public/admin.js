@@ -823,8 +823,8 @@ function renderReceivablesTable() {
   }
   if (els.receivablesPageInfo) {
     els.receivablesPageInfo.textContent = currentReceivables.length
-      ? `Σελίδα ${currentReceivablesPage} από ${totalPages}`
-      : "Σελίδα 1 από 1";
+      ? `\u03a3\u03b5\u03bb\u03af\u03b4\u03b1 ${currentReceivablesPage} \u03b1\u03c0\u03cc ${totalPages}`
+      : "\u03a3\u03b5\u03bb\u03af\u03b4\u03b1 1 \u03b1\u03c0\u03cc 1";
   }
   if (els.receivablesPrevBtn) {
     els.receivablesPrevBtn.disabled = currentReceivablesPage <= 1;
