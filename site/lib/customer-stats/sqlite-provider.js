@@ -57,6 +57,9 @@ function buildCutoffDateString(now, days) {
 }
 
 const SALES_TIME_RANGE_DAYS = {
+  "1w": 7,
+  "2w": 14,
+  "1m": 30,
   "3m": 90,
   "6m": 180,
   "12m": 365,

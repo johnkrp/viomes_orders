@@ -372,6 +372,13 @@ function findDetailedOrder(orderId) {
   return currentDetailedOrders.find((order) => String(order.order_id) === String(orderId)) || null;
 }
 
+function formatDisplayOrderId(orderId) {
+  const raw = String(orderId || "").trim();
+  if (!raw) return "-";
+  const parts = raw.split("::").filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : raw;
+}
+
 function setAuthenticatedUI(me) {
   const authenticated = Boolean(me?.authenticated);
   els.loginPanel.hidden = authenticated;
@@ -756,7 +763,7 @@ function renderSelectedOrderDetails() {
     <article class="admin-order-card admin-order-card-active">
       <div class="admin-order-head">
         <div>
-          <h3>Παραγγελία #${escapeHtml(selectedOrder.order_id)}</h3>
+          <h3>Παραγγελία #${escapeHtml(formatDisplayOrderId(selectedOrder.order_id))}</h3>
           <p>Παραγγελία: ${escapeHtml(formatDateTime(selectedOrder.ordered_at || selectedOrder.created_at))}</p>
         </div>
         <div class="admin-order-kpis">
@@ -1056,7 +1063,7 @@ function renderStats(data) {
         .map((item) => {
           return `
             <tr>
-              <td>${escapeHtml(item.order_id)}</td>
+              <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
               <td>${escapeHtml(formatDateTime(item.ordered_at || item.created_at))}</td>
               <td>${escapeHtml(formatDateTime(item.sent_at))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
