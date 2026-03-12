@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS imported_sales_lines (
   account_description VARCHAR(255),
   branch_code VARCHAR(128),
   branch_description VARCHAR(255),
+  ordered_at VARCHAR(64),
+  sent_at VARCHAR(64),
   note_1 VARCHAR(255),
   UNIQUE KEY uq_imported_sales_line(
     source_file, document_no, item_code, customer_code, delivery_code, net_value, qty
@@ -111,6 +113,8 @@ CREATE TABLE IF NOT EXISTS imported_orders (
   total_pieces DOUBLE NOT NULL DEFAULT 0,
   total_net_value DOUBLE NOT NULL DEFAULT 0,
   average_discount_pct DOUBLE NOT NULL DEFAULT 0,
+  ordered_at VARCHAR(64),
+  sent_at VARCHAR(64),
   document_type VARCHAR(128),
   delivery_code VARCHAR(128),
   delivery_description VARCHAR(255),

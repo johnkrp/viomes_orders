@@ -239,6 +239,8 @@ export function normalizeStatsPayload(payload, customerCode) {
     recent_orders: recentOrders.map((order) => ({
       order_id: order.order_id,
       created_at: order.created_at,
+      ordered_at: order.ordered_at || order.created_at || null,
+      sent_at: order.sent_at || null,
       total_lines: asInteger(order.total_lines),
       total_pieces: asInteger(order.total_pieces),
       total_net_value: asMoney(order.total_net_value),
@@ -248,6 +250,8 @@ export function normalizeStatsPayload(payload, customerCode) {
       ? payload.detailed_orders.map((order) => ({
           order_id: order.order_id,
           created_at: order.created_at,
+          ordered_at: order.ordered_at || order.created_at || null,
+          sent_at: order.sent_at || null,
           notes: order.notes || "",
           total_lines: asInteger(order.total_lines),
           total_pieces: asInteger(order.total_pieces),

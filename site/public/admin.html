@@ -12,9 +12,9 @@
   <body class="admin-body">
     <div id="rotateOverlay" class="rotate-overlay" aria-hidden="true">
       <div class="rotate-card">
-        <div class="rotate-icon" aria-hidden="true">⤾</div>
-        <h2>Περιστρέψτε το tablet</h2>
-        <p>Το admin περιβάλλον έχει σχεδιαστεί για οριζόντια προβολή.</p>
+        <div class="rotate-icon" aria-hidden="true">&#8635;</div>
+        <h2>??????????? ?? tablet</h2>
+        <p>?? admin ?????????? ???? ?????????? ??? ????????? ???????.</p>
       </div>
     </div>
 
@@ -32,9 +32,9 @@
         </div>
 
         <div class="admin-topbar-actions header-actions">
-          <a class="btn ghost admin-link-btn" href="index.html">Δημόσια φόρμα</a>
+          <a class="btn ghost admin-link-btn" href="index.html">??????? ?????</a>
           <button id="logoutBtn" type="button" class="btn ghost" hidden>
-            Αποσύνδεση
+            ??????????
           </button>
         </div>
         </div>
@@ -45,7 +45,7 @@
       <div class="wrap admin-shell">
         <section class="page-head hero-inner admin-hero">
           <p class="admin-eyebrow">VIOMES Admin</p>
-          <h1 class="hero-title">Στατιστικά πελατών</h1>
+          <h1 class="hero-title">?????????? ???????</h1>
         </section>
 
         <div id="adminStatus" class="toast admin-toast" role="status" aria-live="polite"></div>
@@ -91,6 +91,40 @@
         </section>
 
         <section id="dashboardPanel" class="admin-dashboard" hidden>
+          <section id="importHealthPanel" class="panel admin-panel admin-panel-subtle">
+            <div class="panel-head panel-head-inline">
+              <div>
+                <h2>Import Health</h2>
+                <p class="admin-panel-note">
+                  &#915;&#961;&#942;&#947;&#959;&#961;&#959;&#962; &#941;&#955;&#949;&#947;&#967;&#959;&#962; &#947;&#953;&#945; &#964;&#951;&#957; &#964;&#949;&#955;&#949;&#965;&#964;&#945;&#943;&#945; import &#949;&#954;&#964;&#941;&#955;&#949;&#963;&#951; &#954;&#945;&#953; &#964;&#945; projection invariants.
+                </p>
+              </div>
+            </div>
+            <div class="admin-stat-grid admin-runtime-grid">
+              <article class="admin-stat-card" id="importHealthStatusCard" data-state="idle">
+                <span class="admin-stat-label">Status</span>
+                <strong id="importHealthStatus">-</strong>
+              </article>
+              <article class="admin-stat-card">
+                <span class="admin-stat-label">Latest Dataset</span>
+                <strong id="importHealthDataset">-</strong>
+              </article>
+              <article class="admin-stat-card">
+                <span class="admin-stat-label">Finished At</span>
+                <strong id="importHealthFinishedAt">-</strong>
+              </article>
+              <article class="admin-stat-card">
+                <span class="admin-stat-label">Rows</span>
+                <strong id="importHealthRows">-</strong>
+              </article>
+            </div>
+            <div class="admin-runtime-summary">
+              <p id="importHealthSummary" class="admin-runtime-summary-text">
+                &#916;&#949;&#957; &#941;&#967;&#949;&#953; &#966;&#959;&#961;&#964;&#969;&#952;&#949;&#943; &#945;&#954;&#972;&#956;&#951; &#954;&#945;&#964;&#940;&#963;&#964;&#945;&#963;&#951; import.
+              </p>
+            </div>
+          </section>
+
           <section id="customerSearchPanel" class="panel admin-panel">
             <div class="panel-head panel-head-inline">
               <div>
@@ -288,6 +322,17 @@
                     <h2>Πωλήσεις ανά μήνα</h2>
                     <p class="admin-panel-note">Τζίρος ανά μήνα για το προηγούμενο και το τρέχον έτος.</p>
                   </div>
+                  <div class="admin-inline-controls">
+                    <label class="field admin-compact-field">
+                      <span>Period</span>
+                      <select id="salesTimeRange">
+                        <option value="3m" selected>Last 3 months</option>
+                        <option value="6m">Last 6 months</option>
+                        <option value="12m">Last 12 months</option>
+                        <option value="all">All time</option>
+                      </select>
+                    </label>
+                  </div>
                 </div>
                 <div class="admin-table-wrap">
                   <table class="admin-table admin-monthly-table">
@@ -329,10 +374,6 @@
                   <article class="admin-stat-card">
                     <span class="admin-stat-label">&#913;&#957;&#959;&#953;&#967;&#964;&#972; &#965;&#960;&#972;&#955;&#959;&#953;&#960;&#959;</span>
                     <strong id="receivablesOpenValue">-</strong>
-                  </article>
-                  <article class="admin-stat-card">
-                    <span class="admin-stat-label">&#928;&#961;&#959;&#959;&#948;. &#960;&#943;&#963;&#964;&#969;&#963;&#951;</span>
-                    <strong id="receivablesOverdueValue">-</strong>
                   </article>
                 </div>
                 <div class="admin-table-wrap">
@@ -474,7 +515,7 @@
                       <th>ID</th>
                       <th>Ημερομηνία</th>
                       <th class="admin-table-number">Γραμμές</th>
-                      <th class="admin-table-number">Τεμάχια</th>
+                      <th class="admin-table-number">???????</th>
                       <th class="admin-table-number">Αξία</th>
                       <th class="admin-table-number">Μ.Έκπτωση</th>
                       <th>Ενέργεια</th>
@@ -508,7 +549,7 @@
 
       <footer class="site-footer">
         <div class="wrap footer-inner">
-          <span class="footer-text">© VIOMES • Admin tools</span>
+          <span class="footer-text">&copy; VIOMES | Admin tools</span>
         </div>
       </footer>
     </main>

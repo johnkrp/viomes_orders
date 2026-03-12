@@ -22,10 +22,12 @@ function buildQueryString(options = {}) {
   const branchCode = String(options.branchCode || "").trim();
   const branchScopeCode = String(options.branchScopeCode || "").trim();
   const branchScopeDescription = String(options.branchScopeDescription || "").trim();
+  const salesTimeRange = String(options.salesTimeRange || "").trim().toLowerCase();
 
   if (branchCode) params.set("branch_code", branchCode);
   if (branchScopeCode) params.set("filter_branch_code", branchScopeCode);
   if (branchScopeDescription) params.set("filter_branch_description", branchScopeDescription);
+  if (salesTimeRange) params.set("sales_time_range", salesTimeRange);
 
   const query = params.toString();
   return query ? `?${query}` : "";
@@ -75,6 +77,9 @@ function mapRecentOrders(rows) {
   return (Array.isArray(rows) ? rows : []).map((row) => ({
     order_id: row.order_id ?? row.id ?? row.document_id ?? row.document_no,
     created_at: row.created_at ?? row.date ?? row.order_date ?? row.document_date,
+    ordered_at:
+      row.ordered_at ?? row.order_created_at ?? row.order_registered_at ?? row.created_at ?? row.date ?? null,
+    sent_at: row.sent_at ?? row.shipped_at ?? row.dispatched_at ?? row.delivery_date ?? null,
     total_lines: Number(row.total_lines ?? row.lines ?? row.line_count ?? 0),
     total_pieces: Number(row.total_pieces ?? row.qty ?? row.quantity ?? 0),
     total_net_value: asMoney(row.total_net_value ?? row.net_value ?? row.value ?? 0),
@@ -88,6 +93,9 @@ function mapDetailedOrders(rows) {
   return (Array.isArray(rows) ? rows : []).map((row) => ({
     order_id: row.order_id ?? row.id ?? row.document_id ?? row.document_no,
     created_at: row.created_at ?? row.date ?? row.order_date ?? row.document_date,
+    ordered_at:
+      row.ordered_at ?? row.order_created_at ?? row.order_registered_at ?? row.created_at ?? row.date ?? null,
+    sent_at: row.sent_at ?? row.shipped_at ?? row.dispatched_at ?? row.delivery_date ?? null,
     notes: row.notes ?? row.comments ?? row.remark ?? "",
     total_lines: Number(row.total_lines ?? row.lines ?? row.line_count ?? 0),
     total_pieces: Number(row.total_pieces ?? row.qty ?? row.quantity ?? 0),

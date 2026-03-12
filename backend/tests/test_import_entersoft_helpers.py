@@ -7,7 +7,15 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from import_entersoft import import_customer_ledgers, import_sales_lines, parse_date, parse_decimal, resolve_import_mode
+from import_entersoft import (
+    build_branch_description,
+    import_customer_ledgers,
+    import_sales_lines,
+    parse_date,
+    parse_optional_datetime_date,
+    parse_decimal,
+    resolve_import_mode,
+)
 
 TEST_TMP_DIR = Path(__file__).resolve().parents[2] / ".tmp"
 
@@ -34,6 +42,9 @@ def sample_sales_row():
         "Περ. ΑΧ": "Account",
         "Κωδ.υποκ.": "B1",
         "Περ.υποκ.": "Branch",
+        "Ταχ.Κώδικας": "71408",
+        "Ημ/νία Καταχώρησης Παραγγελίας": "08/03/2026 10:15:00 πμ",
+        "Ημ/νία Παράδοσης από Έδρα μας": "09/03/2026 06:30:00 μμ",
         "Σχόλιο 1": "Note",
     }
 
@@ -184,6 +195,8 @@ class FakeCursor:
                 params[21],
                 params[23],
                 params[24],
+                params[25],
+                params[26],
             )
             self.imported_rows.append(
                 {
@@ -248,6 +261,15 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(parse_date("08/03/2026"), "2026-03-08")
         self.assertEqual(parse_date("08/03/26"), "2026-03-08")
 
+    def test_build_branch_description_appends_postcode(self):
+        self.assertEqual(build_branch_description("Branch", "71408"), "Branch (71408)")
+        self.assertEqual(build_branch_description("Branch (71408)", "71408"), "Branch (71408)")
+        self.assertEqual(build_branch_description("Branch", ""), "Branch")
+
+    def test_parse_optional_datetime_date_extracts_date_portion(self):
+        self.assertEqual(parse_optional_datetime_date("08/03/2026 10:15:00 πμ"), "2026-03-08")
+        self.assertEqual(parse_optional_datetime_date(""), "")
+
     def test_resolve_import_mode_defaults_to_incremental(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("ENTERSOFT_IMPORT_MODE", None)
@@ -274,6 +296,9 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(stats.rows_skipped_duplicate, 1)
         self.assertEqual(stats.rows_rejected, 0)
         self.assertEqual(len(cursor.imported_rows), 1)
+        self.assertEqual(cursor.imported_rows[0]["mutable_values"][11], "Branch (71408)")
+        self.assertEqual(cursor.imported_rows[0]["mutable_values"][12], "2026-03-08")
+        self.assertEqual(cursor.imported_rows[0]["mutable_values"][13], "2026-03-09")
         self.assertIsNotNone(cursor.import_run_insert_params)
         self.assertIsNotNone(cursor.import_run_update_params)
         rebuild_customers.assert_called_once()

@@ -40,6 +40,8 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
         {
           order_id: "A",
           created_at: "2026-02-15",
+          ordered_at: "2026-02-14",
+          sent_at: "2026-02-16",
           total_lines: 1,
           total_pieces: 2,
           total_net_value: 50,
@@ -92,4 +94,6 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
     raw_rows: 4,
     last_order_date: null,
   });
+  assert.equal(payload.recent_orders[0].ordered_at, "2026-02-14");
+  assert.equal(payload.recent_orders[0].sent_at, "2026-02-16");
 });

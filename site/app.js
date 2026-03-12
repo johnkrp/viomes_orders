@@ -18,6 +18,119 @@ import {
 import { validateRuntimeConfig } from "./lib/runtime-config.js";
 
 export const APP_NAME = "VIOMES Order Form API";
+const ORDER_EXPORT_MAX_ITEMS = 500;
+const ORDER_EXPORT_MAX_TEXT_LENGTH = 500;
+const ORDER_EXPORT_MAX_COMMENT_LENGTH = 4000;
+const ORDER_EXPORT_FILENAME_PREFIX = "order";
+
+const ORDER_EXPORT_SHEET_COLUMNS = [
+  { header: "\u039a\u03a9\u0394\u0399\u039a\u039f\u03a3", key: "code", width: 15 },
+  { header: "\u03a0\u0395\u03a1\u0399\u0393\u03a1\u0391\u03a6\u0397", key: "description", width: 45 },
+  { header: "\u03a7\u03a1\u03a9\u039c\u0391", key: "color", width: 18 },
+  { header: "\u03a3\u03a5\u03a3\u039a\u0395\u03a5\u0391\u03a3\u0399\u0395\u03a3", key: "packs", width: 12 },
+  { header: "\u03a4\u0395\u039c\u0391\u03a7\u0399\u0391", key: "qty", width: 10 },
+  { header: "\u039f\u0393\u039a\u039f\u03a3 (L)", key: "vol", width: 10 },
+];
+
+function sanitizeExportText(value, maxLength) {
+  return String(value ?? "").trim().slice(0, maxLength);
+}
+
+function validateEmailAddress(value) {
+  if (!value) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function validatePositiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
+function validateNonNegativeNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function validateOrderExportRequest(body) {
+  const customerName = sanitizeExportText(body?.customerName, ORDER_EXPORT_MAX_TEXT_LENGTH);
+  const customerEmail = sanitizeExportText(body?.customerEmail, ORDER_EXPORT_MAX_TEXT_LENGTH);
+  const comment = sanitizeExportText(body?.comment, ORDER_EXPORT_MAX_COMMENT_LENGTH);
+  const items = Array.isArray(body?.items) ? body.items : null;
+
+  if (!items || !items.length) {
+    const error = new Error("Order export requires at least one item.");
+    error.status = 400;
+    throw error;
+  }
+
+  if (items.length > ORDER_EXPORT_MAX_ITEMS) {
+    const error = new Error(`Order export supports up to ${ORDER_EXPORT_MAX_ITEMS} items.`);
+    error.status = 400;
+    throw error;
+  }
+
+  if (!validateEmailAddress(customerEmail)) {
+    const error = new Error("Customer email address is invalid.");
+    error.status = 400;
+    throw error;
+  }
+
+  const normalizedItems = items.map((item, index) => {
+    const code = sanitizeExportText(item?.code, 128);
+    const description = sanitizeExportText(item?.description, 255);
+    const color = sanitizeExportText(item?.color, 128);
+    const packs =
+      item?.packs === "" || item?.packs === null || item?.packs === undefined
+        ? ""
+        : Number(item.packs);
+    const qty = Number(item?.qty);
+    const volumeLiters = item?.volume_liters === undefined ? 0 : Number(item.volume_liters);
+
+    if (!code) {
+      const error = new Error(`Item ${index + 1} is missing a product code.`);
+      error.status = 400;
+      throw error;
+    }
+
+    if (!description) {
+      const error = new Error(`Item ${index + 1} is missing a description.`);
+      error.status = 400;
+      throw error;
+    }
+
+    if (!validatePositiveInteger(qty)) {
+      const error = new Error(`Item ${index + 1} has an invalid quantity.`);
+      error.status = 400;
+      throw error;
+    }
+
+    if (packs !== "" && !validatePositiveInteger(packs)) {
+      const error = new Error(`Item ${index + 1} has an invalid package count.`);
+      error.status = 400;
+      throw error;
+    }
+
+    if (!validateNonNegativeNumber(volumeLiters)) {
+      const error = new Error(`Item ${index + 1} has an invalid volume value.`);
+      error.status = 400;
+      throw error;
+    }
+
+    return {
+      code,
+      description,
+      color,
+      packs,
+      qty,
+      volume_liters: volumeLiters,
+    };
+  });
+
+  return {
+    customerName,
+    customerEmail,
+    comment,
+    items: normalizedItems,
+  };
+}
 
 function normGr(value) {
   return (value ?? "")
@@ -425,6 +538,7 @@ export function createApp({
         branchCode: String(req.query.branch_code || "").trim() || null,
         branchScopeCode: String(req.query.filter_branch_code || "").trim() || null,
         branchScopeDescription: String(req.query.filter_branch_description || "").trim() || null,
+        salesTimeRange: String(req.query.sales_time_range || "").trim() || null,
       });
       res.json(payload);
     } catch (error) {
@@ -435,7 +549,7 @@ export function createApp({
 
   app.post("/api/order/export-xlsx", async (req, res) => {
     try {
-      const { customerName, customerEmail, comment, items } = req.body;
+      const { customerName, customerEmail, comment, items } = validateOrderExportRequest(req.body);
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Order");
@@ -462,8 +576,13 @@ export function createApp({
         worksheet.columns.map((column) => column.header),
       );
       worksheet.getRow(5).font = { bold: true };
+      worksheet.getCell("A1").value = "\u03a0\u03b5\u03bb\u03ac\u03c4\u03b7\u03c2:";
+      worksheet.getCell("A3").value = "\u03a3\u03c7\u03cc\u03bb\u03b9\u03b1:";
+      ORDER_EXPORT_SHEET_COLUMNS.forEach((column, index) => {
+        worksheet.getRow(5).getCell(index + 1).value = column.header;
+      });
 
-      (items || []).forEach((item) => {
+      items.forEach((item) => {
         worksheet.addRow({
           code: item.code,
           description: item.description,
@@ -475,7 +594,7 @@ export function createApp({
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
-      const filename = `order_${Date.now()}.xlsx`;
+      const filename = `${ORDER_EXPORT_FILENAME_PREFIX}_${Date.now()}.xlsx`;
 
       res.setHeader(
         "Content-Type",
@@ -484,8 +603,10 @@ export function createApp({
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.send(Buffer.from(buffer));
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: String(error) });
+      if ((error.status || 500) >= 500) {
+        console.error(error);
+      }
+      res.status(error.status || 500).json({ error: error.message || String(error) });
     }
   });
 

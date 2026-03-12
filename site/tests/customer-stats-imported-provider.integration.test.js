@@ -56,10 +56,10 @@ test("SQLite-backed imported stats integration returns the expected contract", a
       `
         INSERT INTO imported_orders(
           order_id, document_no, customer_code, customer_name, created_at, total_lines,
-          total_pieces, total_net_value, average_discount_pct, document_type, delivery_code,
+          total_pieces, total_net_value, average_discount_pct, ordered_at, sent_at, document_type, delivery_code,
           delivery_description, source_file
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         "C001::2026-02-15::INV-2",
@@ -71,6 +71,8 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         10,
         175.6,
         0,
+        `${currentYear}-02-14`,
+        `${currentYear}-02-16`,
         "\u03A4\u0399\u03A0",
         "D1",
         "Main Store",
@@ -81,10 +83,10 @@ test("SQLite-backed imported stats integration returns the expected contract", a
       `
         INSERT INTO imported_orders(
           order_id, document_no, customer_code, customer_name, created_at, total_lines,
-          total_pieces, total_net_value, average_discount_pct, document_type, delivery_code,
+          total_pieces, total_net_value, average_discount_pct, ordered_at, sent_at, document_type, delivery_code,
           delivery_description, source_file
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
         "C001::2025-12-10::INV-1",
@@ -96,6 +98,8 @@ test("SQLite-backed imported stats integration returns the expected contract", a
         5,
         70,
         0,
+        `${previousYear}-12-09`,
+        `${previousYear}-12-11`,
         "\u03A4\u0399\u03A0",
         "D1",
         "Main Store",
@@ -340,13 +344,17 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.top_products_by_qty[0].code, "P1");
     assert.equal(payload.top_products_by_value[0].code, "P1");
     assert.equal(payload.available_branches.length, 2);
+    assert.equal(payload.product_sales.items.length, 1);
+    assert.equal(payload.recent_orders.length, 1);
     assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
-    assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
+    assert.equal(payload.monthly_sales.previous_year[11].revenue, 0);
     assert.equal(payload.monthly_sales.yearly_series.length, 3);
     assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
-    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
+    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 0);
     assert.equal(payload.detailed_orders[0].lines[0].code, "P1");
     assert.equal(payload.detailed_orders[0].lines[0].discount_pct, 7);
+    assert.equal(payload.recent_orders[0].ordered_at, `${currentYear}-02-14`);
+    assert.equal(payload.recent_orders[0].sent_at, `${currentYear}-02-16`);
     assert.equal(payload.receivables.open_balance, 321.45);
     assert.equal(payload.receivables.overdue_balance, 0);
     assert.equal(payload.receivables.progressive_credit, 120.5);
@@ -361,6 +369,11 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(branchPayload.summary.total_orders, 1);
     assert.equal(branchPayload.summary.total_revenue, 175.6);
     assert.equal(branchPayload.recent_orders[0].average_discount_pct, 7);
+
+    const allTimePayload = await provider.getCustomerStats("C001", { salesTimeRange: "all" });
+    assert.equal(allTimePayload.product_sales.items.length, 2);
+    assert.equal(allTimePayload.recent_orders.length, 2);
+    assert.equal(allTimePayload.monthly_sales.previous_year[11].revenue, 70);
 
     const scopedPayload = await provider.getCustomerStats("C001", {
       branchScopeDescription: "Branch 1",

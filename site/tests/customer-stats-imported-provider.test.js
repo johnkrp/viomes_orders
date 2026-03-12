@@ -144,6 +144,18 @@ function createImportedDbFixture() {
         ];
       }
       if (sql.includes("GROUP BY item_code")) {
+        if (sql.includes("SUBSTR(order_date, 1, 10) >= ?")) {
+          return [
+            {
+              code: "P1",
+              description: "First",
+              pieces: 10,
+              orders: 1,
+              revenue: 175.6,
+              avg_unit_price: 17.56,
+            },
+          ];
+        }
         return [
           {
             code: "P2",
@@ -164,6 +176,19 @@ function createImportedDbFixture() {
         ];
       }
       if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 10")) {
+        if (sql.includes("SUBSTR(created_at, 1, 10) >= ?")) {
+          return [
+            {
+              order_id: "C001::2026-02-15::INV-2",
+              document_no: "INV-2",
+              created_at: `${currentYear}-02-15`,
+              total_lines: 1,
+              total_pieces: 10,
+              total_net_value: 175.6,
+              average_discount_pct: 0,
+            },
+          ];
+        }
         return [
           {
             order_id: "C001::2026-02-15::INV-2",
@@ -186,6 +211,19 @@ function createImportedDbFixture() {
         ];
       }
       if (sql.includes("GROUP BY customer_code, document_no, order_date") && sql.includes("LIMIT 10")) {
+        if (sql.includes("SUBSTR(order_date, 1, 10) >= ?")) {
+          return [
+            {
+              order_id: "C001::2026-02-15::INV-2",
+              document_no: "INV-2",
+              created_at: `${currentYear}-02-15`,
+              total_lines: 1,
+              total_pieces: 10,
+              total_net_value: 175.6,
+              average_discount_pct: 0,
+            },
+          ];
+        }
         return [
           {
             order_id: "C001::2026-02-15::INV-2",
@@ -238,6 +276,11 @@ function createImportedDbFixture() {
         if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
       }
       if (sql.includes("GROUP BY order_month")) {
+        if (sql.includes("SUBSTR(order_date, 1, 10) >= ?")) {
+          if (params[1] === olderYear) return [];
+          if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
+          if (params[1] === previousYear) return [];
+        }
         if (params[1] === olderYear) return [{ month: 1, revenue: 25, pieces: 2 }];
         if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
         if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
@@ -267,18 +310,18 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.summary.total_pieces, 15);
   assert.equal(payload.summary.total_revenue, 245.6);
   assert.equal(payload.summary.average_order_value, 122.8);
-  assert.equal(payload.product_sales.items.length, 2);
+  assert.equal(payload.product_sales.items.length, 1);
   assert.equal(payload.top_products_by_qty[0].code, "P1");
   assert.equal(payload.top_products_by_value[0].code, "P1");
-  assert.equal(payload.recent_orders.length, 2);
+  assert.equal(payload.recent_orders.length, 1);
   assert.equal(payload.detailed_orders.length, 1);
   assert.equal(payload.detailed_orders[0].lines.length, 1);
   assert.equal(payload.available_branches.length, 2);
   assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
-  assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
+  assert.equal(payload.monthly_sales.previous_year[11].revenue, 0);
   assert.equal(payload.monthly_sales.yearly_series.length, 3);
   assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
-  assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
+  assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 0);
   assert.equal(payload.receivables.open_balance, 321.45);
   assert.equal(payload.receivables.overdue_balance, 0);
   assert.equal(payload.receivables.progressive_credit, 120.5);

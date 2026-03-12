@@ -83,6 +83,25 @@ def parse_date(value):
     raise ValueError(f"Unsupported date format: {text}")
 
 
+def parse_optional_datetime_date(value):
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return parse_date(text.split(" ")[0])
+
+
+def build_branch_description(branch_description, postal_code):
+    description = str(branch_description or "").strip()
+    postcode = str(postal_code or "").strip()
+    if not postcode:
+        return description
+    if not description:
+        return postcode
+    if postcode in description:
+        return description
+    return f"{description} ({postcode})"
+
+
 class ImportStats:
     def __init__(self, dataset, file_name, import_mode, source_files_json, source_checksum, trigger_source, metadata_json):
         self.dataset = dataset
@@ -334,6 +353,8 @@ def replace_sales_line_by_id(
     account_code,
     account_description,
     branch_description,
+    ordered_at,
+    sent_at,
     note_1,
 ):
     execute_step(
@@ -353,6 +374,8 @@ def replace_sales_line_by_id(
             account_code = %s,
             account_description = %s,
             branch_description = %s,
+            ordered_at = %s,
+            sent_at = %s,
             note_1 = %s
         WHERE id = %s
         """,
@@ -369,6 +392,8 @@ def replace_sales_line_by_id(
             account_code,
             account_description,
             branch_description,
+            ordered_at,
+            sent_at,
             note_1,
             row_id,
         ),
@@ -520,7 +545,7 @@ def rebuild_sales_aggregates(cur) -> None:
         f"""
         INSERT INTO imported_orders(
           order_id, document_no, customer_code, customer_name, created_at, total_lines, total_pieces,
-          total_net_value, average_discount_pct, document_type, delivery_code,
+          total_net_value, average_discount_pct, ordered_at, sent_at, document_type, delivery_code,
           delivery_description, source_file
         )
         SELECT
@@ -533,6 +558,8 @@ def rebuild_sales_aggregates(cur) -> None:
           COALESCE(SUM({build_effective_pieces_expression()}), 0) AS total_pieces,
           COALESCE(SUM({build_effective_revenue_expression()}), 0) AS total_net_value,
           COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+          MAX(ordered_at),
+          MAX(sent_at),
           MAX(document_type),
           MAX(delivery_code),
           MAX(delivery_description),
@@ -641,7 +668,29 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                     account_code = str(get_row_value(row, "Κωδ. ΑΧ ", "ΞΟ‰Ξ΄. Ξ‘Ξ§ ")).strip()
                     account_description = str(get_row_value(row, "Περ. ΑΧ", "Ξ ΞµΟ. Ξ‘Ξ§")).strip()
                     branch_code = str(get_row_value(row, "Κωδ.υποκ.", "ΞΟ‰Ξ΄.Ο…Ο€ΞΏΞΊ.")).strip()
-                    branch_description = str(get_row_value(row, "Περ.υποκ.", "Ξ ΞµΟ.Ο…Ο€ΞΏΞΊ.")).strip()
+                    branch_postal_code = str(
+                        get_row_value(row, "Ταχ.Κώδικας", "Ξ¤Ξ±Ο‡.ΞΟΞ΄ΞΉΞΊΞ±Ο‚")
+                    ).strip()
+                    branch_description = build_branch_description(
+                        get_row_value(row, "Περ.υποκ.", "Ξ ΞµΟ.Ο…Ο€ΞΏΞΊ."),
+                        branch_postal_code,
+                    )
+                    ordered_at = parse_optional_datetime_date(
+                        get_row_value(
+                            row,
+                            "Ημ/νία Καταχώρησης Παραγγελίας",
+                            "Ξ—ΞΌ/Ξ½Ξ―Ξ± ΞΞ±Ο„Ξ±Ο‡ΟΟΞ·ΟƒΞ·Ο‚ Ξ Ξ±ΟΞ±Ξ³Ξ³ΞµΞ»Ξ―Ξ±Ο‚",
+                            "Ημ/νία Λήψης Παραγγελίας",
+                            "Ξ—ΞΌ/Ξ½Ξ―Ξ± Ξ›Ξ®ΟΞ·Ο‚ Ξ Ξ±ΟΞ±Ξ³Ξ³ΞµΞ»Ξ―Ξ±Ο‚",
+                        )
+                    )
+                    sent_at = parse_optional_datetime_date(
+                        get_row_value(
+                            row,
+                            "Ημ/νία Παράδοσης από Έδρα μας",
+                            "Ξ—ΞΌ/Ξ½Ξ―Ξ± Ξ Ξ±ΟΞ¬Ξ΄ΞΏΟƒΞ·Ο‚ Ξ±Ο€Ο ΈΞ΄ΟΞ± ΞΌΞ±Ο‚",
+                        )
+                    )
                     note_1 = str(get_row_value(row, "Σχόλιο 1", "Ξ£Ο‡ΟΞ»ΞΉΞΏ 1")).strip()
 
                     discount_pct_1 = parse_decimal(get_row_value(row, "% Ξ­ΞΊΟ€Ο„.1"))
@@ -689,6 +738,8 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                             account_code=account_code,
                             account_description=account_description,
                             branch_description=branch_description,
+                            ordered_at=ordered_at,
+                            sent_at=sent_at,
                             note_1=note_1,
                         )
                         if cur.rowcount:
@@ -706,9 +757,9 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                               item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
                               discount_pct_1, discount_pct_2, discount_pct_total,
                               customer_code, customer_name, delivery_code, delivery_description, account_code,
-                              account_description, branch_code, branch_description, note_1
+                              account_description, branch_code, branch_description, ordered_at, sent_at, note_1
                             )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """,
                             (
                                 sales_file.name,
@@ -735,6 +786,8 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                                 account_description,
                                 branch_code,
                                 branch_description,
+                                ordered_at,
+                                sent_at,
                                 note_1,
                             ),
                         )

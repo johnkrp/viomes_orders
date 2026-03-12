@@ -158,6 +158,8 @@ def init_schema() -> None:
       account_description TEXT,
       branch_code TEXT,
       branch_description TEXT,
+      ordered_at TEXT,
+      sent_at TEXT,
       note_1 TEXT,
       UNIQUE(source_file, document_no, item_code, customer_code, delivery_code, net_value, qty)
     );
@@ -174,6 +176,8 @@ def init_schema() -> None:
       total_pieces REAL NOT NULL DEFAULT 0,
       total_net_value REAL NOT NULL DEFAULT 0,
       average_discount_pct REAL NOT NULL DEFAULT 0,
+      ordered_at TEXT,
+      sent_at TEXT,
       document_type TEXT,
       delivery_code TEXT,
       delivery_description TEXT,
@@ -259,6 +263,10 @@ def init_schema() -> None:
     _ensure_column(cur, "order_lines", "discount_pct", "discount_pct REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "order_lines", "line_net_value", "line_net_value REAL NOT NULL DEFAULT 0")
     _ensure_column(cur, "imported_orders", "document_no", "document_no TEXT NOT NULL DEFAULT ''")
+    _ensure_column(cur, "imported_sales_lines", "ordered_at", "ordered_at TEXT")
+    _ensure_column(cur, "imported_sales_lines", "sent_at", "sent_at TEXT")
+    _ensure_column(cur, "imported_orders", "ordered_at", "ordered_at TEXT")
+    _ensure_column(cur, "imported_orders", "sent_at", "sent_at TEXT")
     _ensure_column(cur, "imported_customers", "branch_code", "branch_code TEXT")
     _ensure_column(cur, "imported_customers", "branch_description", "branch_description TEXT")
     _ensure_column(cur, "import_runs", "import_mode", "import_mode TEXT NOT NULL DEFAULT 'incremental'")

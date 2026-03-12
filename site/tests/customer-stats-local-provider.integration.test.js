@@ -127,14 +127,21 @@ test("SQLite-backed local-order stats integration returns the expected contract"
     assert.equal(payload.summary.average_order_value, 81.87);
     assert.equal(payload.top_products_by_qty[0].code, "P1");
     assert.equal(payload.top_products_by_value[0].code, "P1");
-    assert.equal(payload.recent_orders.length, 3);
-    assert.equal(payload.detailed_orders.length, 3);
+    assert.equal(payload.recent_orders.length, 1);
+    assert.equal(payload.detailed_orders.length, 1);
     assert.equal(payload.detailed_orders[0].lines.length, 2);
+    assert.equal(payload.recent_orders[0].ordered_at, `${currentYear}-02-15`);
+    assert.equal(payload.recent_orders[0].sent_at, null);
     assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
-    assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
+    assert.equal(payload.monthly_sales.previous_year[11].revenue, 0);
     assert.equal(payload.monthly_sales.yearly_series.length, 3);
     assert.equal(payload.monthly_sales.yearly_series[0].year, olderYear);
-    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);
+    assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 0);
+
+    const allTimePayload = await provider.getCustomerStats("C001", { salesTimeRange: "all" });
+    assert.equal(allTimePayload.recent_orders.length, 3);
+    assert.equal(allTimePayload.detailed_orders.length, 3);
+    assert.equal(allTimePayload.monthly_sales.previous_year[11].revenue, 70);
   } finally {
     await db.close();
   }
