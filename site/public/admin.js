@@ -30,6 +30,7 @@ function resolveApiBase() {
 const API_BASE = resolveApiBase();
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const PRODUCT_SALES_PAGE_SIZE = 10;
+const RECEIVABLES_PAGE_SIZE = 5;
 const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 
@@ -37,7 +38,9 @@ let currentDetailedOrders = [];
 let currentProductSales = [];
 let currentSearchResults = [];
 let selectedOrderId = null;
+let currentReceivables = [];
 let currentProductSalesPage = 1;
+let currentReceivablesPage = 1;
 let currentCustomerCode = null;
 let currentBranchCode = "";
 let currentAvailableBranches = [];
@@ -102,6 +105,10 @@ const els = {
   monthlyYearThreeHeading: document.getElementById("monthlyYearThreeHeading"),
   monthlySalesFoot: document.getElementById("monthlySalesFoot"),
   receivablesOpenValue: document.getElementById("receivablesOpenValue"),
+  receivablesPagination: document.getElementById("receivablesPagination"),
+  receivablesPrevBtn: document.getElementById("receivablesPrevBtn"),
+  receivablesNextBtn: document.getElementById("receivablesNextBtn"),
+  receivablesPageInfo: document.getElementById("receivablesPageInfo"),
   receivablesOverdueValue: document.getElementById("receivablesOverdueValue"),
   receivablesBody: document.getElementById("receivablesBody"),
   productSalesMetric: document.getElementById("productSalesMetric"),
@@ -784,13 +791,14 @@ function renderMonthlySales(monthlySales) {
   }
 }
 
-function renderReceivables(receivables) {
-  const items = Array.isArray(receivables?.items) ? receivables.items : [];
-  els.receivablesOpenValue.textContent = formatMoney(receivables?.open_balance);
-  els.receivablesOverdueValue.textContent = formatMoney(receivables?.progressive_credit);
+function renderReceivablesTable() {
+  const totalPages = Math.max(1, Math.ceil(currentReceivables.length / RECEIVABLES_PAGE_SIZE));
+  currentReceivablesPage = Math.min(currentReceivablesPage, totalPages);
+  const start = (currentReceivablesPage - 1) * RECEIVABLES_PAGE_SIZE;
+  const pageItems = currentReceivables.slice(start, start + RECEIVABLES_PAGE_SIZE);
 
-  els.receivablesBody.innerHTML = items.length
-    ? items
+  els.receivablesBody.innerHTML = pageItems.length
+    ? pageItems
         .map((item) => {
           return `
             <tr>
@@ -809,8 +817,30 @@ function renderReceivables(receivables) {
           <td colspan="6" class="admin-table-empty">\u0394\u03b5\u03bd \u03c5\u03c0\u03ac\u03c1\u03c7\u03bf\u03c5\u03bd \u03ba\u03b9\u03bd\u03ae\u03c3\u03b5\u03b9\u03c2 \u03ba\u03b1\u03c1\u03c4\u03ad\u03bb\u03b1\u03c2 \u03b3\u03b9\u03b1 \u03b1\u03c5\u03c4\u03cc\u03bd \u03c4\u03bf\u03bd \u03c0\u03b5\u03bb\u03ac\u03c4\u03b7.</td>
         </tr>
       `;
+
+  if (els.receivablesPagination) {
+    els.receivablesPagination.hidden = !currentReceivables.length;
+  }
+  if (els.receivablesPageInfo) {
+    els.receivablesPageInfo.textContent = currentReceivables.length
+      ? `Σελίδα ${currentReceivablesPage} από ${totalPages}`
+      : "Σελίδα 1 από 1";
+  }
+  if (els.receivablesPrevBtn) {
+    els.receivablesPrevBtn.disabled = currentReceivablesPage <= 1;
+  }
+  if (els.receivablesNextBtn) {
+    els.receivablesNextBtn.disabled = currentReceivablesPage >= totalPages;
+  }
 }
 
+function renderReceivables(receivables) {
+  currentReceivables = Array.isArray(receivables?.items) ? receivables.items : [];
+  currentReceivablesPage = 1;
+  els.receivablesOpenValue.textContent = formatMoney(receivables?.open_balance);
+  els.receivablesOverdueValue.textContent = formatMoney(receivables?.progressive_credit);
+  renderReceivablesTable();
+}
 function renderProductSales() {
   const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
   const sortedItems = [...currentProductSales].sort((a, b) => {
@@ -1247,6 +1277,17 @@ els.productSalesMetric?.addEventListener("change", () => {
   currentProductSalesPage = 1;
   renderProductSales();
 });
+els.receivablesPrevBtn?.addEventListener("click", () => {
+  if (currentReceivablesPage <= 1) return;
+  currentReceivablesPage -= 1;
+  renderReceivablesTable();
+});
+els.receivablesNextBtn?.addEventListener("click", () => {
+  const totalPages = Math.max(1, Math.ceil(currentReceivables.length / RECEIVABLES_PAGE_SIZE));
+  if (currentReceivablesPage >= totalPages) return;
+  currentReceivablesPage += 1;
+  renderReceivablesTable();
+});
 els.productSalesPrevBtn?.addEventListener("click", () => {
   if (currentProductSalesPage <= 1) return;
   currentProductSalesPage -= 1;
@@ -1282,5 +1323,6 @@ refreshSession({ silent: false }).then((me) => {
     els.username.focus();
   }
 });
+
 
 
