@@ -1497,6 +1497,37 @@ button.secondary:hover,
   width: min(100%, 300px);
 }
 
+#receivablesPanel .admin-top-qty-table {
+  table-layout: fixed;
+}
+
+#receivablesPanel .admin-top-qty-table th:nth-child(1),
+#receivablesPanel .admin-top-qty-table td:nth-child(1) {
+  width: 14%;
+}
+
+#receivablesPanel .admin-top-qty-table th:nth-child(2),
+#receivablesPanel .admin-top-qty-table td:nth-child(2) {
+  width: 18%;
+}
+
+#receivablesPanel .admin-top-qty-table th:nth-child(3),
+#receivablesPanel .admin-top-qty-table td:nth-child(3) {
+  width: 42%;
+}
+
+#receivablesPanel .admin-top-qty-table th:nth-child(4),
+#receivablesPanel .admin-top-qty-table td:nth-child(4),
+#receivablesPanel .admin-top-qty-table th:nth-child(5),
+#receivablesPanel .admin-top-qty-table td:nth-child(5) {
+  width: 13%;
+}
+
+#receivablesPanel .admin-top-qty-table th:nth-child(6),
+#receivablesPanel .admin-top-qty-table td:nth-child(6) {
+  display: none;
+}
+
 
 .admin-inline-controls {
   display: flex;
