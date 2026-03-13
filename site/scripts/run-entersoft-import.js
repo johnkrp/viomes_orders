@@ -81,7 +81,7 @@ const effectiveEnv = {
   MYSQL_PORT: cli["mysql-port"] || process.env.MYSQL_PORT,
   MYSQL_DATABASE: cli["mysql-database"] || process.env.MYSQL_DATABASE,
   MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
-  MYSQL_PASSWORD: cli["mysql-password"] || process.env.MYSQL_PASSWORD,
+  MYSQL_PASSWORD: process.env.MYSQL_PASSWORD,
   ENTERSOFT_IMPORT_MODE: requestedMode,
   ENTERSOFT_SALES_FILES: cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
   ENTERSOFT_DAILY_INFO_FILE: cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
@@ -90,12 +90,19 @@ const effectiveEnv = {
   ENTERSOFT_IMPORT_LOG_FILE: logFile,
 };
 
+if (cli["mysql-password"] !== undefined) {
+  writeLog(
+    "[import] ignoring --mysql-password CLI override. Set MYSQL_PASSWORD in the environment instead.",
+    "stderr",
+  );
+}
+
 const requiredEnv = ["MYSQL_DATABASE", "MYSQL_USER"];
 const missing = requiredEnv.filter((key) => !String(effectiveEnv[key] || "").trim());
 if (missing.length) {
   writeLog(
     `Missing required environment variables: ${missing.join(", ")}. ` +
-      "Set MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD in Plesk.",
+      "Set MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD in the environment.",
     "stderr",
   );
   process.exit(1);

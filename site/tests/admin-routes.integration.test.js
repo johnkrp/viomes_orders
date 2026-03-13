@@ -367,6 +367,7 @@ test("admin import upload endpoint stores files and runs the existing importer p
     assert.match(storedFactuals, /A-1/);
     assert.equal(app.importRuns.length, 1);
     assert.match(app.importRuns[0].args.join(" "), /--sales-files=/);
+    assert.doesNotMatch(app.importRuns[0].args.join(" "), /--mysql-password=/);
 
     response = await fetch(`${app.baseUrl}/api/admin/import-upload/receivables`, {
       method: "PUT",
@@ -384,7 +385,45 @@ test("admin import upload endpoint stores files and runs the existing importer p
     assert.equal(ledgerPayload.dataset, "ledger");
     assert.equal(app.importRuns.length, 2);
     assert.match(app.importRuns[1].args.join(" "), /--ledger-file=/);
+    assert.doesNotMatch(app.importRuns[1].args.join(" "), /--mysql-password=/);
     assert.match(app.importRuns[1].args.join(" "), /--trigger-source=admin_upload:upload-api:yearly-receivables\.csv/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("admin import upload endpoint rejects non-csv and mismatched dataset filenames", async () => {
+  const app = await startTestApp();
+
+  try {
+    let response = await fetch(`${app.baseUrl}/api/admin/import-upload/factuals`, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer upload-key",
+        "Content-Type": "text/plain",
+        "X-Upload-Filename": "yearly-factuals.txt",
+      },
+      body: "date,document\n2026-01-01,A-1\n",
+    });
+
+    assert.equal(response.status, 400);
+    let payload = await response.json();
+    assert.match(payload.error, /\.csv/i);
+
+    response = await fetch(`${app.baseUrl}/api/admin/import-upload/factuals`, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer upload-key",
+        "Content-Type": "text/csv",
+        "X-Upload-Filename": "yearly-receivables.csv",
+      },
+      body: "customer,balance\nC001,120.55\n",
+    });
+
+    assert.equal(response.status, 400);
+    payload = await response.json();
+    assert.match(payload.error, /ledger dataset/i);
+    assert.equal(app.importRuns.length, 0);
   } finally {
     await app.close();
   }

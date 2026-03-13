@@ -71,19 +71,22 @@ python backend\import_entersoft.py
 From `site/` (Plesk npm runner):
 
 ```powershell
-npm run import:entersoft -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run import:entersoft -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 With explicit sales files:
 
 ```powershell
-npm run import:entersoft -- --sales-files=/abs/path/2025.CSV,/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run import:entersoft -- --sales-files=/abs/path/2025.CSV,/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 With daily file:
 
 ```powershell
-npm run import:entersoft -- --daily-info-file=/abs/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run import:entersoft -- --daily-info-file=/abs/path/daily_info.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 This daily file does not need to contain only "today".
@@ -92,21 +95,24 @@ It may contain several recent days or overlap with the canonical yearly file(s);
 Force full refresh mode (clears `imported_sales_lines` first):
 
 ```powershell
-npm run import:entersoft -- --mode=full_refresh --sales-files=/abs/path/2025.CSV,/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run import:entersoft -- --mode=full_refresh --sales-files=/abs/path/2025.CSV,/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 Cleanup historical duplicates already stored in `imported_sales_lines`:
 
 ```powershell
 cd site
-npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 Run integrity checks after reload/import:
 
 ```powershell
 cd site
-npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 ## Validation Queries
@@ -166,6 +172,7 @@ HAVING COUNT(*) > 1;
 - `imported_orders.order_id` is now a synthetic value: `{customer_code}::{order_date}::{document_no}`.
 - `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, and `imported_customers` are rebuilt from the full `imported_sales_lines` history on each run.
 - `import_runs` now records import mode, file checksums, duplicate skips, rejected rows, rebuild timing, schema version, and trigger source.
+- Keep `MYSQL_PASSWORD` in the environment instead of passing it as a CLI flag.
 - If import blocks on locks, stop Node app and retry.
 
 ## Troubleshooting

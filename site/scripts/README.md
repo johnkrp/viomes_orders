@@ -68,13 +68,15 @@ Daily ledger note:
 If bad history already exists in `imported_sales_lines`, run:
 
 ```powershell
-npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 To validate import integrity after a reload or nightly run, use:
 
 ```powershell
-npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER --mysql-password=YOUR_PASS
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 Use `full_refresh` instead when you want to rebuild from canonical yearly files.
@@ -85,12 +87,14 @@ Typical daily server commands:
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+export MYSQL_PASSWORD='YOUR_PASSWORD'
+npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+export MYSQL_PASSWORD='YOUR_PASSWORD'
+npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ## Operational Notes
@@ -101,6 +105,7 @@ npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viome
 - `manual-reload-sales.sh` is the preferred script for a clean rebuild because it creates a timestamped log file and then runs integrity checks.
 - Ad hoc `npm run import:entersoft` executions also create a dedicated importer log file under `site/logs/imports/`.
 - Do not commit server credentials into these shell wrappers; keep DB configuration in host-level environment variables or scheduler configuration.
+- Do not pass `MYSQL_PASSWORD` as a CLI flag. Keep it in the environment so it does not leak through shell history or process listings.
 
 ## Daily Upload Workflow
 
@@ -153,13 +158,13 @@ Recommended Plesk Scheduled Tasks:
 Factuals import:
 
 ```bash
-cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && node scripts/run-entersoft-import.js --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_DB_PASSWORD'
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && MYSQL_PASSWORD='YOUR_DB_PASSWORD' node scripts/run-entersoft-import.js --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 Receivables import:
 
 ```bash
-cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && node scripts/run-entersoft-import.js --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-receivables.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_DB_PASSWORD'
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && MYSQL_PASSWORD='YOUR_DB_PASSWORD' node scripts/run-entersoft-import.js --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-receivables.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 Recommended timing:

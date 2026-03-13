@@ -25,7 +25,7 @@ function buildEnv(cli) {
     MYSQL_PORT: cli["mysql-port"] || process.env.MYSQL_PORT,
     MYSQL_DATABASE: cli["mysql-database"] || process.env.MYSQL_DATABASE,
     MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
-    MYSQL_PASSWORD: cli["mysql-password"] || process.env.MYSQL_PASSWORD,
+    MYSQL_PASSWORD: process.env.MYSQL_PASSWORD,
   };
 }
 
@@ -38,7 +38,7 @@ async function main() {
   if (missing.length) {
     throw new Error(
       `Missing required environment variables: ${missing.join(", ")}. ` +
-        "Provide --mysql-* args or set env vars.",
+        "Provide non-secret --mysql-* args or set env vars. MYSQL_PASSWORD must come from the environment.",
     );
   }
 

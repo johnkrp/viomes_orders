@@ -120,40 +120,41 @@ GET /api/health
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ### Dedupe after daily sales import
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run dedupe:sales -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+npm run dedupe:sales -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ### Integrity check after dedupe
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run check:import-integrity -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+npm run check:import-integrity -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ### Daily ledger import
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ### Full reset + reload from canonical yearly sales files
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/2025.CSV,/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/2026.CSV --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/2025.CSV,/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/2026.CSV --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ## Important Operational Notes
 
 - Long imports should be run from shell or scheduled tasks, not interactive browser requests.
+- Keep `MYSQL_PASSWORD` in the shell, scheduler, or host environment. Do not pass it as a CLI flag.
 - For daily off-server exports, the intended pattern is: upload `yearly-factuals.csv` and `yearly-receivables.csv` into the server `backend` folder via SFTP/FTP, then let Plesk Scheduled Tasks run the importer commands. See [site/scripts/README.md](/d:/Desktop/programming/viomes/order_form/site/scripts/README.md) for the current WinSCP/PowerShell and Plesk command examples.
 - If the DB looks correct but the UI still shows old behavior, the deployed Node app likely needs redeploy/restart.
 - Same-origin runtime fixes do not take effect until the deployed app process is restarted.

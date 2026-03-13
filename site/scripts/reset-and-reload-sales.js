@@ -27,7 +27,6 @@ function buildForwardArgs(cli) {
     "mysql-port",
     "mysql-database",
     "mysql-user",
-    "mysql-password",
     "sales-files",
     "daily-info-file",
     "trigger-source",
