@@ -37,6 +37,7 @@ const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
 const ADMIN_STATE_KEY = "viomes.admin.state.v1";
 const ORDER_FORM_IMPORT_KEY = "viomes.orderForm.import.v1";
+const ORDER_FORM_RANKING_KEY = "viomes.orderForm.ranking.v1";
 const IMPORT_DATASET_LABELS = {
   sales_lines: "γραμμές πωλήσεων",
   customer_ledgers: "καρτέλες πελατών",
@@ -134,6 +135,7 @@ const els = {
   productSalesPageInfo: document.getElementById("productSalesPageInfo"),
   topProductsQtyBody: document.getElementById("topProductsQtyBody"),
   topProductsValueBody: document.getElementById("topProductsValueBody"),
+  openRankedOrderFormBtn: document.getElementById("openRankedOrderFormBtn"),
   recentOrdersBody: document.getElementById("recentOrdersBody"),
   recentOrdersPagination: document.getElementById("recentOrdersPagination"),
   recentOrdersPrevBtn: document.getElementById("recentOrdersPrevBtn"),
@@ -786,6 +788,7 @@ function resetStats() {
   currentRecentOrdersPage = 1;
   if (els.recentOrdersPagination) els.recentOrdersPagination.hidden = true;
   if (els.recentOrdersPageInfo) els.recentOrdersPageInfo.textContent = "Σελίδα 1 από 1";
+  if (els.openRankedOrderFormBtn) els.openRankedOrderFormBtn.disabled = true;
   currentDetailedOrders = [];
   selectedOrderId = null;
   els.detailedOrdersList.innerHTML = `
@@ -947,6 +950,46 @@ function renderSelectedOrderDetails() {
   `;
 }
 
+function openRankedOrderForm() {
+  const customer = lastRenderedStatsPayload?.customer || {};
+  const rankedCodes = getSortedProductSales()
+    .map((item) => String(item?.code || "").trim())
+    .filter(Boolean);
+
+  if (!currentCustomerCode || !rankedCodes.length) {
+    setStatus("Δεν υπάρχουν αρκετά στοιχεία για κατάταξη ειδών πελάτη.", "error");
+    return;
+  }
+
+  const draft = {
+    customerName: customer.name || "",
+    customerEmail: customer.email || "",
+    customerCode: currentCustomerCode,
+    branchCode: currentBranchCode || "",
+    rankedCodes,
+    salesTimeRange: currentSalesTimeRange,
+  };
+
+  try {
+    window.sessionStorage.setItem(ORDER_FORM_RANKING_KEY, JSON.stringify(draft));
+  } catch (_error) {
+    setStatus("Δεν ήταν δυνατή η αποθήκευση της κατάταξης για τη φόρμα παραγγελίας.", "error");
+    return;
+  }
+
+  window.location.href = "index.html";
+}
+
+function getSortedProductSales() {
+  const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
+  return [...currentProductSales].sort((a, b) => {
+    if (metric === "pieces") {
+      return Number(b.pieces || 0) - Number(a.pieces || 0) || Number(b.revenue || 0) - Number(a.revenue || 0);
+    }
+    return Number(b.revenue || 0) - Number(a.revenue || 0) || Number(b.pieces || 0) - Number(a.pieces || 0);
+  });
+}
+
 function renderMonthlySales(monthlySales) {
   const now = new Date();
   const currentYear = now.getUTCFullYear();
@@ -1072,12 +1115,7 @@ function renderReceivables(receivables) {
 function renderProductSales() {
   const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
   const secondaryMetric = metric === "pieces" ? "revenue" : "pieces";
-  const sortedItems = [...currentProductSales].sort((a, b) => {
-    if (metric === "pieces") {
-      return Number(b.pieces || 0) - Number(a.pieces || 0) || Number(b.revenue || 0) - Number(a.revenue || 0);
-    }
-    return Number(b.revenue || 0) - Number(a.revenue || 0) || Number(b.pieces || 0) - Number(a.pieces || 0);
-  });
+  const sortedItems = getSortedProductSales();
 
   if (els.productSalesMetricHeading) {
     els.productSalesMetricHeading.textContent = metric === "pieces" ? "Τεμάχια" : "Τζίρος";
@@ -1209,6 +1247,9 @@ function renderStats(data) {
 
   currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
   currentProductSales = Array.isArray(productSales.items) ? productSales.items : [];
+  if (els.openRankedOrderFormBtn) {
+    els.openRankedOrderFormBtn.disabled = currentProductSales.length === 0;
+  }
   selectedOrderId = null;
   currentProductSalesPage = 1;
   currentRecentOrdersPage = 1;
@@ -1664,6 +1705,7 @@ els.recentOrdersBody?.addEventListener("click", (event) => {
   renderSelectedOrderDetails();
   renderRecentOrdersTable();
 });
+els.openRankedOrderFormBtn?.addEventListener("click", openRankedOrderForm);
 window.addEventListener("focus", () => {
   if (!els.dashboardPanel?.hidden) {
     void refreshSession({ silent: true });

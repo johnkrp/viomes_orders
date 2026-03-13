@@ -7,6 +7,7 @@ const PLACEHOLDER_PACKSHOT = "https://via.placeholder.com/300x300?text=Packshot"
 const PLACEHOLDER_CART_IMAGE = "https://via.placeholder.com/80x80?text=Packshot";
 const ORDER_FORM_STATE_KEY = "viomes.orderForm.state.v1";
 const ORDER_FORM_IMPORT_KEY = "viomes.orderForm.import.v1";
+const ORDER_FORM_RANKING_KEY = "viomes.orderForm.ranking.v1";
 
 let allCatalog = [];
 let catalog = [];
@@ -18,6 +19,7 @@ let draftCatalogInputs = new Map();
 let restoredOrderFormState = loadOrderFormState();
 let importedOrderDraft = loadImportedOrderDraft();
 let importedCatalogCodes = new Set();
+let rankedCatalogCodes = [];
 
 const cart = new Map();
 
@@ -25,6 +27,7 @@ const els = {
   q: document.getElementById("q"),
   toolbarQty: document.getElementById("toolbarQty"),
   toolbarAddBtn: document.getElementById("toolbarAddBtn"),
+  preparedAddBtn: document.getElementById("preparedAddBtn"),
   toolbarMsg: document.getElementById("toolbarMsg"),
   catalog: document.getElementById("catalog"),
   cart: document.getElementById("cart"),
@@ -70,9 +73,28 @@ function loadImportedOrderDraft() {
   }
 }
 
+function loadOrderFormRankingDraft() {
+  try {
+    const raw = window.sessionStorage.getItem(ORDER_FORM_RANKING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
 function clearImportedOrderDraft() {
   try {
     window.sessionStorage.removeItem(ORDER_FORM_IMPORT_KEY);
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+}
+
+function clearOrderFormRankingDraft() {
+  try {
+    window.sessionStorage.removeItem(ORDER_FORM_RANKING_KEY);
   } catch (_error) {
     // Ignore storage failures.
   }
@@ -91,6 +113,7 @@ function saveOrderFormState() {
       cartItems: Array.from(cart.values()),
       draftCatalogInputs: Object.fromEntries(draftCatalogInputs.entries()),
       importedCatalogCodes: Array.from(importedCatalogCodes),
+      rankedCatalogCodes: [...rankedCatalogCodes],
     };
     window.sessionStorage.setItem(ORDER_FORM_STATE_KEY, JSON.stringify(state));
   } catch (_error) {
@@ -131,6 +154,13 @@ function restoreImportedCatalogCodes(state) {
   );
 }
 
+function restoreRankedCatalogCodes(state) {
+  const codes = Array.isArray(state?.rankedCatalogCodes) ? state.rankedCatalogCodes : [];
+  rankedCatalogCodes = codes
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+}
+
 function buildCartItemFromCatalog(product, qty, fallbackDescription = "") {
   return {
     code: product.code,
@@ -161,6 +191,7 @@ function applyImportedOrderDraft(draft) {
   cart.clear();
   draftCatalogInputs.clear();
   importedCatalogCodes.clear();
+  rankedCatalogCodes = [];
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
@@ -198,6 +229,36 @@ function applyImportedOrderDraft(draft) {
   );
   clearImportedOrderDraft();
   importedOrderDraft = null;
+  saveOrderFormState();
+}
+
+function applyCustomerRankingDraft(draft) {
+  if (!draft) return;
+
+  cart.clear();
+  draftCatalogInputs.clear();
+  importedCatalogCodes.clear();
+  rankedCatalogCodes = Array.isArray(draft.rankedCodes)
+    ? draft.rankedCodes.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+
+  if (els.q) els.q.value = "";
+  if (els.toolbarQty) els.toolbarQty.value = "";
+  if (els.customerName) els.customerName.value = draft.customerName || "";
+  if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
+  if (els.notes) els.notes.value = "";
+  currentPage = 1;
+  lastQuery = "";
+
+  renderCart();
+  applyCatalogView(1, "");
+  setToolbarMsg(
+    rankedCatalogCodes.length
+      ? `Φορτώθηκε κατάταξη ειδών για τον πελάτη ${draft.customerName || draft.customerCode || ""}.`
+      : "Δεν βρέθηκαν είδη για κατάταξη πελάτη.",
+    rankedCatalogCodes.length ? "ok" : "error",
+  );
+  clearOrderFormRankingDraft();
   saveOrderFormState();
 }
 
@@ -413,6 +474,18 @@ function applyCatalogView(page = 1, query = "") {
       .map((entry) => entry.item);
   }
 
+  if (rankedCatalogCodes.length) {
+    const rankingMap = new Map(rankedCatalogCodes.map((code, index) => [code, index]));
+    items.sort((a, b) => {
+      const aCode = String(a.code || "").trim();
+      const bCode = String(b.code || "").trim();
+      const aRank = rankingMap.has(aCode) ? rankingMap.get(aCode) : Number.POSITIVE_INFINITY;
+      const bRank = rankingMap.has(bCode) ? rankingMap.get(bCode) : Number.POSITIVE_INFINITY;
+      if (aRank !== bRank) return aRank - bRank;
+      return aCode.localeCompare(bCode, "el");
+    });
+  }
+
   const total = items.length;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const safePage = Math.min(Math.max(page, 1), pages);
@@ -437,7 +510,16 @@ async function loadCatalog(page = 1, query = "") {
     const data = await response.json();
     allCatalog = Array.isArray(data.items) ? data.items : [];
     if (importedOrderDraft) {
+      updateCodesDatalist(allCatalog);
       applyImportedOrderDraft(importedOrderDraft);
+      return;
+    }
+
+    const rankingDraft = loadOrderFormRankingDraft();
+    if (rankingDraft) {
+      updateCodesDatalist(allCatalog);
+      applyCustomerRankingDraft(rankingDraft);
+      return;
     }
 
     updateCodesDatalist(allCatalog);
@@ -463,6 +545,7 @@ function clearTopFilters(event) {
   if (els.q) els.q.value = "";
   clearToolbarQty();
   importedCatalogCodes.clear();
+  rankedCatalogCodes = [];
   setToolbarMsg("");
   currentPage = 1;
   lastQuery = "";
@@ -495,6 +578,33 @@ function addToCart(product, qty) {
 
   renderCart();
   saveOrderFormState();
+}
+
+function setCartItemQty(code, qty, options = {}) {
+  const item = cart.get(code);
+  if (!item) return false;
+
+  const piecesPerPack = Math.max(1, parseInt(item.pieces_per_package, 10) || 1);
+  const parsedQty = parseInt(qty, 10);
+  if (!Number.isFinite(parsedQty) || parsedQty <= 0) {
+    if (options.removeIfEmpty) {
+      cart.delete(code);
+      renderCart();
+      saveOrderFormState();
+      return true;
+    }
+    return false;
+  }
+
+  if (parsedQty % piecesPerPack !== 0) {
+    return false;
+  }
+
+  item.qty = parsedQty;
+  cart.set(code, item);
+  renderCart();
+  saveOrderFormState();
+  return true;
 }
 
 function addFromUnifiedBar() {
@@ -582,6 +692,16 @@ function clearPreparedCatalogRow(entry) {
   rememberDraftCatalogInput(entry.product.code, {});
 }
 
+function updatePreparedAddButton() {
+  if (!els.preparedAddBtn) return;
+
+  const preparedCount = getPreparedCatalogRows().length;
+  els.preparedAddBtn.disabled = preparedCount === 0;
+  els.preparedAddBtn.textContent = preparedCount
+    ? `Προσθήκη έτοιμων γραμμών (${preparedCount})`
+    : "Προσθήκη έτοιμων γραμμών";
+}
+
 function addPreparedCatalogRowsToCart() {
   const preparedRows = getPreparedCatalogRows();
   if (!preparedRows.length) return false;
@@ -608,6 +728,7 @@ function addPreparedCatalogRowsToCart() {
       : `Προστέθηκαν ${preparedRows.length} προϊόντα στο καλάθι.`,
     "ok",
   );
+  updatePreparedAddButton();
   return true;
 }
 
@@ -716,6 +837,7 @@ function renderCatalog(items) {
       packsInput.value = "";
       piecesInput.setCustomValidity("");
       rememberDraftCatalogInput(product.code, {});
+      updatePreparedAddButton();
     }
 
     function applyFromPieces(qty) {
@@ -732,6 +854,7 @@ function renderCatalog(items) {
         packs: packsInput.value,
         pieces: piecesInput.value,
       });
+      updatePreparedAddButton();
     }
 
     row.addEventListener("click", (event) => {
@@ -753,6 +876,7 @@ function renderCatalog(items) {
       if (!Number.isFinite(packs) || packs <= 0) {
         piecesInput.value = "";
         rememberDraftCatalogInput(product.code, {});
+        updatePreparedAddButton();
         return;
       }
 
@@ -762,6 +886,7 @@ function renderCatalog(items) {
         packs: packsInput.value,
         pieces: piecesInput.value,
       });
+      updatePreparedAddButton();
     });
 
     piecesInput?.addEventListener("input", () => {
@@ -770,6 +895,7 @@ function renderCatalog(items) {
       if (!Number.isFinite(qty) || qty <= 0) {
         packsInput.value = "";
         rememberDraftCatalogInput(product.code, {});
+        updatePreparedAddButton();
         return;
       }
 
@@ -778,6 +904,7 @@ function renderCatalog(items) {
         packs: packsInput.value,
         pieces: piecesInput.value,
       });
+      updatePreparedAddButton();
     });
 
     qtyMinusBtn?.addEventListener("click", () => {
@@ -826,6 +953,7 @@ function renderCatalog(items) {
   });
 
   els.countPill.textContent = `${items.length} προϊόντα`;
+  updatePreparedAddButton();
 }
 
 function renderCart() {
@@ -861,9 +989,21 @@ function renderCart() {
               <div class="small" style="margin-top:2px;">${totals.packages} συσκ. - ${fmtM3(totals.totalLiters)} m³</div>
             </div>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <div class="cartQty">${item.qty} τεμ.</div>
-            <button type="button" class="secondary" data-remove="${escapeHtml(item.code)}">X</button>
+          <div class="cartRight">
+            <div class="cartQtyEditor">
+              <button type="button" class="secondary cartStepBtn" data-cart-minus="${escapeHtml(item.code)}">-</button>
+              <input
+                class="cartQtyInput"
+                type="number"
+                min="${Math.max(1, parseInt(item.pieces_per_package, 10) || 1)}"
+                step="${Math.max(1, parseInt(item.pieces_per_package, 10) || 1)}"
+                inputmode="numeric"
+                value="${item.qty}"
+                data-cart-qty="${escapeHtml(item.code)}"
+                data-ppp="${Math.max(1, parseInt(item.pieces_per_package, 10) || 1)}"
+              />
+              <button type="button" class="secondary cartStepBtn" data-cart-plus="${escapeHtml(item.code)}">+</button>
+            </div>
           </div>
         </div>
       `;
@@ -878,12 +1018,65 @@ function renderCart() {
     </div>
   `;
 
-  els.cart.querySelectorAll("button[data-remove]").forEach((button) => {
+  els.cart.querySelectorAll("button[data-cart-minus]").forEach((button) => {
     button.addEventListener("click", () => {
-      cart.delete(button.getAttribute("data-remove"));
-      renderCart();
-      saveOrderFormState();
+      const code = button.getAttribute("data-cart-minus");
+      const item = cart.get(code);
+      if (!item) return;
+      const piecesPerPack = Math.max(1, parseInt(item.pieces_per_package, 10) || 1);
+      const nextQty = item.qty - piecesPerPack;
+      if (nextQty <= 0) {
+        cart.delete(code);
+        renderCart();
+        saveOrderFormState();
+        return;
+      }
+      setCartItemQty(code, nextQty);
     });
+  });
+
+  els.cart.querySelectorAll("button[data-cart-plus]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const code = button.getAttribute("data-cart-plus");
+      const item = cart.get(code);
+      if (!item) return;
+      const piecesPerPack = Math.max(1, parseInt(item.pieces_per_package, 10) || 1);
+      setCartItemQty(code, item.qty + piecesPerPack);
+    });
+  });
+
+  els.cart.querySelectorAll("input[data-cart-qty]").forEach((input) => {
+    const commit = () => {
+      const code = input.getAttribute("data-cart-qty");
+      const item = cart.get(code);
+      if (!item) return;
+      const piecesPerPack = Math.max(1, parseInt(input.getAttribute("data-ppp"), 10) || 1);
+      const qty = parseInt(input.value || "", 10);
+
+      if (!Number.isFinite(qty) || qty <= 0) {
+        input.value = String(item.qty);
+        return;
+      }
+
+      if (qty % piecesPerPack !== 0) {
+        input.setCustomValidity(`Πρέπει να είναι πολλαπλάσιο των ${piecesPerPack}.`);
+        input.reportValidity();
+        input.value = String(item.qty);
+        input.setCustomValidity("");
+        return;
+      }
+
+      input.setCustomValidity("");
+      setCartItemQty(code, qty);
+    };
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commit();
+      }
+    });
+    input.addEventListener("blur", commit);
   });
 }
 
@@ -1163,6 +1356,9 @@ els.customerEmail?.addEventListener("input", saveOrderFormState);
 els.notes?.addEventListener("input", saveOrderFormState);
 
 els.toolbarAddBtn?.addEventListener("click", addFromUnifiedBar);
+els.preparedAddBtn?.addEventListener("click", () => {
+  addPreparedCatalogRowsToCart();
+});
 els.clearBtn?.addEventListener("click", () => {
   cart.clear();
   renderCart();
@@ -1180,6 +1376,7 @@ window.addEventListener("beforeunload", saveOrderFormState);
 
 restoreDraftCatalogInputs(restoredOrderFormState);
 restoreImportedCatalogCodes(restoredOrderFormState);
+restoreRankedCatalogCodes(restoredOrderFormState);
 restoreCartFromState(restoredOrderFormState);
 restoreOrderFormFields(restoredOrderFormState);
 loadCatalog(
@@ -1187,4 +1384,5 @@ loadCatalog(
   restoredOrderFormState?.lastQuery || restoredOrderFormState?.q || "",
 );
 renderCart();
+updatePreparedAddButton();
 saveOrderFormState();
