@@ -35,6 +35,7 @@ const RECENT_ORDERS_PAGE_SIZE = 10;
 const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
+const ADMIN_STATE_KEY = "viomes.admin.state.v1";
 const IMPORT_DATASET_LABELS = {
   sales_lines: "γραμμές πωλήσεων",
   customer_ledgers: "καρτέλες πελατών",
@@ -66,6 +67,8 @@ let searchLoadingStateId = 0;
 let statsLoadingStateId = 0;
 let searchLoadingStartedAt = 0;
 let statsLoadingStartedAt = 0;
+let lastRenderedStatsPayload = null;
+const restoredAdminState = loadAdminState();
 
 const els = {
   adminStatus: document.getElementById("adminStatus"),
@@ -137,6 +140,93 @@ const els = {
   recentOrdersPageInfo: document.getElementById("recentOrdersPageInfo"),
   detailedOrdersList: document.getElementById("detailedOrdersList"),
 };
+
+function loadAdminState() {
+  try {
+    const raw = window.sessionStorage.getItem(ADMIN_STATE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function clearAdminState() {
+  try {
+    window.sessionStorage.removeItem(ADMIN_STATE_KEY);
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+}
+
+function fillSearchFields(filters = {}) {
+  if (els.customerNameQuery) els.customerNameQuery.value = filters.customer_name || "";
+  if (els.customerCodeQuery) els.customerCodeQuery.value = filters.customer_code || "";
+  if (els.branchCodeQuery) els.branchCodeQuery.value = filters.branch_code || "";
+  if (els.branchDescriptionQuery) els.branchDescriptionQuery.value = filters.branch_description || "";
+}
+
+function saveAdminState() {
+  try {
+    const state = {
+      authenticatedLikely: !els.dashboardPanel?.hidden,
+      username: els.username?.value || "",
+      searchPanelCollapsed: Boolean(els.searchPanelContent?.hidden),
+      searchFields: getCustomerSearchFilters(),
+      currentCustomerSearchFilters,
+      currentSearchResults,
+      currentCustomerCode,
+      currentBranchCode,
+      currentAvailableBranches,
+      currentSalesTimeRange,
+      currentProductSalesPage,
+      currentReceivablesPage,
+      currentRecentOrdersPage,
+      selectedOrderId,
+      branchSelectorSearch: els.branchSelectorSearch?.value || "",
+      productSalesMetric: els.productSalesMetric?.value || "revenue",
+      lastRenderedStatsPayload,
+    };
+    window.sessionStorage.setItem(ADMIN_STATE_KEY, JSON.stringify(state));
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+}
+
+function restoreAdminStateView(state) {
+  if (!state) return;
+
+  fillSearchFields(state.searchFields || state.currentCustomerSearchFilters || {});
+  setCurrentCustomerSearchFilters(state.currentCustomerSearchFilters || state.searchFields || {});
+  currentSalesTimeRange = String(state.currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE)
+    .trim()
+    .toLowerCase();
+  syncSalesTimeRangeControls(currentSalesTimeRange);
+  setSearchPanelCollapsed(Boolean(state.searchPanelCollapsed));
+
+  if (Array.isArray(state.currentSearchResults) && state.currentSearchResults.length) {
+    renderSearchResults(state.currentSearchResults, state.currentCustomerSearchFilters || state.searchFields || {});
+  }
+
+  if (state.lastRenderedStatsPayload) {
+    renderStats(state.lastRenderedStatsPayload);
+    currentProductSalesPage = Math.max(1, Number(state.currentProductSalesPage) || 1);
+    currentReceivablesPage = Math.max(1, Number(state.currentReceivablesPage) || 1);
+    currentRecentOrdersPage = Math.max(1, Number(state.currentRecentOrdersPage) || 1);
+    selectedOrderId = state.selectedOrderId || null;
+    if (els.productSalesMetric) {
+      els.productSalesMetric.value = state.productSalesMetric === "pieces" ? "pieces" : "revenue";
+    }
+    if (els.branchSelectorSearch) {
+      els.branchSelectorSearch.value = state.branchSelectorSearch || "";
+    }
+    renderProductSales();
+    renderReceivablesTable();
+    renderRecentOrdersTable();
+    renderSelectedOrderDetails();
+  }
+}
 
 function getSalesTimeRangeControls() {
   return Array.from(document.querySelectorAll(".sales-time-range-control"));
@@ -646,6 +736,7 @@ function resetReceivables() {
 
 function resetStats() {
   void setStatsLoading(false);
+  lastRenderedStatsPayload = null;
   resetBranchSelector();
   currentSalesTimeRange = getSelectedSalesTimeRange();
   els.customerNameHeading.textContent = "Πελάτης";
@@ -1104,6 +1195,7 @@ function renderStats(data) {
   const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const isBranchView = customer.aggregation_level === "branch";
+  lastRenderedStatsPayload = data;
 
   currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
   currentProductSales = Array.isArray(productSales.items) ? productSales.items : [];
@@ -1274,6 +1366,7 @@ async function handleLogout() {
     setSearchPanelCollapsed(false);
     els.username.focus();
     setStatus("Η αποσύνδεση ολοκληρώθηκε επιτυχώς.", "ok");
+    clearAdminState();
   } catch (error) {
     setStatus(`Η αποσύνδεση απέτυχε: ${error.message}`, "error");
   } finally {
@@ -1521,16 +1614,26 @@ window.addEventListener("focus", () => {
   }
 });
 
+window.addEventListener("pagehide", saveAdminState);
+window.addEventListener("beforeunload", saveAdminState);
+
 resetStats();
 resetSearchResults();
 resetSearchSuggestions();
 setSearchPanelCollapsed(false);
+if (restoredAdminState?.authenticatedLikely) {
+  if (els.username && restoredAdminState.username) els.username.value = restoredAdminState.username;
+  setAuthenticatedUI({ authenticated: true, username: restoredAdminState.username || "admin" });
+  restoreAdminStateView(restoredAdminState);
+}
 refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
+    restoreAdminStateView(restoredAdminState);
     focusPrimarySearchField();
   } else {
     els.username.focus();
   }
+  saveAdminState();
 });
 
 
