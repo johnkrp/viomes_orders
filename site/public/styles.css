@@ -1488,9 +1488,15 @@ button.secondary:hover,
 }
 
 .admin-mini-stat-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: block;
   padding-top: 0;
 }
+
+#receivablesPanel .admin-stat-card {
+  margin: 0 auto;
+  width: min(100%, 300px);
+}
+
 
 .admin-inline-controls {
   display: flex;
