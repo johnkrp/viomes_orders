@@ -17,6 +17,7 @@ let lastOrder = null;
 let draftCatalogInputs = new Map();
 let restoredOrderFormState = loadOrderFormState();
 let importedOrderDraft = loadImportedOrderDraft();
+let importedCatalogCodes = new Set();
 
 const cart = new Map();
 
@@ -89,6 +90,7 @@ function saveOrderFormState() {
       lastQuery,
       cartItems: Array.from(cart.values()),
       draftCatalogInputs: Object.fromEntries(draftCatalogInputs.entries()),
+      importedCatalogCodes: Array.from(importedCatalogCodes),
     };
     window.sessionStorage.setItem(ORDER_FORM_STATE_KEY, JSON.stringify(state));
   } catch (_error) {
@@ -120,6 +122,15 @@ function restoreDraftCatalogInputs(state) {
   draftCatalogInputs = new Map(rawEntries.map(([code, value]) => [code, value || {}]));
 }
 
+function restoreImportedCatalogCodes(state) {
+  const codes = Array.isArray(state?.importedCatalogCodes) ? state.importedCatalogCodes : [];
+  importedCatalogCodes = new Set(
+    codes
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+}
+
 function buildCartItemFromCatalog(product, qty, fallbackDescription = "") {
   return {
     code: product.code,
@@ -149,6 +160,7 @@ function applyImportedOrderDraft(draft) {
 
   cart.clear();
   draftCatalogInputs.clear();
+  importedCatalogCodes.clear();
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
@@ -158,21 +170,31 @@ function applyImportedOrderDraft(draft) {
   lastQuery = "";
 
   const lines = Array.isArray(draft.lines) ? draft.lines : [];
+  let missingLines = 0;
   lines.forEach((line) => {
     if (!line?.code || Number(line?.qty || 0) <= 0) return;
     const product = findProductByCode(line.code);
-    const item = product
-      ? buildCartItemFromCatalog(product, Number(line.qty || 0), line.description || "")
-      : buildFallbackCartItem(line);
-    cart.set(item.code, item);
+    if (!product) {
+      missingLines += 1;
+      return;
+    }
+
+    const qty = Number(line.qty || 0);
+    const piecesPerPack = Math.max(1, parseInt(product.pieces_per_package, 10) || 1);
+    importedCatalogCodes.add(product.code);
+    draftCatalogInputs.set(product.code, {
+      pieces: String(qty),
+      packs: qty % piecesPerPack === 0 ? String(qty / piecesPerPack) : "",
+    });
   });
 
   renderCart();
+  applyCatalogView(1, "");
   setToolbarMsg(
-    lines.length
-      ? `Φορτώθηκε η παραγγελία ${draft.sourceOrderId || ""} στη φόρμα.`
+    importedCatalogCodes.size
+      ? `Φορτώθηκε η παραγγελία ${draft.sourceOrderId || ""} στον κατάλογο.${missingLines ? ` ${missingLines} γραμμές δεν βρέθηκαν.` : ""}`
       : "Δεν βρέθηκαν γραμμές ειδών για φόρτωση.",
-    lines.length ? "ok" : "error",
+    importedCatalogCodes.size ? "ok" : "error",
   );
   clearImportedOrderDraft();
   importedOrderDraft = null;
@@ -375,6 +397,9 @@ function applyCatalogView(page = 1, query = "") {
   lastQuery = query;
 
   let items = [...allCatalog];
+  if (importedCatalogCodes.size) {
+    items = items.filter((item) => importedCatalogCodes.has(String(item.code || "").trim()));
+  }
   const normalizedQuery = normalizeText(query);
 
   if (normalizedQuery) {
@@ -437,6 +462,7 @@ function clearTopFilters(event) {
   // This clears only the catalog toolbar state, not the cart or customer form.
   if (els.q) els.q.value = "";
   clearToolbarQty();
+  importedCatalogCodes.clear();
   setToolbarMsg("");
   currentPage = 1;
   lastQuery = "";
@@ -1153,6 +1179,7 @@ window.addEventListener("pagehide", saveOrderFormState);
 window.addEventListener("beforeunload", saveOrderFormState);
 
 restoreDraftCatalogInputs(restoredOrderFormState);
+restoreImportedCatalogCodes(restoredOrderFormState);
 restoreCartFromState(restoredOrderFormState);
 restoreOrderFormFields(restoredOrderFormState);
 loadCatalog(
