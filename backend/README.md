@@ -1,59 +1,137 @@
 # Backend Layer
 
-This folder now mainly hosts import tooling and data files for Entersoft.
+This folder is the active import/ETL layer for the production Node app.
 
-## Active files
+## Active Responsibilities
 
-- `import_entersoft.py`: core CSV -> MySQL importer
-- `mysql_db.py`: MySQL connection + schema init for importer
-- `ENTERSOFT_IMPORT_README.md`: importer behavior, modes, commands
-- `2025.CSV`, `2026.CSV`: baseline historical sales files (optional after initial load)
-- `today.csv`: daily file consumed by nightly incremental import
+- import Entersoft sales CSVs into MySQL/MariaDB
+- rebuild sales projections used by the admin dashboard
+- import the daily customer ledger export used by the balances panel
 
-## Current architecture
+Main files:
 
-- Node app (`site/server.js`) is the runtime backend.
-- Python in this folder is import/ETL only.
-- Imported data lands in MySQL tables and is consumed by Node API.
+- `import_entersoft.py`
+  - core importer
+- `mysql_db.py`
+  - DB connection + shared schema loader
+- `sql/mysql_import_schema.sql`
+  - shared import-table DDL
+- `ENTERSOFT_IMPORT_README.md`
+  - lower-level import behavior/details
 
-Supported matrix:
+## Current Supported Production Path
 
-- Supported production data path: Python importer -> MySQL -> Node runtime
-- Not a supported production path: legacy FastAPI/SQLite backend files in this folder
+```text
+Python importer -> MySQL/MariaDB -> Node runtime in site/
+```
 
-Source-of-truth table layout:
+Not a supported production path:
 
-- operational tables owned by runtime: `products`, `admin_users`, `admin_sessions`
-- ingestion tables owned by importer: `import_runs`, `imported_sales_lines`
-- rebuildable projections: `imported_customers`, `imported_orders`, `imported_monthly_sales`, `imported_product_sales`
-- mirrored projection target: `customers` rows with `source='entersoft_import'`
-- legacy/dormant compatibility tables: `orders`, `order_lines`, `customer_receivables`
+- legacy FastAPI backend files in this folder
+- old SQLite/demo flows unless explicitly re-enabled
 
-Schema ownership note:
+## Current Daily Inputs
 
-- the Node runtime schema initializer in `site/lib/db/init-schema.js` is the primary authority
-- shared MySQL import-table DDL now lives in `sql/mysql_import_schema.sql`
-- `mysql_db.py` loads that shared SQL for importer startup and should not diverge from the Node schema
+Daily operational inputs going forward:
 
-Importer helper regression checks:
+- daily sales/factual CSVs
+  - imported incrementally into `imported_sales_lines`
+- `new-kart.csv`
+  - daily ledger export
+  - source of truth for admin balances/ledger movements
+
+No longer the primary daily app import inputs:
+
+- `karteles.csv`
+- `eispr*.csv`
+
+## Current Import Outputs
+
+Sales import outputs:
+
+- `imported_sales_lines`
+- `imported_customers`
+- `imported_orders`
+- `imported_monthly_sales`
+- `imported_product_sales`
+- `imported_customer_branches`
+
+Daily ledger import outputs:
+
+- `imported_customer_ledgers`
+  - latest row per customer
+- `imported_customer_ledger_lines`
+  - all movement rows from `new-kart.csv`
+
+Important ledger line fields:
+
+- `customer_code`
+- `customer_name`
+- `document_date`
+- `document_no`
+- `reason`
+- `debit`
+- `credit`
+- `running_debit`
+- `running_credit`
+- `ledger_balance`
+- `source_file`
+- `imported_at`
+
+## Important Import Behavior
+
+### Sales rows
+
+- `imported_sales_lines` is the canonical raw sales fact table
+- overlapping revised rows now replace older rows by business key when possible
+- document-type rules decide which rows count toward sales analytics
+- historical discount fallback derives discount from:
+  - `net_value / (qty * unit_price)`
+  - when imported discount columns are zero
+
+### Daily ledger file
+
+- `new-kart.csv` is treated as the current daily ledger source
+- importer replaces the previous ledger snapshot/movement dataset deterministically
+- latest per-customer row feeds the admin summary cards
+- full movement rows feed the admin ledger table
+
+## Commands
+
+### Daily sales import
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
+
+### Daily ledger import
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
+
+### Dedupe sales history
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run dedupe:sales -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
+
+### Integrity check
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run check:import-integrity -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
+
+## Practical Rule
+
+If a file is not used by `import_entersoft.py` or the current Node wrappers in `site/scripts/`, treat it as legacy/reference-only unless explicitly brought back into the workflow.
+
+## Tests
 
 ```powershell
 python -m unittest discover -s backend/tests
 ```
-
-## Legacy files
-
-Some files may still exist for old flows (FastAPI/SQLite/demo). They are not part of current production runtime.
-Examples: `main.py`, `db.py`, `app.db`, old `info_*.csv`, `customers.csv`, demo seed tools.
-
-## Practical rule
-
-If a file is not used by `import_entersoft.py` or current Node scripts, treat it as legacy unless explicitly re-enabled.
-
-`import_runs` now acts as the import ledger for:
-
-- import mode
-- source file metadata and checksum
-- duplicate skips / rejected rows
-- projection rebuild timing
-- schema version and trigger source

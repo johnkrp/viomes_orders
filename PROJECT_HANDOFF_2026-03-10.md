@@ -1,217 +1,158 @@
-# Project Handoff - 2026-03-10
+# Project Handoff - 2026-03-12
 
-This file captures the important work completed in the current collaboration so a future scan of the repo can continue from the right state quickly.
+This file captures the current working state after the latest runtime, import, DB, and admin-panel changes.
 
-## Current Product Shape
+## Active Production Shape
 
-- Active runtime app: `site/server.js`
+- Active runtime app: `site/app.js` + `site/server.js`
 - Active frontend:
   - public order form: `site/public/index.html`, `site/public/order-form.js`
-  - admin dashboard: `site/public/admin.html`, `site/public/admin.js`, `site/public/styles.css`
+  - admin dashboard: `site/public/admin.html`, `site/public/admin.js`
 - Active import pipeline:
   - importer: `backend/import_entersoft.py`
-  - MySQL schema helpers: `backend/mysql_db.py`, `backend/sql/mysql_import_schema.sql`
-  - wrappers/scripts: `site/scripts/*`
-- Active DB: MariaDB on the remote server, with import-backed analytics tables as the real production data source.
+  - schema helpers: `backend/mysql_db.py`, `backend/sql/mysql_import_schema.sql`
+  - Node wrappers: `site/scripts/*`
+- Active production DB: MariaDB/MySQL on remote host `213.158.90.203`
 
-## Architecture Decisions Made
+Legacy FastAPI code under `backend/app/*` and `backend/main.py` is dormant/reference-only.
 
-### Database
+## Daily Operating Rules
 
-- Keep one physical MariaDB database for now.
-- Treat the schema as logically split into:
-  - operational: admin/auth and product catalog
-  - ingestion: raw imported sales and import ledger
-  - projections: rebuildable customer/order/month/product aggregates
-- `imported_sales_lines` is the canonical raw imported fact table.
-- `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, `imported_customers` are rebuildable projections.
-- Dormant local runtime tables remain present but are not the active production path:
-  - `orders`
-  - `order_lines`
-  - `customer_receivables`
+Current daily uploads to the server:
 
-### Customer Analytics
+- `backend/new-kart.csv`
+  - daily customer-ledger export
+  - source of truth for the admin balances/ledger panel
+- daily factual sales CSVs
+  - imported incrementally into `imported_sales_lines`
 
-- Customer stats are import-backed in production.
-- Customer selection must happen at customer level first.
-- If a customer has many substores, the branch selector is populated after customer selection.
-- Branch/substore view is a filtered drill-down of the customer, not a separate customer identity.
+Not the primary daily app inputs anymore:
 
-### Receivables UX
+- `backend/karteles.csv`
+- `backend/eispr*.csv`
 
-- Receivables are shown only on total customer stats.
-- Receivables must not be shown on branch/substore-level stats.
+## Current Balance / Ledger Model
 
-## Live DB Work Completed
+The admin balances panel no longer behaves like invoice aging.
 
-- Remote DB access was fixed by switching from local `127.0.0.1` assumptions to the real remote DB host.
-- Live DB connectivity through MCP was verified.
-- A read-only integrity audit was performed and documented.
-- A full import of:
-  - `2024.csv`
-  - `2025.CSV`
-  - `2026.CSV`
-  was successfully completed on the server.
+It now reflects the daily ledger export from `new-kart.csv`:
 
-### Current Live Data Shape After Full Import
+- `Ανοιχτό υπόλοιπο` = latest `Υπόλοιπο`
+- second card = latest `Προοδ. Πίστωση`
+- table = daily ledger movements, newest first
+- table pagination = 5 rows per page
 
-- `imported_sales_lines`: about 1.146M rows
-- `imported_orders`: about 76k rows
-- `imported_product_sales`: about 59k rows
-- `imported_monthly_sales`: about 5.3k rows
-- `imported_customers`: about 808 rows
-- mirrored `customers`: aligned with imported customers
+The panel is customer-level only and should stay hidden on branch/substore drill-down.
 
-### Integrity Status
+## Current Ledger Import Shape
 
-- duplicate logical sales-line groups: clean
-- imported-order collisions: clean
-- mirrored customer consistency: clean
+`new-kart.csv` is imported into two tables:
 
-## Importer / Ops Changes Completed
+- `imported_customer_ledgers`
+  - latest per-customer snapshot
+- `imported_customer_ledger_lines`
+  - all imported ledger movement rows
 
-- Removed committed DB secrets from operational scripts.
-- Tightened runtime credential requirements for non-local environments.
-- Added automatic log file creation for the importer wrapper:
-  - logs go under `site/logs/imports`
-- Raised default timeout behavior for large file-based/full reload imports.
-- Fixed a bug where `reload:sales` was recorded as incremental instead of full refresh.
-- Added/expanded the import ledger fields in `import_runs`.
+Important persisted fields for ledger lines:
 
-## Testing / CI Work Completed
+- `customer_code`
+- `customer_name`
+- `document_date`
+- `document_no`
+- `reason`
+- `debit`
+- `credit`
+- `running_debit`
+- `running_credit`
+- `ledger_balance`
+- `source_file`
+- `imported_at`
 
-- Added Node tests for:
-  - runtime config guardrails
-  - customer stats shared logic
-  - imported-data provider behavior
-  - local SQL-backed provider behavior
-  - imported-sales rebuild/integrity helper logic
-- Added Python tests for importer helpers.
-- Added CI workflow under `.github/workflows/ci.yml`.
+## Sales Import / Classification State
 
-## Admin UX Changes Completed
+Important completed work:
 
-### Search
+- document-type classification now excludes non-sales/internal document types from analytics
+- credit/return document types affect revenue with sign rules
+- discount fallback exists for historical data when CSV discount columns are zero:
+  - derived from `net_value / (qty * unit_price)`
+- overlapping revised sales rows are now replaced by business key instead of being blindly duplicated
 
-- The admin search moved from exact-code-only toward a richer customer search.
-- Search currently uses separate fields for:
-  - customer name
-  - customer code
-  - branch code
-  - branch description / location
-- Autocomplete/suggestion UI was later removed.
-- The results table is the single selection surface now.
+## Current Import / DB Commands
 
-### Branch Selection
+### Daily sales import on server
 
-- After loading a customer, the user can choose among that customer's substores.
-- The branch selector also supports keyboard-oriented filtering via the dedicated branch search field.
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
 
-### Layout / Presentation
+### Dedupe after sales import
 
-- Three-year monthly sales view was introduced.
-- Year labels are concrete years, not generic placeholders.
-- Table title alignment and column alignment were improved across admin tables.
-- The top search panel collapses after customer load for a cleaner dashboard view.
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run dedupe:sales -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
 
-### Terminology
+### Integrity check after dedupe
 
-- `Περιγραφή Υποκ.` was updated in the UI to a clearer label:
-  - `Τοποθεσία / Διεύθυνση`
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run check:import-integrity -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
 
-## Business Clarifications Captured
+### Daily ledger import on server
 
-These are not all fully implemented yet, but they were clarified during the session:
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app --mysql-password='YOUR_PASSWORD'
+```
 
-- CSV columns 25 and 26 are unnecessary.
-- CSV columns 21-31 should not be ignored in principle.
-- Columns 6 and 7 currently appear equal in the sample import checked, but they should still be treated conceptually as distinct fields.
-- Branch code and branch description are important for admin search UX.
-- Customer lookup should support recognition, not just exact recall of codes.
-- `Τύπος Παραστατικών` needs a future business classification pass because not all document types should count as sales.
+## Important Production Lessons From This Chat
 
-## Important Files Touched During This Session
+- same-origin browser login/logout 500s were caused by CORS behavior and were fixed in code; redeploy/restart is required for production to pick up fixes
+- when the UI changed but values stayed empty, the root cause was often a stale deployed Node process, not a bad DB import
+- `new-kart.csv` data can already be present in the DB while the live app still shows old behavior if the runtime was not restarted
+- local testing preference:
+  - when the user asks for real validation, prefer the actual deployed app or the real runtime/API path
+  - do not rely on demo/mock servers unless explicitly requested
 
-- `site/server.js`
-- `site/public/admin.html`
-- `site/public/admin.js`
-- `site/public/styles.css`
-- `site/lib/customer-stats/*`
-- `site/lib/imported-sales.js`
-- `site/lib/runtime-config.js`
-- `site/lib/db/init-schema.js`
-- `site/scripts/*`
-- `backend/import_entersoft.py`
-- `backend/mysql_db.py`
-- `backend/sql/mysql_import_schema.sql`
-- `backend/tests/*`
-- `site/tests/*`
-- `.github/workflows/ci.yml`
-- `README.md`
-- `site/README.md`
-- `backend/README.md`
+## Important Commits From This Chat
 
-## Important Git History Created During This Session
+- `28d741a` Optimize imported customer stats queries
+- `89c58aa` Classify imported documents and round discount values
+- `0cedc92` Allow same-origin browser auth requests
+- `f1e6fd6` Import karteles snapshot into admin balances
+- `4481d9e` Fix ledger email upsert for MariaDB
+- `d89bf40` Switch ledger snapshot import to new ledger export
+- `7c5470a` Convert balances panel to daily ledger view
+- `03aa1e6` Fix ledger panel text encoding
+- `dce8daf` Paginate ledger movements table
 
-The session included multiple pushes to `main`. Relevant milestones included:
+## Current Known Truths
 
-- hardening import architecture and DB integrity tooling
-- Python runtime compatibility fix for importer typing
-- admin customer search improvements
-- three-year monthly sales view
-- full import timeout improvements
-- branch-aware customer stats behavior
-- admin user CLI
-- cache-control improvements for admin assets
-- revert of postal-code admin search changes
+- production analytics are Node + MySQL only
+- `imported_sales_lines` is the canonical raw sales fact table
+- sales projections are rebuildable
+- ledger/balance view is now driven by `new-kart.csv`, not `karteles.csv`
+- `eispr*.csv` is useful for payment history, but is not the current source of truth for the admin balance panel
 
-## Current UX Constraint To Remember
+## Current Local-Only Data Files
 
-- On branch view:
-  - receivables should be hidden
-  - monthly sales should remain visible
-- The current discussion at the end of the session focused on using more of the admin page width for the search row and dashboard layout.
+These are intentionally not committed:
 
-## Current Local Working Tree Notes
+- `backend/cur-week.csv`
+- `backend/eispr1003.csv`
+- `backend/karteles.csv`
+- `backend/new-kart.csv`
+- `backend/ΠΑΡΑΣΤΑΤΙΚΑ.CSV`
 
-At the end of this session there were local changes not yet pushed.
+## Recommended Next Chat Starting Point
 
-Important ones:
-
-- `site/public/admin.html`
-- `site/public/admin.js`
-- `site/public/styles.css`
-- `site/server.js`
-
-Notes:
-
-- The receivables panel fix is in local code:
-  - the `Υπόλοιπα` section has `id="receivablesPanel"`
-  - `admin.js` hides it only for branch view
-- `site/server.js` currently contains a user-edited default admin password value. That should be reviewed carefully before any future push.
-- `CODEX_MCP_SETUP.md` was intentionally kept out of commits and should continue to be treated as local setup documentation.
-
-## Recommended Next-Step Workflow For The Next Chat
-
-1. Scan the repo and compare it with this handoff.
-2. Check `git status` first, because there are local uncommitted changes.
-3. Review the current diffs in:
-   - `site/public/admin.html`
-   - `site/public/admin.js`
-   - `site/public/styles.css`
-   - `site/server.js`
-4. Confirm whether the remaining local changes should be:
-   - kept and committed
-   - adjusted
-   - or reverted
-5. Continue from the admin UX / layout thread, unless priorities change.
-
-## Useful Open Follow-Ups
-
-- Classify `Τύπος Παραστατικών` values into counted-sale vs non-sale/internal categories.
-- Preserve more raw CSV fields if business reporting needs them.
-- Add CLI/admin tooling for:
-  - listing admin users
-  - disabling admin users
-  - resetting admin passwords
-- Consider a more intentional admin layout pass after the current width/layout issue is settled.
+1. Check `git status`.
+2. Confirm deployed `main` matches the expected commit.
+3. If a live UI mismatch appears, verify:
+   - latest deploy is live
+   - app process restarted
+   - latest import run succeeded
+4. Treat `new-kart.csv` + daily factual sales CSVs as the current operational import model.

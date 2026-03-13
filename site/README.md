@@ -1,31 +1,32 @@
 # Site Layer
 
-This is the active runtime application.
-
-## What runs in production
-
-- `server.js`: main Node/Express backend + static hosting
-- `public/`: customer/admin frontend files served by Node
-- `lib/`: DB and customer-stats provider logic
-- `scripts/`: operational scripts (import/reset/nightly)
-
-## Runtime boundaries
-
 This folder is the active production runtime.
 
-- Public flow: static-first UI from `public/`, currently using `public/catalog.json` plus browser-side XLSX/email draft generation.
-- Admin flow: runtime-backed auth and analytics APIs served by `server.js`.
-- Import flow: operational wrappers in `scripts/` call the Python importer in `backend/import_entersoft.py`.
+## What Runs In Production
 
-Runtime support matrix:
+- `app.js`
+  - Express app factory
+- `server.js`
+  - runtime bootstrap
+- `public/`
+  - public order form + admin frontend
+- `lib/`
+  - DB access, schema init, providers, import helpers
+- `scripts/`
+  - operational wrappers for import/reset/check tasks
 
-- Supported in production: Node + MySQL
-- Supported in automated tests: Node + SQLite in-memory fixtures for local SQL-backed provider coverage
-- Not a supported production mode: Node + SQLite deployment
+## Supported Runtime Matrix
 
-## Runtime DB mode
+- supported in production:
+  - Node + MySQL/MariaDB
+- supported in tests:
+  - Node + SQLite/in-memory fixtures
+- not a supported production target:
+  - Node + SQLite deployment
 
-Expected env on server:
+## Runtime DB Expectations
+
+Required env:
 
 - `DB_CLIENT=mysql`
 - `MYSQL_HOST`
@@ -34,45 +35,82 @@ Expected env on server:
 - `MYSQL_USER`
 - `MYSQL_PASSWORD`
 
-Health check:
+Health endpoint:
 
-- `GET /api/health`
+```text
+GET /api/health
+```
 
-## Key API contract
+## Admin Stats Model
 
-- `GET /api/admin/customers/:code/stats` (must remain stable)
+The key admin endpoint remains:
 
-## Admin users
+```text
+GET /api/admin/customers/:code/stats
+```
 
-Create or update admin portal credentials with:
+Current behavior:
+
+- sales analytics are projection-first and MySQL-backed
+- customer search is projection-backed
+- branch drill-down remains available for sales analytics
+- balances/ledger panel is customer-level only
+
+## Current Ledger / Balances Behavior
+
+The old receivables/open-invoice semantics are no longer the active model for this panel.
+
+The admin balances area now behaves as a daily ledger view driven by the imported daily ledger export:
+
+- `Ανοιχτό υπόλοιπο`
+  - latest `Υπόλοιπο`
+- `Προοδ. πίστωση`
+  - latest `Προοδ. Πίστωση`
+- ledger movement table
+  - rows from `imported_customer_ledger_lines`
+  - newest first
+  - 5 rows per page
+
+Branch rule:
+
+- hide this panel in branch/substore drill-down mode
+- show it at customer-total level
+
+## Schema / Provider Notes
+
+- runtime schema authority:
+  - `lib/db/init-schema.js`
+- shared MySQL import schema:
+  - `../backend/sql/mysql_import_schema.sql`
+- importer compatibility loader:
+  - `../backend/mysql_db.py`
+
+Current import-backed read models used by the runtime:
+
+- `imported_orders`
+- `imported_monthly_sales`
+- `imported_product_sales`
+- `imported_customer_branches`
+- `imported_customer_ledgers`
+- `imported_customer_ledger_lines`
+
+`CUSTOMER_STATS_PROVIDER=sqlite` is still the historical provider name for the local SQL-backed provider. It does not mean the production runtime uses SQLite.
+
+## Operational Notes
+
+- If the DB looks correct but the live UI still shows old behavior, the deployed Node process likely needs redeploy/restart.
+- The live app will not pick up backend/provider changes until the deployed process restarts.
+- The ledger movement table depends on the latest `new-kart.csv` import, not just on legacy `imported_customer_ledgers` snapshot rows.
+
+## Admin User Management
 
 ```bash
 npm run admin:create-user -- --username=USERNAME --password=PASSWORD
 ```
 
-Optional:
+## Tests
 
-- `--active=0` creates or updates the user as inactive
-- rerunning the command for the same username resets the password and active flag
-
-## Schema and provider notes
-
-- Runtime schema authority lives in `lib/db/init-schema.js`.
-- Shared MySQL import-table DDL lives in `../backend/sql/mysql_import_schema.sql`.
-- The Python importer loads that shared import schema via `backend/mysql_db.py`; treat the remaining duplication as transitional and keep it aligned.
-- Runtime DB architecture is logical, not flat:
-  - operational: `products`, `admin_users`, `admin_sessions`
-  - ingestion: `import_runs`, `imported_sales_lines`
-  - projections: `imported_customers`, `imported_orders`, `imported_monthly_sales`, `imported_product_sales`, mirrored import customers
-  - legacy/dormant compatibility: `orders`, `order_lines`, `customer_receivables`, non-import customer behavior
-- `CUSTOMER_STATS_PROVIDER=sqlite` is the historical name for the local SQL-backed provider, not a guarantee that the runtime DB is SQLite.
-- The active SQL-backed provider is projection-first: imported projections are the primary analytics read model, while `imported_sales_lines` remains the raw fact table for rebuilds and drill-down.
-- `CUSTOMER_STATS_PROVIDER=entersoft` switches the admin stats endpoint to an external upstream adapter while preserving the frontend JSON contract.
-
-## Notes
-
-- This folder is the deployment target for Node on Plesk.
-- Import scheduling is handled through `scripts/nightly-import.sh`.
-- `POST /api/order/export-xlsx` is retained as a compatibility endpoint; the current public order form does not depend on it.
-- `GET /api/admin/import-health` is the admin-facing integrity endpoint for projection checks and latest import-ledger status.
-- Run the lightweight Node regression suite with `npm test`.
+```powershell
+cd site
+npm test
+```
