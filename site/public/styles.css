@@ -1663,22 +1663,22 @@ button.secondary:hover,
 
 .admin-top-value-table th:nth-child(1),
 .admin-top-value-table td:nth-child(1) {
-  width: 12%;
+  width: 16%;
 }
 
 .admin-top-value-table th:nth-child(2),
 .admin-top-value-table td:nth-child(2) {
-  width: 16%;
+  width: 37%;
 }
 
 .admin-top-value-table th:nth-child(3),
 .admin-top-value-table td:nth-child(3) {
-  width: 37%;
+  width: 20%;
 }
 
 .admin-top-value-table th:nth-child(4),
 .admin-top-value-table td:nth-child(4) {
-  width: 20%;
+  width: 12%;
 }
 
 .admin-top-value-table th:nth-child(5),

@@ -1172,10 +1172,10 @@ function renderStats(data) {
         .map((item) => {
           return `
             <tr>
-              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
               <td>${escapeHtml(item.code)}</td>
               <td>${escapeHtml(item.description)}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.revenue))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.avg_unit_price))}</td>
             </tr>
           `;
@@ -1186,6 +1186,17 @@ function renderStats(data) {
           <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν κορυφαία είδη ανά τζίρο.</td>
         </tr>
       `;
+
+  const topProductsValueHeadRow = document.querySelector("#topProductsValueBody")?.closest("table")?.querySelector("thead tr");
+  if (topProductsValueHeadRow) {
+    topProductsValueHeadRow.innerHTML = `
+      <th>Κωδικός</th>
+      <th>Περιγραφή</th>
+      <th class="admin-table-number">Τζίρος</th>
+      <th class="admin-table-number">Τεμάχια</th>
+      <th class="admin-table-number">Μέση τιμή μονάδας</th>
+    `;
+  }
 
   renderRecentOrdersTable();
   renderSelectedOrderDetails();
