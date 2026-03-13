@@ -36,6 +36,7 @@ const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
 const ADMIN_STATE_KEY = "viomes.admin.state.v1";
+const ORDER_FORM_IMPORT_KEY = "viomes.orderForm.import.v1";
 const IMPORT_DATASET_LABELS = {
   sales_lines: "γραμμές πωλήσεων",
   customer_ledgers: "καρτέλες πελατών",
@@ -908,9 +909,18 @@ function renderSelectedOrderDetails() {
           <p>Παραγγελία: ${escapeHtml(formatDate(selectedOrder.ordered_at || selectedOrder.created_at))}</p>
         </div>
         <div class="admin-order-kpis">
-          <span>${escapeHtml(formatNumber(selectedOrder.total_lines))} γραμμές</span>
-          <span>${escapeHtml(formatNumber(selectedOrder.total_pieces))} τεμ.</span>
+          <div class="admin-order-kpi-meta">
+            <span>${escapeHtml(formatNumber(selectedOrder.total_lines))} γραμμές</span>
+            <span>${escapeHtml(formatNumber(selectedOrder.total_pieces))} τεμ.</span>
+          </div>
           <strong>${escapeHtml(formatMoney(selectedOrder.total_net_value))}</strong>
+          <a
+            href="index.html"
+            class="btn ghost admin-order-open-link"
+            data-open-order-form="${escapeHtml(selectedOrder.order_id)}"
+          >
+            Άνοιγμα στη φόρμα παραγγελίας
+          </a>
         </div>
       </div>
       <div class="admin-order-note">${escapeHtml(selectedOrder.notes || "Χωρίς σημειώσεις")}</div>
@@ -1541,6 +1551,46 @@ function expandSearchPanel() {
   focusPrimarySearchField();
 }
 
+function buildOrderFormDraftFromSelectedOrder(order) {
+  const customerName = String(order?.customer_name || els.customerNameHeading?.textContent || "").trim();
+  return {
+    customerName,
+    customerEmail: String(order?.customer_email || "").trim(),
+    notes: String(order?.notes || "").trim(),
+    sourceOrderId: String(order?.order_id || "").trim(),
+    lines: Array.isArray(order?.lines)
+      ? order.lines
+          .filter((line) => line?.code && Number(line?.qty || 0) > 0)
+          .map((line) => ({
+            code: String(line.code).trim(),
+            qty: Number(line.qty || 0),
+            description: String(line.description || "").trim(),
+          }))
+      : [],
+  };
+}
+
+function openSelectedOrderInOrderForm(orderId) {
+  const order = findDetailedOrder(orderId);
+  if (!order) {
+    setStatus("Η επιλεγμένη παραγγελία δεν βρέθηκε.", "error");
+    return;
+  }
+
+  const draft = buildOrderFormDraftFromSelectedOrder(order);
+  if (!draft.lines.length) {
+    setStatus("Η επιλεγμένη παραγγελία δεν έχει γραμμές ειδών για φόρτωση.", "error");
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(ORDER_FORM_IMPORT_KEY, JSON.stringify(draft));
+    window.location.href = "index.html";
+  } catch (_error) {
+    setStatus("Δεν ήταν δυνατή η μεταφορά της παραγγελίας στη φόρμα.", "error");
+  }
+}
+
 els.loginForm?.addEventListener("submit", handleLogin);
 els.logoutBtn?.addEventListener("click", handleLogout);
 els.customerSearchForm?.addEventListener("submit", searchCustomers);
@@ -1554,6 +1604,12 @@ els.searchResultsBody?.addEventListener("click", (event) => {
   if (!button) return;
 
   fetchCustomerStats(button.getAttribute("data-customer-code"), "", currentCustomerSearchFilters);
+});
+els.detailedOrdersList?.addEventListener("click", (event) => {
+  const trigger = event.target.closest("[data-open-order-form]");
+  if (!trigger) return;
+  event.preventDefault();
+  openSelectedOrderInOrderForm(trigger.getAttribute("data-open-order-form"));
 });
 els.productSalesMetric?.addEventListener("change", () => {
   currentProductSalesPage = 1;

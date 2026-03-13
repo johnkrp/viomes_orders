@@ -6,6 +6,7 @@ const PAGE_SIZE = 20;
 const PLACEHOLDER_PACKSHOT = "https://via.placeholder.com/300x300?text=Packshot";
 const PLACEHOLDER_CART_IMAGE = "https://via.placeholder.com/80x80?text=Packshot";
 const ORDER_FORM_STATE_KEY = "viomes.orderForm.state.v1";
+const ORDER_FORM_IMPORT_KEY = "viomes.orderForm.import.v1";
 
 let allCatalog = [];
 let catalog = [];
@@ -15,6 +16,7 @@ let msgTimer = null;
 let lastOrder = null;
 let draftCatalogInputs = new Map();
 let restoredOrderFormState = loadOrderFormState();
+let importedOrderDraft = loadImportedOrderDraft();
 
 const cart = new Map();
 
@@ -53,6 +55,25 @@ function loadOrderFormState() {
     return parsed && typeof parsed === "object" ? parsed : null;
   } catch (_error) {
     return null;
+  }
+}
+
+function loadImportedOrderDraft() {
+  try {
+    const raw = window.sessionStorage.getItem(ORDER_FORM_IMPORT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function clearImportedOrderDraft() {
+  try {
+    window.sessionStorage.removeItem(ORDER_FORM_IMPORT_KEY);
+  } catch (_error) {
+    // Ignore storage failures.
   }
 }
 
@@ -97,6 +118,65 @@ function restoreDraftCatalogInputs(state) {
     ? Object.entries(state.draftCatalogInputs)
     : [];
   draftCatalogInputs = new Map(rawEntries.map(([code, value]) => [code, value || {}]));
+}
+
+function buildCartItemFromCatalog(product, qty, fallbackDescription = "") {
+  return {
+    code: product.code,
+    title: product.description || productTitle(product) || fallbackDescription || product.code,
+    qty,
+    image_url: product.image_url || "",
+    pieces_per_package: product.pieces_per_package,
+    volume_liters: getVolLitersFromProduct(product),
+    color: product.color || "",
+  };
+}
+
+function buildFallbackCartItem(line) {
+  return {
+    code: line.code,
+    title: line.description || line.code,
+    qty: line.qty,
+    image_url: "",
+    pieces_per_package: 1,
+    volume_liters: 0,
+    color: "",
+  };
+}
+
+function applyImportedOrderDraft(draft) {
+  if (!draft) return;
+
+  cart.clear();
+  draftCatalogInputs.clear();
+  if (els.q) els.q.value = "";
+  if (els.toolbarQty) els.toolbarQty.value = "";
+  if (els.customerName) els.customerName.value = draft.customerName || "";
+  if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
+  if (els.notes) els.notes.value = draft.notes || "";
+  currentPage = 1;
+  lastQuery = "";
+
+  const lines = Array.isArray(draft.lines) ? draft.lines : [];
+  lines.forEach((line) => {
+    if (!line?.code || Number(line?.qty || 0) <= 0) return;
+    const product = findProductByCode(line.code);
+    const item = product
+      ? buildCartItemFromCatalog(product, Number(line.qty || 0), line.description || "")
+      : buildFallbackCartItem(line);
+    cart.set(item.code, item);
+  });
+
+  renderCart();
+  setToolbarMsg(
+    lines.length
+      ? `Φορτώθηκε η παραγγελία ${draft.sourceOrderId || ""} στη φόρμα.`
+      : "Δεν βρέθηκαν γραμμές ειδών για φόρτωση.",
+    lines.length ? "ok" : "error",
+  );
+  clearImportedOrderDraft();
+  importedOrderDraft = null;
+  saveOrderFormState();
 }
 
 function rememberDraftCatalogInput(productCode, values = {}) {
@@ -331,6 +411,9 @@ async function loadCatalog(page = 1, query = "") {
 
     const data = await response.json();
     allCatalog = Array.isArray(data.items) ? data.items : [];
+    if (importedOrderDraft) {
+      applyImportedOrderDraft(importedOrderDraft);
+    }
 
     updateCodesDatalist(allCatalog);
     applyCatalogView(page, query);
