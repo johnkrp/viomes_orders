@@ -167,6 +167,12 @@ class FakeCursor:
                 row["source_file"] = params[0]
                 self.rowcount = 1
             return
+        if normalized.startswith("DELETE FROM imported_sales_lines WHERE id IN ("):
+            row_ids = {int(value) for value in params}
+            before = len(self.imported_rows)
+            self.imported_rows = [row for row in self.imported_rows if row["id"] not in row_ids]
+            self.rowcount = before - len(self.imported_rows)
+            return
         if normalized.startswith("INSERT INTO imported_sales_lines"):
             self.lastrowid += 1
             business_key = (
@@ -174,9 +180,17 @@ class FakeCursor:
                 params[4],
                 params[5],
                 params[6],
+                params[7],
+                params[8],
+                params[12],
                 params[16],
+                params[17],
                 params[18],
+                params[19],
+                params[20],
+                params[21],
                 params[22],
+                params[23],
                 params[9],
                 params[10],
                 params[11],
@@ -333,7 +347,36 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(len(cursor.imported_rows), 1)
         self.assertEqual(cursor.imported_rows[0]["source_file"], updated_file.name)
 
-    def test_import_sales_lines_rejects_ambiguous_business_key_match(self):
+    def test_import_sales_lines_inserts_distinct_variant_with_same_narrow_key(self):
+        cursor = FakeCursor()
+        existing_row = sample_sales_row()
+        variant_row = sample_sales_row()
+        net_value_key = next(key for key, value in variant_row.items() if value == "125,00")
+        variant_row[net_value_key] = "110,00"
+        existing_file = create_temp_sales_file()
+        variant_file = create_temp_sales_file()
+        try:
+            with patch("import_entersoft.csv.DictReader", return_value=[existing_row]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                import_sales_lines(cursor, [existing_file], "incremental")
+            with patch("import_entersoft.csv.DictReader", return_value=[variant_row]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                stats = import_sales_lines(cursor, [variant_file], "incremental")
+        finally:
+            existing_file.unlink(missing_ok=True)
+            variant_file.unlink(missing_ok=True)
+
+        self.assertEqual(stats.rows_in, 1)
+        self.assertEqual(stats.rows_upserted, 1)
+        self.assertEqual(stats.rows_replaced, 0)
+        self.assertEqual(stats.rows_skipped_duplicate, 0)
+        self.assertEqual(stats.rows_skipped_ambiguous, 0)
+        self.assertEqual(stats.rows_rejected, 0)
+        self.assertEqual(len(cursor.imported_rows), 2)
+
+    def test_import_sales_lines_replaces_ambiguous_business_key_match_with_incoming_row(self):
         cursor = FakeCursor()
         row = sample_sales_row()
         business_key = (
@@ -341,9 +384,17 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
             "INV-1",
             "TI",
             "P001",
+            "Product 1",
+            "PCS",
+            125.0,
             "C001",
+            "Alpha Store",
             "D1",
+            "Main Store",
+            "A1",
+            "Account",
             "B1",
+            "Branch (71408)",
             10.0,
             10.0,
             12.5,
@@ -362,9 +413,12 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
             sales_file.unlink(missing_ok=True)
 
         self.assertEqual(stats.rows_in, 1)
-        self.assertEqual(stats.rows_upserted, 0)
-        self.assertEqual(stats.rows_skipped_ambiguous, 1)
-        self.assertEqual(stats.rows_rejected, 1)
+        self.assertEqual(stats.rows_upserted, 1)
+        self.assertEqual(stats.rows_replaced, 2)
+        self.assertEqual(stats.rows_skipped_ambiguous, 0)
+        self.assertEqual(stats.rows_rejected, 0)
+        self.assertEqual(len(cursor.imported_rows), 1)
+        self.assertEqual(cursor.imported_rows[0]["source_file"], sales_file.name)
 
     def test_import_sales_lines_full_refresh_clears_previous_imported_rows(self):
         cursor = FakeCursor()

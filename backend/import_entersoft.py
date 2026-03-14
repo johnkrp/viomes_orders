@@ -295,7 +295,28 @@ def execute_step(cur, label: str, sql: str, params=None) -> None:
         raise
 
 
-def find_matching_sales_line_ids(cur, *, order_date, document_no, document_type, item_code, customer_code, delivery_code, branch_code, qty, qty_base, unit_price):
+def find_matching_sales_line_ids(
+    cur,
+    *,
+    order_date,
+    document_no,
+    document_type,
+    item_code,
+    item_description,
+    unit_code,
+    qty,
+    qty_base,
+    unit_price,
+    net_value,
+    customer_code,
+    customer_name,
+    delivery_code,
+    delivery_description,
+    account_code,
+    account_description,
+    branch_code,
+    branch_description,
+):
     execute_step(
         cur,
         "lookup imported_sales_lines business-key matches",
@@ -306,9 +327,17 @@ def find_matching_sales_line_ids(cur, *, order_date, document_no, document_type,
           AND document_no = %s
           AND document_type = %s
           AND item_code = %s
+          AND item_description = %s
+          AND unit_code = %s
+          AND net_value = %s
           AND customer_code = %s
+          AND customer_name = %s
           AND delivery_code = %s
+          AND delivery_description = %s
+          AND account_code = %s
+          AND account_description = %s
           AND branch_code = %s
+          AND branch_description = %s
           AND qty = %s
           AND qty_base = %s
           AND unit_price = %s
@@ -319,9 +348,17 @@ def find_matching_sales_line_ids(cur, *, order_date, document_no, document_type,
             document_no,
             document_type,
             item_code,
+            item_description,
+            unit_code,
+            net_value,
             customer_code,
+            customer_name,
             delivery_code,
+            delivery_description,
+            account_code,
+            account_description,
             branch_code,
+            branch_description,
             qty,
             qty_base,
             unit_price,
@@ -398,6 +435,19 @@ def replace_sales_line_by_id(
             row_id,
         ),
     )
+
+
+def delete_sales_lines_by_ids(cur, row_ids):
+    if not row_ids:
+        return 0
+    placeholders = ", ".join(["%s"] * len(row_ids))
+    execute_step(
+        cur,
+        "delete colliding imported_sales_lines rows",
+        f"DELETE FROM imported_sales_lines WHERE id IN ({placeholders})",
+        tuple(row_ids),
+    )
+    return cur.rowcount or 0
 
 
 def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success", error_text: Optional[str] = None) -> None:
@@ -703,24 +753,32 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                         document_no=document_no,
                         document_type=document_type,
                         item_code=item_code,
+                        item_description=item_description,
+                        unit_code=unit_code,
+                        net_value=net_value,
                         customer_code=customer_code,
+                        customer_name=customer_name,
                         delivery_code=delivery_code,
+                        delivery_description=delivery_description,
+                        account_code=account_code,
+                        account_description=account_description,
                         branch_code=branch_code,
+                        branch_description=branch_description,
                         qty=qty,
                         qty_base=qty_base,
                         unit_price=unit_price,
                     )
 
                     if len(matching_ids) > 1:
-                        stats.rows_skipped_ambiguous += 1
-                        stats.rows_rejected += 1
+                        deleted_rows = delete_sales_lines_by_ids(cur, matching_ids)
+                        stats.rows_replaced += deleted_rows
                         print(
-                            "[import] sales_lines: ambiguous business-key match skipped "
+                            "[import] sales_lines: resolved business-key collision in favor of incoming row "
                             f"(order_date={order_date}, document_no={document_no}, document_type={document_type}, "
-                            f"item_code={item_code}, customer_code={customer_code}, matches={len(matching_ids)})",
+                            f"item_code={item_code}, customer_code={customer_code}, deleted_old_rows={deleted_rows})",
                             flush=True,
                         )
-                        continue
+                        matching_ids = []
 
                     if len(matching_ids) == 1:
                         replace_sales_line_by_id(
