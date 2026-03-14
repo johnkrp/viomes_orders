@@ -148,8 +148,12 @@ class FakeCursor:
             self.rowcount = 0
             return
         if "SELECT id FROM imported_sales_lines" in normalized:
-            business_key = tuple(params)
-            matches = [row for row in self.imported_rows if row["business_key"] == business_key]
+            if "WHERE source_file = %s" in normalized:
+                unique_key = tuple(params)
+                matches = [row for row in self.imported_rows if row["unique_key"] == unique_key]
+            else:
+                business_key = tuple(params)
+                matches = [row for row in self.imported_rows if row["business_key"] == business_key]
             self._fetchall_result = [(row["id"],) for row in matches]
             self.rowcount = len(self._fetchall_result)
             return
@@ -212,10 +216,20 @@ class FakeCursor:
                 params[25],
                 params[26],
             )
+            unique_key = (
+                params[0],
+                params[4],
+                params[6],
+                params[16],
+                params[18],
+                params[12],
+                params[9],
+            )
             self.imported_rows.append(
                 {
                     "id": self.lastrowid,
                     "business_key": business_key,
+                    "unique_key": unique_key,
                     "mutable_values": mutable_values,
                     "source_file": params[0],
                 }
@@ -375,6 +389,35 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(stats.rows_skipped_ambiguous, 0)
         self.assertEqual(stats.rows_rejected, 0)
         self.assertEqual(len(cursor.imported_rows), 2)
+
+    def test_import_sales_lines_replaces_same_source_unique_key_collision_with_incoming_row(self):
+        cursor = FakeCursor()
+        existing_row = sample_sales_row()
+        variant_row = sample_sales_row()
+        for key, value in list(variant_row.items()):
+            if value == "TI":
+                variant_row[key] = "TD"
+                break
+        existing_file = create_temp_sales_file()
+        try:
+            with patch("import_entersoft.csv.DictReader", return_value=[existing_row]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                import_sales_lines(cursor, [existing_file], "incremental")
+            with patch("import_entersoft.csv.DictReader", return_value=[variant_row]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                stats = import_sales_lines(cursor, [existing_file], "incremental")
+        finally:
+            existing_file.unlink(missing_ok=True)
+
+        self.assertEqual(stats.rows_in, 1)
+        self.assertEqual(stats.rows_upserted, 1)
+        self.assertEqual(stats.rows_replaced, 1)
+        self.assertEqual(stats.rows_skipped_duplicate, 0)
+        self.assertEqual(stats.rows_skipped_ambiguous, 0)
+        self.assertEqual(stats.rows_rejected, 0)
+        self.assertEqual(len(cursor.imported_rows), 1)
 
     def test_import_sales_lines_replaces_ambiguous_business_key_match_with_incoming_row(self):
         cursor = FakeCursor()

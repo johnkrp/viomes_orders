@@ -374,6 +374,42 @@ def find_matching_sales_line_ids(
     return [row_id for row_id in ids if row_id is not None]
 
 
+def find_unique_sales_line_ids(cur, *, source_file, document_no, item_code, customer_code, delivery_code, net_value, qty):
+    execute_step(
+        cur,
+        "lookup imported_sales_lines unique-key matches",
+        """
+        SELECT id
+        FROM imported_sales_lines
+        WHERE source_file = %s
+          AND document_no = %s
+          AND item_code = %s
+          AND customer_code = %s
+          AND delivery_code = %s
+          AND net_value = %s
+          AND qty = %s
+        ORDER BY id ASC
+        """,
+        (
+            source_file,
+            document_no,
+            item_code,
+            customer_code,
+            delivery_code,
+            net_value,
+            qty,
+        ),
+    )
+    rows = cur.fetchall()
+    ids = []
+    for row in rows:
+        if isinstance(row, dict):
+            ids.append(row.get("id"))
+        else:
+            ids.append(row[0])
+    return [row_id for row_id in ids if row_id is not None]
+
+
 def replace_sales_line_by_id(
     cur,
     *,
@@ -806,6 +842,25 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
                         else:
                             stats.rows_skipped_duplicate += 1
                     else:
+                        unique_key_ids = find_unique_sales_line_ids(
+                            cur,
+                            source_file=sales_file.name,
+                            document_no=document_no,
+                            item_code=item_code,
+                            customer_code=customer_code,
+                            delivery_code=delivery_code,
+                            net_value=net_value,
+                            qty=qty,
+                        )
+                        if unique_key_ids:
+                            deleted_rows = delete_sales_lines_by_ids(cur, unique_key_ids)
+                            stats.rows_replaced += deleted_rows
+                            print(
+                                "[import] sales_lines: resolved unique-key collision in favor of incoming row "
+                                f"(source_file={sales_file.name}, document_no={document_no}, "
+                                f"item_code={item_code}, customer_code={customer_code}, deleted_old_rows={deleted_rows})",
+                                flush=True,
+                            )
                         execute_step(
                             cur,
                             "insert imported_sales_lines row",
