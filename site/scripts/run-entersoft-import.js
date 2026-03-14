@@ -83,6 +83,8 @@ const effectiveEnv = {
   MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
   MYSQL_PASSWORD: process.env.MYSQL_PASSWORD,
   ENTERSOFT_IMPORT_MODE: requestedMode,
+  ENTERSOFT_REPLACE_SALES_YEAR:
+    cli["replace-sales-year"] || process.env.ENTERSOFT_REPLACE_SALES_YEAR,
   ENTERSOFT_SALES_FILES: cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
   ENTERSOFT_DAILY_INFO_FILE: cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
   ENTERSOFT_LEDGER_FILE: cli["ledger-file"] || process.env.ENTERSOFT_LEDGER_FILE,

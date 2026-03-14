@@ -23,7 +23,7 @@ DEFAULT_SALES_FILES = [
 ]
 PROGRESS_EVERY_ROWS = 5000
 LOCK_WAIT_TIMEOUT_SECONDS = 5
-VALID_IMPORT_MODES = {"incremental", "full_refresh"}
+VALID_IMPORT_MODES = {"incremental", "full_refresh", "replace_sales_year"}
 IMPORT_SCHEMA_VERSION = "import-ledger-v2"
 RAW_FACT_TABLE = "imported_sales_lines"
 PROJECTION_TABLES = [
@@ -165,7 +165,7 @@ def describe_source_files(sales_files) -> Tuple[str, str]:
     )
 
 
-def build_import_metadata_json(import_mode: str) -> str:
+def build_import_metadata_json(import_mode: str, replace_sales_year: Optional[int] = None) -> str:
     return json.dumps(
         {
             "raw_fact_table": RAW_FACT_TABLE,
@@ -174,6 +174,7 @@ def build_import_metadata_json(import_mode: str) -> str:
             "projection_strategy": "truncate_and_recompute",
             "legacy_dormant_tables": LEGACY_DORMANT_TABLES,
             "import_mode": import_mode,
+            "replace_sales_year": replace_sales_year,
         },
         ensure_ascii=True,
         separators=(",", ":"),
@@ -233,6 +234,23 @@ def resolve_import_mode() -> str:
             f"Allowed values: {', '.join(sorted(VALID_IMPORT_MODES))}"
         )
     return mode
+
+
+def resolve_replace_sales_year(import_mode: str) -> Optional[int]:
+    value = str(os.getenv("ENTERSOFT_REPLACE_SALES_YEAR", "")).strip()
+    if not value:
+        if import_mode == "replace_sales_year":
+            raise RuntimeError(
+                "ENTERSOFT_REPLACE_SALES_YEAR is required when ENTERSOFT_IMPORT_MODE=replace_sales_year."
+            )
+        return None
+    try:
+        year = int(value)
+    except ValueError as exc:
+        raise RuntimeError(f"Invalid ENTERSOFT_REPLACE_SALES_YEAR='{value}'. Expected a 4-digit year.") from exc
+    if year < 2000 or year > 2100:
+        raise RuntimeError(f"Invalid ENTERSOFT_REPLACE_SALES_YEAR='{value}'. Expected a year between 2000 and 2100.")
+    return year
 
 
 def begin_import(cur, stats: ImportStats) -> int:
@@ -724,7 +742,7 @@ def rebuild_sales_aggregates(cur) -> None:
     )
 
 
-def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
+def import_sales_lines(cur, sales_files, import_mode: str, replace_sales_year: Optional[int] = None) -> ImportStats:
     source_files_json, source_checksum = describe_source_files(sales_files)
     stats = ImportStats(
         dataset="sales_lines",
@@ -733,13 +751,20 @@ def import_sales_lines(cur, sales_files, import_mode: str) -> ImportStats:
         source_files_json=source_files_json,
         source_checksum=source_checksum,
         trigger_source=resolve_trigger_source(),
-        metadata_json=build_import_metadata_json(import_mode),
+        metadata_json=build_import_metadata_json(import_mode, replace_sales_year),
     )
     print(f"[import] sales_lines: starting ({stats.file_name})", flush=True)
     run_id = begin_import(cur, stats)
     try:
         if import_mode == "full_refresh":
             execute_step(cur, "truncate imported_sales_lines", "DELETE FROM imported_sales_lines")
+        elif import_mode == "replace_sales_year":
+            execute_step(
+                cur,
+                f"delete imported_sales_lines for year {replace_sales_year}",
+                "DELETE FROM imported_sales_lines WHERE order_year = %s",
+                (replace_sales_year,),
+            )
 
         for sales_file in sales_files:
             print(f"[import] sales_lines: reading {sales_file.name}", flush=True)
@@ -1234,7 +1259,10 @@ def main() -> None:
     configure_session(cur)
     print(f"[import] session lock wait timeout set to {LOCK_WAIT_TIMEOUT_SECONDS}s", flush=True)
     import_mode = resolve_import_mode()
+    replace_sales_year = resolve_replace_sales_year(import_mode)
     print(f"[import] mode: {import_mode}", flush=True)
+    if replace_sales_year is not None:
+        print(f"[import] replace sales year: {replace_sales_year}", flush=True)
     ledger_file = resolve_ledger_file()
     if ledger_file and not ledger_file.exists():
         raise FileNotFoundError(f"Ledger snapshot file not found: {ledger_file}")
@@ -1257,7 +1285,7 @@ def main() -> None:
 
     try:
         if sales_files:
-            sales_stats = import_sales_lines(cur, sales_files, import_mode)
+            sales_stats = import_sales_lines(cur, sales_files, import_mode, replace_sales_year)
         else:
             sales_stats = None
         if ledger_file:

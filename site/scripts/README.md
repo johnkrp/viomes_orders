@@ -43,6 +43,7 @@ Operational scripts used by Plesk/local maintenance.
 
 - default: `incremental`
 - optional: `full_refresh`
+- optional: `replace_sales_year` with `--replace-sales-year=YYYY`
 
 In incremental mode, history is preserved in `imported_sales_lines`.
 
@@ -80,6 +81,16 @@ npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mys
 ```
 
 Use `full_refresh` instead when you want to rebuild from canonical yearly files.
+
+Use `replace_sales_year` when a new yearly file should replace only one sales year while preserving older years already imported.
+
+Example: replace existing 2026 sales rows, keep 2024/2025, then import the fresh 2026 yearly file:
+
+```bash
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
+export MYSQL_PASSWORD='YOUR_PASSWORD'
+npm run import:entersoft -- --mode=replace_sales_year --replace-sales-year=2026 --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+```
 
 `npm run reload:sales -- ...` now does this automatically and records the run as `full_refresh` in `import_runs`.
 

@@ -15,6 +15,7 @@ from import_entersoft import (
     parse_optional_datetime_date,
     parse_decimal,
     resolve_import_mode,
+    resolve_replace_sales_year,
 )
 
 TEST_TMP_DIR = Path(__file__).resolve().parents[2] / ".tmp"
@@ -154,6 +155,14 @@ class FakeCursor:
             self.imported_rows.clear()
             self.rowcount = 0
             return
+        if normalized == "DELETE FROM imported_sales_lines WHERE order_year = %s":
+            target_year = int(params[0])
+            before = len(self.imported_rows)
+            self.imported_rows = [
+                row for row in self.imported_rows if row.get("order_year") != target_year
+            ]
+            self.rowcount = before - len(self.imported_rows)
+            return
         if normalized == "DELETE FROM imported_customer_ledgers":
             self.imported_ledgers.clear()
             self.rowcount = 0
@@ -243,6 +252,7 @@ class FakeCursor:
             self.imported_rows.append(
                 {
                     "id": self.lastrowid,
+                    "order_year": params[2],
                     "business_key": business_key,
                     "unique_key": unique_key,
                     "mutable_values": mutable_values,
@@ -322,6 +332,22 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         with patch.dict(os.environ, {"ENTERSOFT_IMPORT_MODE": "bad-mode"}, clear=False):
             with self.assertRaises(RuntimeError):
                 resolve_import_mode()
+
+    def test_resolve_replace_sales_year_defaults_to_none(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("ENTERSOFT_REPLACE_SALES_YEAR", None)
+            self.assertIsNone(resolve_replace_sales_year("incremental"))
+
+    def test_resolve_replace_sales_year_requires_value_for_replace_mode(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("ENTERSOFT_REPLACE_SALES_YEAR", None)
+            with self.assertRaises(RuntimeError):
+                resolve_replace_sales_year("replace_sales_year")
+
+    def test_resolve_replace_sales_year_rejects_invalid_value(self):
+        with patch.dict(os.environ, {"ENTERSOFT_REPLACE_SALES_YEAR": "abc"}, clear=False):
+            with self.assertRaises(RuntimeError):
+                resolve_replace_sales_year("replace_sales_year")
 
     def test_import_sales_lines_skips_duplicate_logical_rows(self):
         cursor = FakeCursor()
@@ -480,7 +506,16 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
 
     def test_import_sales_lines_full_refresh_clears_previous_imported_rows(self):
         cursor = FakeCursor()
-        cursor.imported_rows.append({"id": 999, "business_key": ("stale",), "mutable_values": tuple(), "source_file": "stale.csv"})
+        cursor.imported_rows.append(
+            {
+                "id": 999,
+                "order_year": 2025,
+                "business_key": ("stale",),
+                "unique_key": ("stale",),
+                "mutable_values": tuple(),
+                "source_file": "stale.csv",
+            }
+        )
         sales_file = create_temp_sales_file()
         try:
             with patch("import_entersoft.csv.DictReader", return_value=[sample_sales_row()]), \
@@ -493,6 +528,44 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(stats.rows_in, 1)
         self.assertEqual(stats.rows_upserted, 1)
         self.assertEqual(len(cursor.imported_rows), 1)
+
+    def test_import_sales_lines_replace_sales_year_clears_only_target_year(self):
+        cursor = FakeCursor()
+        cursor.imported_rows.extend(
+            [
+                {
+                    "id": 999,
+                    "order_year": 2025,
+                    "business_key": ("stale-2025",),
+                    "unique_key": ("stale-2025",),
+                    "mutable_values": tuple(),
+                    "source_file": "2025.CSV",
+                },
+                {
+                    "id": 1000,
+                    "order_year": 2026,
+                    "business_key": ("stale-2026",),
+                    "unique_key": ("stale-2026",),
+                    "mutable_values": tuple(),
+                    "source_file": "2026.CSV",
+                },
+            ]
+        )
+        sales_file = create_temp_sales_file()
+        try:
+            with patch("import_entersoft.csv.DictReader", return_value=[sample_sales_row()]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                stats = import_sales_lines(cursor, [sales_file], "replace_sales_year", 2026)
+        finally:
+            sales_file.unlink(missing_ok=True)
+
+        self.assertEqual(stats.rows_in, 1)
+        self.assertEqual(stats.rows_upserted, 1)
+        self.assertEqual(len(cursor.imported_rows), 2)
+        remaining_years = sorted(row["order_year"] for row in cursor.imported_rows)
+        self.assertEqual(remaining_years, [2025, 2026])
+        self.assertIn('"replace_sales_year":2026', stats.metadata_json)
 
     def test_import_sales_lines_records_rejected_rows_and_ledger_metadata(self):
         cursor = FakeCursor()

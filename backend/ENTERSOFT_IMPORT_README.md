@@ -8,6 +8,7 @@ The importer is now sales-file-only.
 - Customers are rebuilt from imported sales lines.
 - Target runtime DB is MySQL/MariaDB.
 - Default mode is incremental (`ENTERSOFT_IMPORT_MODE=incremental`).
+- Optional year replacement mode is `replace_sales_year` and requires `ENTERSOFT_REPLACE_SALES_YEAR`.
 
 ## Input Files
 
@@ -97,6 +98,13 @@ Force full refresh mode (clears `imported_sales_lines` first):
 ```powershell
 $env:MYSQL_PASSWORD="YOUR_PASS"
 npm run import:entersoft -- --mode=full_refresh --sales-files=/abs/path/2025.CSV,/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
+```
+
+Replace one sales year while preserving older imported years:
+
+```powershell
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run import:entersoft -- --mode=replace_sales_year --replace-sales-year=2026 --sales-files=/abs/path/2026.CSV --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
 Cleanup historical duplicates already stored in `imported_sales_lines`:
