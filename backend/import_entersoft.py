@@ -996,27 +996,58 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
                     get_row_value(row, "Ημ/νία", "Ξ—ΞΌ/Ξ½Ξ―Ξ±")
                 ) if str(get_row_value(row, "Ημ/νία", "Ξ—ΞΌ/Ξ½Ξ―Ξ±")).strip() else None
                 document_no = str(
-                    get_row_value(row, "Παραστατικό", "Ξ Ξ±ΟΞ±ΟƒΟ„Ξ±Ο„ΞΉΞΊΟ")
+                    get_row_value(
+                        row,
+                        "Παραστατικό",
+                        "Παραστατικό - Δικαιολογητικό",
+                        "Ξ Ξ±ΟΞ±ΟƒΟ„Ξ±Ο„ΞΉΞΊΟ",
+                    )
                 ).strip()
                 reason = str(
-                    get_row_value(row, "Αιτιολογία", "Ξ‘ΞΉΟ„ΞΉΞΏΞ»ΞΏΞ³Ξ―Ξ±")
+                    get_row_value(
+                        row,
+                        "Αιτιολογία",
+                        "Αιτιολογία - Δικαιολογητικό",
+                        "Ξ‘ΞΉΟ„ΞΉΞΏΞ»ΞΏΞ³Ξ―Ξ±",
+                    )
                 ).strip()
                 debit = parse_decimal(
-                    get_row_value(row, "Χρέωση", "Ξ§ΟΞ­Ο‰ΟƒΞ·")
+                    get_row_value(
+                        row,
+                        "Χρέωση",
+                        "Χρέωση - Αξίες",
+                        "Ξ§ΟΞ­Ο‰ΟƒΞ·",
+                    )
                 )
                 credit = parse_decimal(
-                    get_row_value(row, "Πίστωση", "Ξ Ξ―ΟƒΟ„Ο‰ΟƒΞ·")
+                    get_row_value(
+                        row,
+                        "Πίστωση",
+                        "Πίστωση - Αξίες",
+                        "Ξ Ξ―ΟƒΟ„Ο‰ΟƒΞ·",
+                    )
                 )
                 progressive_debit = parse_decimal(
-                    get_row_value(row, "Προοδ. Χρέωση", "Ξ ΟΞΏΞΏΞ΄. Ξ§ΟΞ­Ο‰ΟƒΞ·")
+                    get_row_value(
+                        row,
+                        "Προοδ. Χρέωση",
+                        "Προοδ. Χρέωση - Σύνολα",
+                        "Ξ ΟΞΏΞΏΞ΄. Ξ§ΟΞ­Ο‰ΟƒΞ·",
+                    )
                 )
                 progressive_credit = parse_decimal(
-                    get_row_value(row, "Προοδ. Πίστωση", "Ξ ΟΞΏΞΏΞ΄. Ξ Ξ―ΟƒΟ„Ο‰ΟƒΞ·")
+                    get_row_value(
+                        row,
+                        "Προοδ. Πίστωση",
+                        "Προοδ. Πίστωση - Σύνολα",
+                        "Ξ ΟΞΏΞΏΞ΄. Ξ Ξ―ΟƒΟ„Ο‰ΟƒΞ·",
+                    )
                 )
                 ledger_balance = parse_decimal(
                     get_row_value(
                         row,
                         "Υπόλοιπο",
+                        "Υπόλοιπο - Σύνολα",
                         "Ξ¥Ο€ΟΞ»ΞΏΞΉΟ€ΞΏ",
                         "Λογιστικό υπόλοιπο",
                         "Ξ›ΞΏΞ³ΞΉΟƒΟ„ΞΉΞΊΟ Ο…Ο€ΟΞ»ΞΏΞΉΟ€ΞΏ",

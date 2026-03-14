@@ -97,6 +97,21 @@ def sample_ledger_latest_row():
     }
 
 
+def sample_ledger_variant_header_row():
+    return {
+        "Συν/νος": "Alpha Store",
+        "Συναλλασσόμενος": "C001",
+        "Ημ/νία": "12/03/2026",
+        "Παραστατικό - Δικαιολογητικό": "INV-1",
+        "Αιτιολογία - Δικαιολογητικό": "Latest movement",
+        "Χρέωση - Αξίες": "5,00",
+        "Πίστωση - Αξίες": "0,00",
+        "Προοδ. Χρέωση - Σύνολα": "50,00",
+        "Προοδ. Πίστωση - Σύνολα": "10,00",
+        "Υπόλοιπο - Σύνολα": "40,00",
+    }
+
+
 def invalid_ledger_row():
     return {
         "Συναλλασσόμενος": "",
@@ -538,6 +553,27 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(cursor.imported_ledgers["C001"]["opening_balance"], 10.0)
         self.assertEqual(cursor.imported_ledgers["C001"]["email"], None)
         self.assertIn('"snapshot_table":"imported_customer_ledgers"', stats.metadata_json)
+
+    def test_import_customer_ledgers_accepts_variant_receivables_headers(self):
+        cursor = FakeCursor()
+        ledger_file = create_temp_ledger_file()
+        try:
+            with patch(
+                "import_entersoft.csv.DictReader",
+                return_value=[sample_ledger_variant_header_row()],
+            ):
+                stats = import_customer_ledgers(cursor, ledger_file)
+        finally:
+            ledger_file.unlink(missing_ok=True)
+
+        self.assertEqual(stats.rows_in, 1)
+        self.assertEqual(stats.rows_upserted, 1)
+        self.assertEqual(stats.rows_rejected, 0)
+        self.assertEqual(cursor.imported_ledgers["C001"]["ledger_balance"], 40.0)
+        self.assertEqual(cursor.imported_ledgers["C001"]["debit"], 50.0)
+        self.assertEqual(cursor.imported_ledgers["C001"]["credit"], 10.0)
+        self.assertEqual(cursor.imported_ledger_lines[0]["document_no"], "INV-1")
+        self.assertEqual(cursor.imported_ledger_lines[0]["reason"], "Latest movement")
         self.assertIn('"lines_table":"imported_customer_ledger_lines"', stats.metadata_json)
         self.assertIn('"balance_metric":"ledger_balance"', stats.metadata_json)
         self.assertIsNotNone(cursor.import_run_insert_params)
