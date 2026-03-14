@@ -100,9 +100,15 @@ export const IMPORTED_ORDER_COLLISIONS_SQL = `
 
 export const MISSING_MIRRORED_CUSTOMERS_SQL = `
   SELECT COUNT(*) AS missing_mirrors
-  FROM imported_customers ic
+  FROM (
+    SELECT customer_code
+    FROM imported_customers
+    UNION
+    SELECT customer_code
+    FROM imported_customer_ledgers
+  ) imported_customer_sources
   LEFT JOIN customers c
-    ON c.code = ic.customer_code
+    ON c.code = imported_customer_sources.customer_code
    AND c.source = 'entersoft_import'
   WHERE c.code IS NULL
 `;
@@ -110,10 +116,16 @@ export const MISSING_MIRRORED_CUSTOMERS_SQL = `
 export const ORPHAN_MIRRORED_CUSTOMERS_SQL = `
   SELECT COUNT(*) AS orphan_mirrors
   FROM customers c
-  LEFT JOIN imported_customers ic
-    ON ic.customer_code = c.code
+  LEFT JOIN (
+    SELECT customer_code
+    FROM imported_customers
+    UNION
+    SELECT customer_code
+    FROM imported_customer_ledgers
+  ) imported_customer_sources
+    ON imported_customer_sources.customer_code = c.code
   WHERE c.source = 'entersoft_import'
-    AND ic.customer_code IS NULL
+    AND imported_customer_sources.customer_code IS NULL
 `;
 
 export const IMPORTED_ORDER_CARDINALITY_SQL = `

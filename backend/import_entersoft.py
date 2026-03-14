@@ -486,6 +486,51 @@ def delete_sales_lines_by_ids(cur, row_ids):
     return cur.rowcount or 0
 
 
+def sync_mirrored_imported_customers(cur) -> None:
+    execute_step(
+        cur,
+        "delete stale mirrored customers",
+        """
+        DELETE FROM customers
+        WHERE source = 'entersoft_import'
+          AND code NOT IN (
+            SELECT customer_code FROM imported_customers
+            UNION
+            SELECT customer_code FROM imported_customer_ledgers
+          )
+        """,
+    )
+    execute_step(
+        cur,
+        "mirror imported sales customers",
+        """
+        INSERT INTO customers(code, name, email, source)
+        SELECT customer_code, customer_name, NULL, 'entersoft_import'
+        FROM imported_customers
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name),
+          email = COALESCE(customers.email, VALUES(email)),
+          source = VALUES(source)
+        """,
+    )
+    execute_step(
+        cur,
+        "mirror imported ledger customers",
+        """
+        INSERT INTO customers(code, name, email, source)
+        SELECT customer_code, customer_name, email, 'entersoft_import'
+        FROM imported_customer_ledgers
+        ON DUPLICATE KEY UPDATE
+          name = VALUES(name),
+          email = CASE
+            WHEN VALUES(email) IS NOT NULL AND VALUES(email) <> '' THEN VALUES(email)
+            ELSE customers.email
+          END,
+          source = VALUES(source)
+        """,
+    )
+
+
 def finish_import(cur, run_id: int, stats: ImportStats, status: str = "success", error_text: Optional[str] = None) -> None:
     finished_at = utc_now_iso()
     cur.execute(
@@ -594,30 +639,7 @@ def rebuild_customers_from_sales(cur) -> None:
         GROUP BY customer_code
         """,
     )
-    execute_step(
-        cur,
-        "delete stale mirrored customers",
-        """
-        DELETE FROM customers
-        WHERE source = 'entersoft_import'
-          AND code NOT IN (
-            SELECT customer_code FROM imported_customers
-          )
-        """,
-    )
-    execute_step(
-        cur,
-        "mirror imported customers",
-        """
-        INSERT INTO customers(code, name, email, source)
-        SELECT customer_code, customer_name, NULL, 'entersoft_import'
-        FROM imported_customers
-        ON DUPLICATE KEY UPDATE
-          name = VALUES(name),
-          email = COALESCE(customers.email, VALUES(email)),
-          source = VALUES(source)
-        """,
-    )
+    sync_mirrored_imported_customers(cur)
 
 
 def rebuild_sales_aggregates(cur) -> None:
@@ -1191,21 +1213,7 @@ def import_customer_ledgers(cur, ledger_file: Path) -> ImportStats:
             )
             stats.rows_upserted += cur.rowcount
 
-        execute_step(
-            cur,
-            "sync customer emails from imported_customer_ledgers",
-            """
-            INSERT INTO customers(code, name, email, source)
-            SELECT customer_code, customer_name, email, 'entersoft_import'
-            FROM imported_customer_ledgers
-            ON DUPLICATE KEY UPDATE
-              name = VALUES(name),
-              email = CASE
-                WHEN VALUES(email) IS NOT NULL AND VALUES(email) <> '' THEN VALUES(email)
-                ELSE customers.email
-              END
-            """,
-        )
+        sync_mirrored_imported_customers(cur)
 
         finish_import(cur, run_id, stats)
         print(
