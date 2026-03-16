@@ -450,22 +450,21 @@
                   <table class="admin-table admin-pre-approval-orders-table">
                     <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Ημερομηνία παραγγελίας</th>
-                        <th>Ημερομηνία καταχώρησης</th>
-                        <th class="admin-table-number">Γραμμές</th>
-                        <th class="admin-table-number">Τεμάχια</th>
-                        <th class="admin-table-number">Αξία</th>
-                        <th class="admin-table-number">Μέση έκπτωση</th>
+                        <th><button type="button" class="admin-sort-btn" data-table-sort="pre-approval" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
+                        <th><button type="button" class="admin-sort-btn" data-table-sort="pre-approval" data-sort-key="created_at">Ημερομηνία καταχώρησης <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="average_discount_pct">Μέση έκπτωση <span class="admin-sort-indicator">↕</span></button></th>
                         <th>Ενέργεια</th>
                       </tr>
                     </thead>
-                    <tbody id="preApprovalOrdersBody">
-                      <tr>
-                        <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <tbody id="preApprovalOrdersBody">
+                    <tr>
+                      <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                    </tr>
+                  </tbody>
+                </table>
                 </div>
                 <div class="admin-pagination" id="preApprovalOrdersPagination" hidden>
                   <button id="preApprovalOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
@@ -499,22 +498,21 @@
                   <table class="admin-table admin-open-orders-table">
                     <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Ημερομηνία παραγγελίας</th>
-                        <th>Ημερομηνία καταχώρησης</th>
-                        <th class="admin-table-number">Γραμμές</th>
-                        <th class="admin-table-number">Τεμάχια</th>
-                        <th class="admin-table-number">Αξία</th>
-                        <th class="admin-table-number">Μέση έκπτωση</th>
+                        <th><button type="button" class="admin-sort-btn" data-table-sort="open" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
+                        <th><button type="button" class="admin-sort-btn" data-table-sort="open" data-sort-key="created_at">Ημερομηνία καταχώρησης <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
+                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="average_discount_pct">Μέση έκπτωση <span class="admin-sort-indicator">↕</span></button></th>
                         <th>Ενέργεια</th>
                       </tr>
                     </thead>
-                    <tbody id="openOrdersBody">
-                      <tr>
-                        <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <tbody id="openOrdersBody">
+                    <tr>
+                      <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                    </tr>
+                  </tbody>
+                </table>
                 </div>
                 <div class="admin-pagination" id="openOrdersPagination" hidden>
                   <button id="openOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>

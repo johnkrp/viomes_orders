@@ -1661,6 +1661,30 @@ button.secondary:hover,
   background: #edf2f8;
 }
 
+.admin-sort-btn {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+
+.admin-sort-btn-number {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.admin-sort-indicator {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
 .admin-product-sales-table {
   table-layout: auto;
 }

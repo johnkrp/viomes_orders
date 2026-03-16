@@ -63,6 +63,8 @@ let currentReceivablesPage = 1;
 let currentRecentOrdersPage = 1;
 let currentOpenOrdersPage = 1;
 let currentPreApprovalOrdersPage = 1;
+let openOrdersSort = { key: "created_at", direction: "desc" };
+let preApprovalOrdersSort = { key: "created_at", direction: "desc" };
 let currentProductSalesFilters = { code: "", description: "" };
 let currentCustomerCode = null;
 let currentBranchCode = "";
@@ -556,6 +558,34 @@ function formatDisplayOrderId(orderId) {
   return parts.length ? parts[parts.length - 1] : raw;
 }
 
+function compareSortableValues(a, b, { direction = "asc", numeric = false, date = false } = {}) {
+  const multiplier = direction === "desc" ? -1 : 1;
+  if (date) {
+    const left = Date.parse(String(a || "")) || 0;
+    const right = Date.parse(String(b || "")) || 0;
+    return (left - right) * multiplier;
+  }
+  if (numeric) {
+    const left = Number(a || 0);
+    const right = Number(b || 0);
+    return (left - right) * multiplier;
+  }
+  return String(a || "").localeCompare(String(b || ""), "el") * multiplier;
+}
+
+function updateSortIndicators(tableId, sortState) {
+  document.querySelectorAll(`[data-table-sort="${tableId}"]`).forEach((button) => {
+    const sortKey = button.getAttribute("data-sort-key");
+    const indicator = button.querySelector(".admin-sort-indicator");
+    if (!indicator) return;
+    if (sortKey === sortState.key) {
+      indicator.textContent = sortState.direction === "asc" ? "↑" : "↓";
+      return;
+    }
+    indicator.textContent = "↕";
+  });
+}
+
 function setAuthenticatedUI(me) {
   const authenticated = Boolean(me?.authenticated);
   els.loginPanel.hidden = authenticated;
@@ -837,7 +867,7 @@ function resetStats() {
   if (els.openOrdersBody) {
     els.openOrdersBody.innerHTML = `
       <tr>
-        <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+        <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
       </tr>
     `;
   }
@@ -846,7 +876,7 @@ function resetStats() {
   if (els.preApprovalOrdersBody) {
     els.preApprovalOrdersBody.innerHTML = `
       <tr>
-        <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+        <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
       </tr>
     `;
   }
@@ -858,6 +888,8 @@ function resetStats() {
   currentDetailedPreApprovalOrders = [];
   currentOpenOrders = [];
   currentPreApprovalOrders = [];
+  openOrdersSort = { key: "created_at", direction: "desc" };
+  preApprovalOrdersSort = { key: "created_at", direction: "desc" };
   selectedOrderId = null;
   els.detailedOrdersList.innerHTML = `
     <article class="admin-order-card admin-order-empty">
@@ -1379,18 +1411,52 @@ function renderRecentOrdersTable() {
 }
 
 function getOpenOrdersForTable() {
+  const sortState = openOrdersSort;
   return [...currentOpenOrders].sort((a, b) => {
-    const aKey = Date.parse(String(a?.ordered_at || a?.created_at || a?.sent_at || "")) || 0;
-    const bKey = Date.parse(String(b?.ordered_at || b?.created_at || b?.sent_at || "")) || 0;
-    return bKey - aKey || String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
+    const key = sortState.key;
+    let compare = 0;
+    if (key === "created_at") {
+      compare = compareSortableValues(a?.created_at, b?.created_at, {
+        direction: sortState.direction,
+        date: true,
+      });
+    } else if (["total_lines", "total_pieces", "total_net_value", "average_discount_pct"].includes(key)) {
+      compare = compareSortableValues(a?.[key], b?.[key], {
+        direction: sortState.direction,
+        numeric: true,
+      });
+    } else {
+      compare = compareSortableValues(a?.order_id, b?.order_id, {
+        direction: sortState.direction,
+      });
+    }
+    if (compare !== 0) return compare;
+    return String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
   });
 }
 
 function getPreApprovalOrdersForTable() {
+  const sortState = preApprovalOrdersSort;
   return [...currentPreApprovalOrders].sort((a, b) => {
-    const aKey = Date.parse(String(a?.ordered_at || a?.created_at || a?.sent_at || "")) || 0;
-    const bKey = Date.parse(String(b?.ordered_at || b?.created_at || b?.sent_at || "")) || 0;
-    return bKey - aKey || String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
+    const key = sortState.key;
+    let compare = 0;
+    if (key === "created_at") {
+      compare = compareSortableValues(a?.created_at, b?.created_at, {
+        direction: sortState.direction,
+        date: true,
+      });
+    } else if (["total_lines", "total_pieces", "total_net_value", "average_discount_pct"].includes(key)) {
+      compare = compareSortableValues(a?.[key], b?.[key], {
+        direction: sortState.direction,
+        numeric: true,
+      });
+    } else {
+      compare = compareSortableValues(a?.order_id, b?.order_id, {
+        direction: sortState.direction,
+      });
+    }
+    if (compare !== 0) return compare;
+    return String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
   });
 }
 
@@ -1408,7 +1474,6 @@ function renderPreApprovalOrdersTable() {
           return `
             <tr>
               <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
-              <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
               <td>${escapeHtml(formatDate(item.created_at))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
@@ -1429,9 +1494,10 @@ function renderPreApprovalOrdersTable() {
         .join("")
     : `
         <tr>
-          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς έγκριση.</td>
+          <td colspan="7" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς έγκριση.</td>
         </tr>
       `;
+  updateSortIndicators("pre-approval", preApprovalOrdersSort);
 
   if (els.preApprovalOrdersPagination) {
     els.preApprovalOrdersPagination.hidden = !preApprovalOrders.length;
@@ -1463,7 +1529,6 @@ function renderOpenOrdersTable() {
           return `
             <tr>
               <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
-              <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
               <td>${escapeHtml(formatDate(item.created_at))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
@@ -1484,9 +1549,10 @@ function renderOpenOrdersTable() {
         .join("")
     : `
         <tr>
-          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς εκτέλεση.</td>
+          <td colspan="7" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς εκτέλεση.</td>
         </tr>
       `;
+  updateSortIndicators("open", openOrdersSort);
 
   if (els.openOrdersPagination) {
     els.openOrdersPagination.hidden = !openOrders.length;
@@ -1996,6 +2062,34 @@ els.preApprovalOrdersBody?.addEventListener("click", (event) => {
   selectedOrderId = button.getAttribute("data-order-id");
   renderSelectedOrderDetails();
   renderPreApprovalOrdersTable();
+});
+document.querySelectorAll(".admin-sort-btn[data-table-sort]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const tableId = String(button.getAttribute("data-table-sort") || "").trim();
+    const key = String(button.getAttribute("data-sort-key") || "").trim();
+    if (!tableId || !key) return;
+
+    if (tableId === "open") {
+      if (openOrdersSort.key === key) {
+        openOrdersSort.direction = openOrdersSort.direction === "asc" ? "desc" : "asc";
+      } else {
+        openOrdersSort = { key, direction: "desc" };
+      }
+      currentOpenOrdersPage = 1;
+      renderOpenOrdersTable();
+      return;
+    }
+
+    if (tableId === "pre-approval") {
+      if (preApprovalOrdersSort.key === key) {
+        preApprovalOrdersSort.direction = preApprovalOrdersSort.direction === "asc" ? "desc" : "asc";
+      } else {
+        preApprovalOrdersSort = { key, direction: "desc" };
+      }
+      currentPreApprovalOrdersPage = 1;
+      renderPreApprovalOrdersTable();
+    }
+  });
 });
 els.openRankedOrderFormBtn?.addEventListener("click", openRankedOrderForm);
 window.addEventListener("focus", () => {
