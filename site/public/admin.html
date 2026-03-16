@@ -389,7 +389,7 @@
                 </div>
               </div>
               <div class="admin-table-wrap">
-                <table class="admin-table">
+                <table class="admin-table admin-product-sales-table">
                   <thead>
                     <tr>
                       <th>Κωδικός</th>
@@ -398,6 +398,18 @@
                       <th class="admin-table-number">Τεμάχια</th>
                       <th class="admin-table-number">Παραγγελίες</th>
                       <th class="admin-table-number">Μέση τιμή μονάδας</th>
+                    </tr>
+                    <tr class="admin-table-filter-row">
+                      <th>
+                        <input id="productSalesCodeFilter" type="search" class="admin-table-filter-input" placeholder="Αναζήτηση κωδικού" />
+                      </th>
+                      <th>
+                        <input id="productSalesDescriptionFilter" type="search" class="admin-table-filter-input" placeholder="Αναζήτηση περιγραφής" />
+                      </th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody id="productSalesBody">
@@ -485,10 +497,10 @@
                   <table class="admin-table admin-top-value-table">
                     <thead>
                       <tr>
-                        <th class="admin-table-number">Τεμάχια</th>
                         <th>Κωδικός</th>
                         <th>Περιγραφή</th>
                         <th class="admin-table-number">Τζίρος</th>
+                        <th class="admin-table-number">Τεμάχια</th>
                         <th class="admin-table-number">Μέση τιμή μονάδας</th>
                       </tr>
                     </thead>

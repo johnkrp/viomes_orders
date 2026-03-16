@@ -1661,6 +1661,58 @@ button.secondary:hover,
   background: #edf2f8;
 }
 
+.admin-product-sales-table {
+  table-layout: auto;
+}
+
+.admin-product-sales-table th:nth-child(1),
+.admin-product-sales-table td:nth-child(1) {
+  width: 14%;
+}
+
+.admin-product-sales-table th:nth-child(2),
+.admin-product-sales-table td:nth-child(2) {
+  width: 24%;
+}
+
+.admin-product-sales-table th:nth-child(3),
+.admin-product-sales-table td:nth-child(3),
+.admin-product-sales-table th:nth-child(4),
+.admin-product-sales-table td:nth-child(4),
+.admin-product-sales-table th:nth-child(5),
+.admin-product-sales-table td:nth-child(5),
+.admin-product-sales-table th:nth-child(6),
+.admin-product-sales-table td:nth-child(6) {
+  width: 15.5%;
+}
+
+.admin-table-filter-row th {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  background: #f5f8fc;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.admin-table-filter-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 7px 8px;
+  border: 1px solid #cdd8e5;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.admin-table-filter-input::placeholder {
+  color: var(--muted);
+}
+
 .admin-top-qty-table,
 .admin-top-value-table,
 .admin-recent-orders-table {

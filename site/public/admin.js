@@ -47,12 +47,15 @@ const IMPORT_DATASET_LABELS = {
 
 let currentDetailedOrders = [];
 let currentProductSales = [];
+let currentTopProductsByQty = [];
+let currentTopProductsByValue = [];
 let currentSearchResults = [];
 let selectedOrderId = null;
 let currentReceivables = [];
 let currentProductSalesPage = 1;
 let currentReceivablesPage = 1;
 let currentRecentOrdersPage = 1;
+let currentProductSalesFilters = { code: "", description: "" };
 let currentCustomerCode = null;
 let currentBranchCode = "";
 let currentAvailableBranches = [];
@@ -128,6 +131,8 @@ const els = {
   salesTimeRange: document.getElementById("salesTimeRange"),
   productSalesMetric: document.getElementById("productSalesMetric"),
   productSalesMetricHeading: document.getElementById("productSalesMetricHeading"),
+  productSalesCodeFilter: document.getElementById("productSalesCodeFilter"),
+  productSalesDescriptionFilter: document.getElementById("productSalesDescriptionFilter"),
   productSalesBody: document.getElementById("productSalesBody"),
   productSalesPagination: document.getElementById("productSalesPagination"),
   productSalesPrevBtn: document.getElementById("productSalesPrevBtn"),
@@ -759,6 +764,9 @@ function resetStats() {
   resetMonthlySales();
   resetReceivables();
   resetProductSales();
+  resetProductTableFilters();
+  currentTopProductsByQty = [];
+  currentTopProductsByValue = [];
   els.topProductsQtyBody.innerHTML = `
     <tr>
       <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
@@ -992,6 +1000,35 @@ function getSortedProductSales() {
   });
 }
 
+function normalizeFilterValue(value) {
+  return String(value ?? "").trim().toLocaleLowerCase("el-GR");
+}
+
+function matchesProductTableFilters(item, filters = {}) {
+  const codeFilter = normalizeFilterValue(filters.code);
+  const descriptionFilter = normalizeFilterValue(filters.description);
+  const code = normalizeFilterValue(item?.code);
+  const description = normalizeFilterValue(item?.description);
+
+  if (codeFilter && !code.includes(codeFilter)) return false;
+  if (descriptionFilter && !description.includes(descriptionFilter)) return false;
+  return true;
+}
+
+function filterProductItems(items, filters = {}) {
+  return (Array.isArray(items) ? items : []).filter((item) => matchesProductTableFilters(item, filters));
+}
+
+function syncProductTableFilterInputs() {
+  if (els.productSalesCodeFilter) els.productSalesCodeFilter.value = currentProductSalesFilters.code;
+  if (els.productSalesDescriptionFilter) els.productSalesDescriptionFilter.value = currentProductSalesFilters.description;
+}
+
+function resetProductTableFilters() {
+  currentProductSalesFilters = { code: "", description: "" };
+  syncProductTableFilterInputs();
+}
+
 function renderMonthlySales(monthlySales) {
   const now = new Date();
   const currentYear = now.getUTCFullYear();
@@ -1117,7 +1154,7 @@ function renderReceivables(receivables) {
 function renderProductSales() {
   const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
   const secondaryMetric = metric === "pieces" ? "revenue" : "pieces";
-  const sortedItems = getSortedProductSales();
+  const sortedItems = filterProductItems(getSortedProductSales(), currentProductSalesFilters);
 
   if (els.productSalesMetricHeading) {
     els.productSalesMetricHeading.textContent = metric === "pieces" ? "Τεμάχια" : "Τζίρος";
@@ -1170,6 +1207,52 @@ function renderProductSales() {
   if (els.productSalesNextBtn) {
     els.productSalesNextBtn.disabled = currentProductSalesPage >= totalPages;
   }
+}
+
+function renderTopProductsQty() {
+  const filteredItems = currentTopProductsByQty;
+  els.topProductsQtyBody.innerHTML = filteredItems.length
+    ? filteredItems
+        .map((item) => {
+          return `
+            <tr>
+              <td>${escapeHtml(item.code)}</td>
+              <td>${escapeHtml(item.description)}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.orders))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.revenue))}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν κορυφαία είδη ανά τεμάχια.</td>
+        </tr>
+      `;
+}
+
+function renderTopProductsValue() {
+  const filteredItems = currentTopProductsByValue;
+  els.topProductsValueBody.innerHTML = filteredItems.length
+    ? filteredItems
+        .map((item) => {
+          return `
+            <tr>
+              <td>${escapeHtml(item.code)}</td>
+              <td>${escapeHtml(item.description)}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.revenue))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.avg_unit_price))}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν κορυφαία είδη ανά τζίρο.</td>
+        </tr>
+      `;
 }
 
 function getRecentOrdersForTable() {
@@ -1249,12 +1332,15 @@ function renderStats(data) {
 
   currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
   currentProductSales = Array.isArray(productSales.items) ? productSales.items : [];
+  currentTopProductsByQty = topProductsByQty;
+  currentTopProductsByValue = topProductsByValue;
   if (els.openRankedOrderFormBtn) {
     els.openRankedOrderFormBtn.disabled = currentProductSales.length === 0;
   }
   selectedOrderId = null;
   currentProductSalesPage = 1;
   currentRecentOrdersPage = 1;
+  resetProductTableFilters();
 
   const metaParts = [customer.code, customer.email];
   if (customer.branch_code) {
@@ -1291,57 +1377,8 @@ function renderStats(data) {
   renderReceivables(receivables);
   els.productSalesMetric.value = productSales.metric === "pieces" ? "pieces" : "revenue";
   renderProductSales();
-
-  els.topProductsQtyBody.innerHTML = topProductsByQty.length
-    ? topProductsByQty
-        .map((item) => {
-          return `
-            <tr>
-              <td>${escapeHtml(item.code)}</td>
-              <td>${escapeHtml(item.description)}</td>
-              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
-              <td class="admin-table-number">${escapeHtml(formatNumber(item.orders))}</td>
-              <td class="admin-table-number">${escapeHtml(formatMoney(item.revenue))}</td>
-            </tr>
-          `;
-        })
-        .join("")
-    : `
-        <tr>
-          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν κορυφαία είδη ανά τεμάχια.</td>
-        </tr>
-      `;
-
-  els.topProductsValueBody.innerHTML = topProductsByValue.length
-    ? topProductsByValue
-        .map((item) => {
-          return `
-            <tr>
-              <td>${escapeHtml(item.code)}</td>
-              <td>${escapeHtml(item.description)}</td>
-              <td class="admin-table-number">${escapeHtml(formatMoney(item.revenue))}</td>
-              <td class="admin-table-number">${escapeHtml(formatNumber(item.qty))}</td>
-              <td class="admin-table-number">${escapeHtml(formatMoney(item.avg_unit_price))}</td>
-            </tr>
-          `;
-        })
-        .join("")
-    : `
-        <tr>
-          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν κορυφαία είδη ανά τζίρο.</td>
-        </tr>
-      `;
-
-  const topProductsValueHeadRow = document.querySelector("#topProductsValueBody")?.closest("table")?.querySelector("thead tr");
-  if (topProductsValueHeadRow) {
-    topProductsValueHeadRow.innerHTML = `
-      <th>Κωδικός</th>
-      <th>Περιγραφή</th>
-      <th class="admin-table-number">Τζίρος</th>
-      <th class="admin-table-number">Τεμάχια</th>
-      <th class="admin-table-number">Μέση τιμή μονάδας</th>
-    `;
-  }
+  renderTopProductsQty();
+  renderTopProductsValue();
 
   renderRecentOrdersTable();
   renderSelectedOrderDetails();
@@ -1658,6 +1695,16 @@ els.productSalesMetric?.addEventListener("change", () => {
   currentProductSalesPage = 1;
   renderProductSales();
 });
+els.productSalesCodeFilter?.addEventListener("input", () => {
+  currentProductSalesFilters.code = els.productSalesCodeFilter.value || "";
+  currentProductSalesPage = 1;
+  renderProductSales();
+});
+els.productSalesDescriptionFilter?.addEventListener("input", () => {
+  currentProductSalesFilters.description = els.productSalesDescriptionFilter.value || "";
+  currentProductSalesPage = 1;
+  renderProductSales();
+});
 getSalesTimeRangeControls().forEach((control) => {
   control.addEventListener("change", () => {
     currentSalesTimeRange = String(control.value || DEFAULT_SALES_TIME_RANGE).trim().toLowerCase();
@@ -1683,7 +1730,10 @@ els.productSalesPrevBtn?.addEventListener("click", () => {
   renderProductSales();
 });
 els.productSalesNextBtn?.addEventListener("click", () => {
-  const totalPages = Math.max(1, Math.ceil(currentProductSales.length / PRODUCT_SALES_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filterProductItems(getSortedProductSales(), currentProductSalesFilters).length / PRODUCT_SALES_PAGE_SIZE),
+  );
   if (currentProductSalesPage >= totalPages) return;
   currentProductSalesPage += 1;
   renderProductSales();
