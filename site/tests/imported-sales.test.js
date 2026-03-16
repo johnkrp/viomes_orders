@@ -51,19 +51,21 @@ test("rebuildImportedSalesData runs the expected rebuild sequence", async () => 
 
   await rebuildImportedSalesData(db);
 
-  assert.equal(executed.length, 12);
+  assert.equal(executed.length, 14);
   assert.equal(executed[0], "DELETE FROM imported_orders");
-  assert.equal(executed[1], "DELETE FROM imported_monthly_sales");
-  assert.equal(executed[2], "DELETE FROM imported_product_sales");
-  assert.equal(executed[3], "DELETE FROM imported_customer_branches");
-  assert.equal(executed[4], "DELETE FROM imported_customers");
-  assert.equal(executed[5], "DELETE FROM customers WHERE source = 'entersoft_import'");
-  assert.match(executed[6], /^INSERT INTO imported_customer_branches\(/);
-  assert.match(executed[7], /^INSERT INTO imported_customers\(/);
-  assert.match(executed[8], /^INSERT INTO customers\(code, name, email, source\)/);
-  assert.match(executed[9], /^INSERT INTO imported_orders\(/);
-  assert.match(executed[10], /^INSERT INTO imported_monthly_sales/);
-  assert.match(executed[11], /^INSERT INTO imported_product_sales\(/);
+  assert.equal(executed[1], "DELETE FROM imported_open_orders");
+  assert.equal(executed[2], "DELETE FROM imported_monthly_sales");
+  assert.equal(executed[3], "DELETE FROM imported_product_sales");
+  assert.equal(executed[4], "DELETE FROM imported_customer_branches");
+  assert.equal(executed[5], "DELETE FROM imported_customers");
+  assert.equal(executed[6], "DELETE FROM customers WHERE source = 'entersoft_import'");
+  assert.match(executed[7], /^INSERT INTO imported_customer_branches\(/);
+  assert.match(executed[8], /^INSERT INTO imported_customers\(/);
+  assert.match(executed[9], /^INSERT INTO customers\(code, name, email, source\)/);
+  assert.match(executed[10], /^INSERT INTO imported_orders\(/);
+  assert.match(executed[11], /^INSERT INTO imported_open_orders\(/);
+  assert.match(executed[12], /^INSERT INTO imported_monthly_sales/);
+  assert.match(executed[13], /^INSERT INTO imported_product_sales\(/);
 });
 
 test("ensureImportedCustomerBranchProjection backfills missing branch projection rows", async () => {

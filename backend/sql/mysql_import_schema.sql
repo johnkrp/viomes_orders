@@ -122,6 +122,25 @@ CREATE TABLE IF NOT EXISTS imported_orders (
   imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS imported_open_orders (
+  order_id VARCHAR(300) PRIMARY KEY,
+  document_no VARCHAR(128) NOT NULL,
+  customer_code VARCHAR(128) NOT NULL,
+  customer_name VARCHAR(255) NOT NULL,
+  created_at VARCHAR(64) NOT NULL,
+  total_lines INT NOT NULL DEFAULT 0,
+  total_pieces DOUBLE NOT NULL DEFAULT 0,
+  total_net_value DOUBLE NOT NULL DEFAULT 0,
+  average_discount_pct DOUBLE NOT NULL DEFAULT 0,
+  ordered_at VARCHAR(64),
+  sent_at VARCHAR(64),
+  document_type VARCHAR(128),
+  delivery_code VARCHAR(128),
+  delivery_description VARCHAR(255),
+  source_file VARCHAR(255),
+  imported_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS imported_monthly_sales (
   customer_code VARCHAR(128) NOT NULL,
   order_year INT NOT NULL,

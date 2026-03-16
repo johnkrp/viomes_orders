@@ -210,6 +210,9 @@ function createImportedDbFixture() {
           },
         ];
       }
+      if (sql.includes("FROM imported_open_orders")) {
+        return [];
+      }
       if (sql.includes("GROUP BY customer_code, document_no, order_date") && sql.includes("LIMIT 10")) {
         if (sql.includes("SUBSTR(order_date, 1, 10) >= ?")) {
           return [

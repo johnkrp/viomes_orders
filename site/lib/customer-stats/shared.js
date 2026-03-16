@@ -169,6 +169,8 @@ export function normalizeStatsPayload(payload, customerCode) {
 
   const summary = payload?.summary || {};
   const recentOrders = Array.isArray(payload?.recent_orders) ? payload.recent_orders : [];
+  const openOrders = Array.isArray(payload?.open_orders) ? payload.open_orders : [];
+  const detailedOpenOrders = Array.isArray(payload?.detailed_open_orders) ? payload.detailed_open_orders : [];
   const now = new Date();
   const totalOrders = Number(summary.total_orders ?? recentOrders.length ?? 0);
   const totalRevenue = asMoney(summary.total_revenue);
@@ -238,6 +240,18 @@ export function normalizeStatsPayload(payload, customerCode) {
       : [],
     recent_orders: recentOrders.map((order) => ({
       order_id: order.order_id,
+      document_type: order.document_type || "",
+      created_at: order.created_at,
+      ordered_at: order.ordered_at || order.created_at || null,
+      sent_at: order.sent_at || null,
+      total_lines: asInteger(order.total_lines),
+      total_pieces: asInteger(order.total_pieces),
+      total_net_value: asMoney(order.total_net_value),
+      average_discount_pct: asMoney(order.average_discount_pct),
+    })),
+    open_orders: openOrders.map((order) => ({
+      order_id: order.order_id,
+      document_type: order.document_type || "",
       created_at: order.created_at,
       ordered_at: order.ordered_at || order.created_at || null,
       sent_at: order.sent_at || null,
@@ -249,6 +263,7 @@ export function normalizeStatsPayload(payload, customerCode) {
     detailed_orders: Array.isArray(payload?.detailed_orders)
       ? payload.detailed_orders.map((order) => ({
           order_id: order.order_id,
+          document_type: order.document_type || "",
           created_at: order.created_at,
           ordered_at: order.ordered_at || order.created_at || null,
           sent_at: order.sent_at || null,
@@ -269,5 +284,27 @@ export function normalizeStatsPayload(payload, customerCode) {
             : [],
         }))
       : [],
+    detailed_open_orders: detailedOpenOrders.map((order) => ({
+      order_id: order.order_id,
+      document_type: order.document_type || "",
+      created_at: order.created_at,
+      ordered_at: order.ordered_at || order.created_at || null,
+      sent_at: order.sent_at || null,
+      notes: order.notes || "",
+      total_lines: asInteger(order.total_lines),
+      total_pieces: asInteger(order.total_pieces),
+      total_net_value: asMoney(order.total_net_value),
+      average_discount_pct: asMoney(order.average_discount_pct),
+      lines: Array.isArray(order.lines)
+        ? order.lines.map((line) => ({
+            code: line.code,
+            description: line.description,
+            qty: asInteger(line.qty),
+            unit_price: asMoney(line.unit_price),
+            discount_pct: asMoney(line.discount_pct),
+            line_net_value: asMoney(line.line_net_value),
+          }))
+        : [],
+    })),
   };
 }

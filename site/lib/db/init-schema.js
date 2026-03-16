@@ -265,6 +265,26 @@ async function initSqliteSchema(db) {
       )
     `,
     `
+      CREATE TABLE IF NOT EXISTS imported_open_orders (
+        order_id TEXT PRIMARY KEY,
+        document_no TEXT NOT NULL DEFAULT '',
+        customer_code TEXT NOT NULL,
+        customer_name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        total_lines INTEGER NOT NULL DEFAULT 0,
+        total_pieces REAL NOT NULL DEFAULT 0,
+        total_net_value REAL NOT NULL DEFAULT 0,
+        average_discount_pct REAL NOT NULL DEFAULT 0,
+        ordered_at TEXT,
+        sent_at TEXT,
+        document_type TEXT,
+        delivery_code TEXT,
+        delivery_description TEXT,
+        source_file TEXT,
+        imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+    `
       CREATE TABLE IF NOT EXISTS imported_monthly_sales (
         customer_code TEXT NOT NULL,
         order_year INTEGER NOT NULL,

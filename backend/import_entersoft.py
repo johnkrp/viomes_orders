@@ -14,6 +14,11 @@ from document_type_rules import (
     build_effective_pieces_expression,
     build_effective_revenue_expression,
 )
+from factual_lifecycle import (
+    EXECUTED_ORDER_DOCUMENT_TYPES,
+    OPEN_EXECUTION_DOCUMENT_TYPES,
+    build_document_type_sql_list,
+)
 from mysql_db import get_conn, init_schema
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -30,6 +35,7 @@ PROJECTION_TABLES = [
     "imported_customers",
     "imported_customer_branches",
     "imported_orders",
+    "imported_open_orders",
     "imported_monthly_sales",
     "imported_product_sales",
 ]
@@ -51,6 +57,17 @@ CASE
   ELSE 0
 END
 """.strip()
+
+OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL = """
+  executed.customer_code = pending.customer_code
+  AND COALESCE(executed.ordered_at, '') = COALESCE(pending.ordered_at, '')
+  AND COALESCE(executed.sent_at, '') = COALESCE(pending.sent_at, '')
+  AND executed.total_lines = pending.total_lines
+  AND ROUND(executed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+""".strip()
+
+OPEN_EXECUTION_DOCUMENT_TYPES_SQL = build_document_type_sql_list(OPEN_EXECUTION_DOCUMENT_TYPES)
+EXECUTED_ORDER_DOCUMENT_TYPES_SQL = build_document_type_sql_list(EXECUTED_ORDER_DOCUMENT_TYPES)
 
 
 def parse_decimal(value):
@@ -662,6 +679,7 @@ def rebuild_customers_from_sales(cur) -> None:
 
 def rebuild_sales_aggregates(cur) -> None:
     execute_step(cur, "truncate imported_orders", "DELETE FROM imported_orders")
+    execute_step(cur, "truncate imported_open_orders", "DELETE FROM imported_open_orders")
     execute_step(cur, "truncate imported_monthly_sales", "DELETE FROM imported_monthly_sales")
     execute_step(cur, "truncate imported_product_sales", "DELETE FROM imported_product_sales")
 
@@ -693,6 +711,69 @@ def rebuild_sales_aggregates(cur) -> None:
         FROM imported_sales_lines
         WHERE {build_count_in_order_totals_case()} = 1
         GROUP BY document_no, customer_code, order_date
+        """
+    )
+
+    execute_step(
+        cur,
+        "build imported_open_orders",
+        f"""
+        INSERT INTO imported_open_orders(
+          order_id, document_no, customer_code, customer_name, created_at, total_lines, total_pieces,
+          total_net_value, average_discount_pct, ordered_at, sent_at, document_type, delivery_code,
+          delivery_description, source_file
+        )
+        SELECT
+          pending.order_id,
+          pending.document_no,
+          pending.customer_code,
+          pending.customer_name,
+          pending.created_at,
+          pending.total_lines,
+          pending.total_pieces,
+          pending.total_net_value,
+          pending.average_discount_pct,
+          pending.ordered_at,
+          pending.sent_at,
+          pending.document_type,
+          pending.delivery_code,
+          pending.delivery_description,
+          pending.source_file
+        FROM (
+          SELECT
+            CONCAT(customer_code, '::', order_date, '::', document_no) AS order_id,
+            document_no,
+            customer_code,
+            MAX(customer_name) AS customer_name,
+            order_date AS created_at,
+            COUNT(*) AS total_lines,
+            COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+            COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+            COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+            MAX(ordered_at) AS ordered_at,
+            MAX(sent_at) AS sent_at,
+            MAX(document_type) AS document_type,
+            MAX(delivery_code) AS delivery_code,
+            MAX(delivery_description) AS delivery_description,
+            MAX(source_file) AS source_file
+          FROM imported_sales_lines
+          WHERE COALESCE(document_type, '') IN ({OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
+          GROUP BY document_no, customer_code, order_date
+        ) pending
+        LEFT JOIN (
+          SELECT
+            customer_code,
+            MAX(ordered_at) AS ordered_at,
+            MAX(sent_at) AS sent_at,
+            COUNT(*) AS total_lines,
+            COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+          FROM imported_sales_lines
+          WHERE {build_count_in_order_totals_case()} = 1
+            AND COALESCE(document_type, '') IN ({EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
+          GROUP BY document_no, customer_code, order_date
+        ) executed
+          ON {OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL}
+        WHERE executed.customer_code IS NULL
         """
     )
 

@@ -15,6 +15,14 @@ import {
   buildEffectiveRevenueExpression,
 } from "../document-type-rules.js";
 import { IMPORTED_DISCOUNT_PERCENT_EXPRESSION } from "../imported-sales.js";
+import { FACTUAL_LIFECYCLE_RULES, buildDocumentTypeSqlList } from "../factual-lifecycle.js";
+
+const EXECUTED_ORDER_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
+  FACTUAL_LIFECYCLE_RULES.executedOrderDocumentTypes,
+);
+const OPEN_EXECUTION_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
+  FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
+);
 
 function createMonthlyBuckets() {
   return Array.from({ length: 12 }, (_, index) => ({
@@ -725,6 +733,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 average_discount_pct
               FROM imported_orders
               WHERE customer_code = ?
+                AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
               ORDER BY created_at DESC, document_no DESC
               LIMIT 10
             `,
@@ -744,7 +753,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
               FROM imported_sales_lines
               WHERE customer_code = ?
-                AND ${importedExpressions.countInOrderTotals} = 1${importedDataFilter.clause}
+                AND ${importedExpressions.countInOrderTotals} = 1
+                AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}
               GROUP BY customer_code, document_no, order_date
               ORDER BY order_date DESC, document_no DESC
               LIMIT 10
@@ -767,6 +777,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 average_discount_pct
               FROM imported_orders
               WHERE customer_code = ?
+                AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
                 ${importedOrdersDateWindowFilter.clause}
               ORDER BY COALESCE(NULLIF(sent_at, ''), NULLIF(ordered_at, ''), created_at) DESC, document_no DESC
               LIMIT 100
@@ -787,12 +798,114 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
               FROM imported_sales_lines
               WHERE customer_code = ?
-                AND ${importedExpressions.countInOrderTotals} = 1${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+                AND ${importedExpressions.countInOrderTotals} = 1
+                AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
               GROUP BY customer_code, document_no, order_date
               ORDER BY COALESCE(MAX(sent_at), MAX(ordered_at), order_date) DESC, document_no DESC
               LIMIT 100
             `,
             [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
+          );
+
+      const openOrders = useImportedProjections
+        ? await db.all(
+            `
+              SELECT
+                open_orders.order_id,
+                open_orders.document_no,
+                open_orders.created_at,
+                open_orders.ordered_at,
+                open_orders.sent_at,
+                open_orders.total_lines,
+                COALESCE(SUM(COALESCE(lines.qty_base, 0)), 0) AS total_pieces,
+                COALESCE(SUM(COALESCE(lines.net_value, 0)), 0) AS total_net_value,
+                open_orders.average_discount_pct,
+                open_orders.document_type
+              FROM imported_open_orders open_orders
+              LEFT JOIN imported_sales_lines lines
+                ON lines.customer_code = open_orders.customer_code
+               AND lines.document_no = open_orders.document_no
+               AND lines.order_date = open_orders.created_at
+               AND COALESCE(lines.document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}
+              WHERE open_orders.customer_code = ?
+                ${importedOrdersDateWindowFilter.clause}
+              GROUP BY
+                open_orders.order_id,
+                open_orders.document_no,
+                open_orders.created_at,
+                open_orders.ordered_at,
+                open_orders.sent_at,
+                open_orders.total_lines,
+                open_orders.average_discount_pct,
+                open_orders.document_type
+              ORDER BY
+                COALESCE(NULLIF(open_orders.sent_at, ''), NULLIF(open_orders.ordered_at, ''), open_orders.created_at) DESC,
+                open_orders.document_no DESC
+              LIMIT 100
+            `,
+            [code, ...importedDataFilter.params, ...importedOrdersDateWindowFilter.params],
+          )
+        : await db.all(
+            `
+              SELECT
+                pending.order_id,
+                pending.document_no,
+                pending.created_at,
+                pending.ordered_at,
+                pending.sent_at,
+                pending.total_lines,
+                pending.total_pieces,
+                pending.total_net_value,
+                pending.average_discount_pct,
+                pending.document_type
+              FROM (
+                SELECT
+                  ${importedOrderIdExpression} AS order_id,
+                  document_no,
+                  customer_code,
+                  order_date AS created_at,
+                  MAX(ordered_at) AS ordered_at,
+                  MAX(sent_at) AS sent_at,
+                  COUNT(*) AS total_lines,
+                  COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+                  COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+                  COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+                  MAX(document_type) AS document_type
+                FROM imported_sales_lines
+                WHERE customer_code = ?
+                  AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+                GROUP BY customer_code, document_no, order_date
+              ) pending
+              LEFT JOIN (
+                SELECT
+                  customer_code,
+                  MAX(ordered_at) AS ordered_at,
+                  MAX(sent_at) AS sent_at,
+                  COUNT(*) AS total_lines,
+                  COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+                FROM imported_sales_lines
+                WHERE customer_code = ?
+                  AND ${importedExpressions.countInOrderTotals} = 1
+                  AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+                GROUP BY customer_code, document_no, order_date
+              ) executed
+                ON executed.customer_code = pending.customer_code
+               AND COALESCE(executed.ordered_at, '') = COALESCE(pending.ordered_at, '')
+               AND COALESCE(executed.sent_at, '') = COALESCE(pending.sent_at, '')
+               AND executed.total_lines = pending.total_lines
+               AND ROUND(executed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+              WHERE executed.customer_code IS NULL
+              ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
+              LIMIT 100
+            `,
+            [
+              code,
+              ...importedDataFilter.params,
+              ...importedLinesDateWindowFilter.params,
+              code,
+              ...importedDataFilter.params,
+              ...importedLinesDateWindowFilter.params,
+            ],
           );
 
       const detailedOrderHeaders = await db.all(
@@ -809,7 +922,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
           FROM imported_sales_lines
           WHERE customer_code = ?
-            AND ${importedExpressions.countInOrderTotals} = 1${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+            AND ${importedExpressions.countInOrderTotals} = 1
+            AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
           GROUP BY customer_code, document_no, order_date
           ORDER BY COALESCE(MAX(sent_at), MAX(ordered_at), order_date) DESC, document_no DESC
           LIMIT 100
@@ -831,6 +945,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             FROM imported_sales_lines
             WHERE customer_code = ?
               AND ${importedExpressions.countInOrderTotals} = 1
+              AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
               ${importedDataFilter.clause}
               ${importedLinesDateWindowFilter.clause}
               AND document_no = ?
@@ -848,6 +963,57 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
 
         detailedOrders.push({
           order_id: order.order_id,
+          created_at: order.created_at,
+          ordered_at: order.ordered_at || order.created_at,
+          sent_at: order.sent_at || null,
+          notes: "",
+          total_lines: asInteger(order.total_lines),
+          total_pieces: asInteger(order.total_pieces),
+          total_net_value: asMoney(order.total_net_value),
+          average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
+          lines: lines.map((line) => ({
+            code: line.code,
+            description: line.description,
+            qty: asInteger(line.qty),
+            unit_price: asMoney(line.unit_price),
+            discount_pct: asRoundedUpPercent(line.discount_pct),
+            line_net_value: asMoney(line.line_net_value),
+          })),
+        });
+      }
+
+      const detailedOpenOrders = [];
+      for (const order of openOrders) {
+        const lines = await db.all(
+          `
+            SELECT
+              item_code AS code,
+              item_description AS description,
+              COALESCE(qty_base, 0) AS qty,
+              unit_price,
+              ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
+              COALESCE(net_value, 0) AS line_net_value
+            FROM imported_sales_lines
+            WHERE customer_code = ?
+              AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
+              ${importedDataFilter.clause}
+              ${importedLinesDateWindowFilter.clause}
+              AND document_no = ?
+              AND order_date = ?
+            ORDER BY item_code ASC
+          `,
+          [
+            code,
+            ...importedDataFilter.params,
+            ...importedLinesDateWindowFilter.params,
+            order.document_no,
+            order.created_at,
+          ],
+        );
+
+        detailedOpenOrders.push({
+          order_id: order.order_id,
+          document_type: order.document_type || "",
           created_at: order.created_at,
           ordered_at: order.ordered_at || order.created_at,
           sent_at: order.sent_at || null,
@@ -972,7 +1138,19 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           total_net_value: asMoney(order.total_net_value),
           average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
         })),
+        open_orders: openOrders.map((order) => ({
+          order_id: order.order_id,
+          document_type: order.document_type || "",
+          created_at: order.created_at,
+          ordered_at: order.ordered_at || order.created_at,
+          sent_at: order.sent_at || null,
+          total_lines: asInteger(order.total_lines),
+          total_pieces: asInteger(order.total_pieces),
+          total_net_value: asMoney(order.total_net_value),
+          average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
+        })),
         detailed_orders: detailedOrders,
+        detailed_open_orders: detailedOpenOrders,
       };
     },
   };

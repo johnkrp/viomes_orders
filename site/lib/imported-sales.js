@@ -6,6 +6,7 @@ import {
   buildEffectiveRevenueExpression,
   buildKnownDocumentTypesSqlList,
 } from "./document-type-rules.js";
+import { FACTUAL_LIFECYCLE_RULES, buildDocumentTypeSqlList } from "./factual-lifecycle.js";
 
 export const IMPORTED_DISCOUNT_PERCENT_EXPRESSION = `
   CASE
@@ -27,6 +28,7 @@ export const IMPORTED_SALES_ARCHITECTURE = Object.freeze({
     "imported_customers",
     "imported_customer_branches",
     "imported_orders",
+    "imported_open_orders",
     "imported_monthly_sales",
     "imported_product_sales",
     "customers[source='entersoft_import']",
@@ -253,6 +255,92 @@ export const REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL = `
     source_file = VALUES(source_file)
 `;
 
+const OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL = `
+  executed.customer_code = pending.customer_code
+  AND COALESCE(executed.ordered_at, '') = COALESCE(pending.ordered_at, '')
+  AND COALESCE(executed.sent_at, '') = COALESCE(pending.sent_at, '')
+  AND executed.total_lines = pending.total_lines
+  AND ROUND(executed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+`;
+
+const OPEN_EXECUTION_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
+  FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
+);
+const EXECUTED_ORDER_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
+  FACTUAL_LIFECYCLE_RULES.executedOrderDocumentTypes,
+);
+
+export const REBUILD_IMPORTED_OPEN_ORDERS_SQL = `
+  INSERT INTO imported_open_orders(
+    order_id,
+    document_no,
+    customer_code,
+    customer_name,
+    created_at,
+    total_lines,
+    total_pieces,
+    total_net_value,
+    average_discount_pct,
+    ordered_at,
+    sent_at,
+    document_type,
+    delivery_code,
+    delivery_description,
+    source_file
+  )
+  SELECT
+    pending.order_id,
+    pending.document_no,
+    pending.customer_code,
+    pending.customer_name,
+    pending.created_at,
+    pending.total_lines,
+    pending.total_pieces,
+    pending.total_net_value,
+    pending.average_discount_pct,
+    pending.ordered_at,
+    pending.sent_at,
+    pending.document_type,
+    pending.delivery_code,
+    pending.delivery_description,
+    pending.source_file
+  FROM (
+    SELECT
+      CONCAT(customer_code, '::', order_date, '::', document_no) AS order_id,
+      document_no,
+      customer_code,
+      MAX(customer_name) AS customer_name,
+      order_date AS created_at,
+      COUNT(*) AS total_lines,
+      COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+      COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+      COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+      MAX(ordered_at) AS ordered_at,
+      MAX(sent_at) AS sent_at,
+      MAX(document_type) AS document_type,
+      MAX(delivery_code) AS delivery_code,
+      MAX(delivery_description) AS delivery_description,
+      MAX(source_file) AS source_file
+    FROM imported_sales_lines
+    WHERE COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
+    GROUP BY document_no, customer_code, order_date
+  ) pending
+  LEFT JOIN (
+    SELECT
+      customer_code,
+      MAX(ordered_at) AS ordered_at,
+      MAX(sent_at) AS sent_at,
+      COUNT(*) AS total_lines,
+      COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+    FROM imported_sales_lines
+    WHERE ${buildCountInOrderTotalsCase()} = 1
+      AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
+    GROUP BY document_no, customer_code, order_date
+  ) executed
+    ON ${OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL}
+  WHERE executed.customer_code IS NULL
+`;
+
 export const PREVIEW_DUPLICATES_SQL = `
   SELECT
     COUNT(*) AS duplicate_groups,
@@ -337,6 +425,7 @@ export async function ensureImportedCustomerBranchProjection(db) {
 
 export async function rebuildImportedSalesData(db) {
   await db.run("DELETE FROM imported_orders");
+  await db.run("DELETE FROM imported_open_orders");
   await db.run("DELETE FROM imported_monthly_sales");
   await db.run("DELETE FROM imported_product_sales");
   await db.run("DELETE FROM imported_customer_branches");
@@ -416,6 +505,8 @@ export async function rebuildImportedSalesData(db) {
     WHERE ${buildCountInOrderTotalsCase()} = 1
     GROUP BY document_no, customer_code, order_date
   `);
+
+  await db.run(REBUILD_IMPORTED_OPEN_ORDERS_SQL);
 
   await db.run(`
     INSERT INTO imported_monthly_sales(customer_code, order_year, order_month, revenue, pieces)
