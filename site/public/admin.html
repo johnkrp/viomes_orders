@@ -390,12 +390,12 @@
                 <table class="admin-table admin-product-sales-table">
                   <thead>
                     <tr>
-                      <th>Κωδικός</th>
-                      <th>Περιγραφή</th>
-                      <th id="productSalesMetricHeading" class="admin-table-number">Τζίρος</th>
-                      <th class="admin-table-number">Τεμάχια</th>
-                      <th class="admin-table-number">Παραγγελίες</th>
-                      <th class="admin-table-number">Μέση τιμή μονάδας</th>
+                      <th><button type="button" class="admin-sort-btn" data-table-sort="product-sales" data-sort-key="code">Κωδικός <span class="admin-sort-indicator">↕</span></button></th>
+                      <th><button type="button" class="admin-sort-btn" data-table-sort="product-sales" data-sort-key="description">Περιγραφή <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="primary_metric"><span id="productSalesMetricHeading">Τζίρος</span> <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="secondary_metric"><span id="productSalesSecondaryMetricHeading">Τεμάχια</span> <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="orders">Παραγγελίες <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="avg_unit_price">Μέση τιμή μονάδας <span class="admin-sort-indicator">↕</span></button></th>
                     </tr>
                     <tr class="admin-table-filter-row">
                       <th>
@@ -550,13 +550,13 @@
                 <table class="admin-table admin-recent-orders-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Ημερομηνία παραγγελίας</th>
-                      <th>Ημερομηνία τιμολογίου</th>
-                      <th class="admin-table-number">Γραμμές</th>
-                      <th class="admin-table-number">Τεμάχια</th>
-                      <th class="admin-table-number">Αξία</th>
-                      <th class="admin-table-number">Μέση έκπτωση</th>
+                      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
+                      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="ordered_at">Ημερομηνία παραγγελίας <span class="admin-sort-indicator">↕</span></button></th>
+                      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="created_at">Ημερομηνία τιμολογίου <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
+                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="average_discount_pct">Μέση έκπτωση <span class="admin-sort-indicator">↕</span></button></th>
                       <th>Ενέργεια</th>
                     </tr>
                   </thead>

@@ -63,6 +63,8 @@ let currentReceivablesPage = 1;
 let currentRecentOrdersPage = 1;
 let currentOpenOrdersPage = 1;
 let currentPreApprovalOrdersPage = 1;
+let recentOrdersSort = { key: "created_at", direction: "desc" };
+let productSalesSort = { key: "primary_metric", direction: "desc" };
 let openOrdersSort = { key: "created_at", direction: "desc" };
 let preApprovalOrdersSort = { key: "created_at", direction: "desc" };
 let currentProductSalesFilters = { code: "", description: "" };
@@ -141,6 +143,7 @@ const els = {
   salesTimeRange: document.getElementById("salesTimeRange"),
   productSalesMetric: document.getElementById("productSalesMetric"),
   productSalesMetricHeading: document.getElementById("productSalesMetricHeading"),
+  productSalesSecondaryMetricHeading: document.getElementById("productSalesSecondaryMetricHeading"),
   productSalesCodeFilter: document.getElementById("productSalesCodeFilter"),
   productSalesDescriptionFilter: document.getElementById("productSalesDescriptionFilter"),
   productSalesBody: document.getElementById("productSalesBody"),
@@ -605,10 +608,12 @@ function resetProductSales() {
   currentProductSalesPage = 1;
   if (els.productSalesMetric) els.productSalesMetric.value = "revenue";
   if (els.productSalesMetricHeading) els.productSalesMetricHeading.textContent = "Τζίρος";
+  if (els.productSalesSecondaryMetricHeading) els.productSalesSecondaryMetricHeading.textContent = "Τεμάχια";
   if (els.productSalesPagination) els.productSalesPagination.hidden = true;
   if (els.productSalesPageInfo) els.productSalesPageInfo.textContent = "Σελίδα 1 από 1";
   if (els.productSalesPrevBtn) els.productSalesPrevBtn.disabled = true;
   if (els.productSalesNextBtn) els.productSalesNextBtn.disabled = true;
+  updateSortIndicators("product-sales", productSalesSort);
   if (els.productSalesBody) {
     els.productSalesBody.innerHTML = `
       <tr>
@@ -844,13 +849,13 @@ function resetStats() {
   const recentOrdersHeadRow = document.querySelector(".admin-recent-orders-table thead tr");
   if (recentOrdersHeadRow) {
     recentOrdersHeadRow.innerHTML = `
-      <th>ID</th>
-      <th>Ημερομηνία παραγγελίας</th>
-      <th>Ημερομηνία τιμολογίου</th>
-      <th class="admin-table-number">Γραμμές</th>
-      <th class="admin-table-number">Τεμάχια</th>
-      <th class="admin-table-number">Αξία</th>
-      <th class="admin-table-number">Μέση έκπτωση</th>
+      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
+      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="ordered_at">Ημερομηνία παραγγελίας <span class="admin-sort-indicator">↕</span></button></th>
+      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="created_at">Ημερομηνία τιμολογίου <span class="admin-sort-indicator">↕</span></button></th>
+      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
+      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
+      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
+      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="average_discount_pct">Μέση έκπτωση <span class="admin-sort-indicator">↕</span></button></th>
       <th>Ενέργεια</th>
     `;
   }
@@ -888,8 +893,14 @@ function resetStats() {
   currentDetailedPreApprovalOrders = [];
   currentOpenOrders = [];
   currentPreApprovalOrders = [];
+  recentOrdersSort = { key: "created_at", direction: "desc" };
+  productSalesSort = { key: "primary_metric", direction: "desc" };
   openOrdersSort = { key: "created_at", direction: "desc" };
   preApprovalOrdersSort = { key: "created_at", direction: "desc" };
+  updateSortIndicators("recent", recentOrdersSort);
+  updateSortIndicators("product-sales", productSalesSort);
+  updateSortIndicators("open", openOrdersSort);
+  updateSortIndicators("pre-approval", preApprovalOrdersSort);
   selectedOrderId = null;
   els.detailedOrdersList.innerHTML = `
     <article class="admin-order-card admin-order-empty">
@@ -1090,6 +1101,41 @@ function getSortedProductSales() {
   });
 }
 
+function getSortedProductSalesForTable() {
+  const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
+  const primaryMetricField = metric === "pieces" ? "pieces" : "revenue";
+  const secondaryMetricField = metric === "pieces" ? "revenue" : "pieces";
+  const sortState = productSalesSort;
+  return [...currentProductSales].sort((a, b) => {
+    const key = sortState.key;
+    let compare = 0;
+
+    if (key === "code" || key === "description") {
+      compare = compareSortableValues(a?.[key], b?.[key], {
+        direction: sortState.direction,
+      });
+    } else if (key === "primary_metric") {
+      compare = compareSortableValues(a?.[primaryMetricField], b?.[primaryMetricField], {
+        direction: sortState.direction,
+        numeric: true,
+      });
+    } else if (key === "secondary_metric") {
+      compare = compareSortableValues(a?.[secondaryMetricField], b?.[secondaryMetricField], {
+        direction: sortState.direction,
+        numeric: true,
+      });
+    } else {
+      compare = compareSortableValues(a?.[key], b?.[key], {
+        direction: sortState.direction,
+        numeric: true,
+      });
+    }
+
+    if (compare !== 0) return compare;
+    return compareSortableValues(a?.code, b?.code, { direction: "asc" });
+  });
+}
+
 function normalizeFilterValue(value) {
   return String(value ?? "").trim().toLocaleLowerCase("el-GR");
 }
@@ -1244,14 +1290,13 @@ function renderReceivables(receivables) {
 function renderProductSales() {
   const metric = els.productSalesMetric?.value === "pieces" ? "pieces" : "revenue";
   const secondaryMetric = metric === "pieces" ? "revenue" : "pieces";
-  const sortedItems = filterProductItems(getSortedProductSales(), currentProductSalesFilters);
+  const sortedItems = filterProductItems(getSortedProductSalesForTable(), currentProductSalesFilters);
 
   if (els.productSalesMetricHeading) {
     els.productSalesMetricHeading.textContent = metric === "pieces" ? "Τεμάχια" : "Τζίρος";
   }
-  const productSalesSecondaryHeading = document.querySelector("#productSalesMetricHeading + th");
-  if (productSalesSecondaryHeading) {
-    productSalesSecondaryHeading.textContent = secondaryMetric === "pieces" ? "Τεμάχια" : "Τζίρος";
+  if (els.productSalesSecondaryMetricHeading) {
+    els.productSalesSecondaryMetricHeading.textContent = secondaryMetric === "pieces" ? "Τεμάχια" : "Τζίρος";
   }
 
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / PRODUCT_SALES_PAGE_SIZE));
@@ -1297,6 +1342,7 @@ function renderProductSales() {
   if (els.productSalesNextBtn) {
     els.productSalesNextBtn.disabled = currentProductSalesPage >= totalPages;
   }
+  updateSortIndicators("product-sales", productSalesSort);
 }
 
 function renderTopProductsQty() {
@@ -1348,10 +1394,29 @@ function renderTopProductsValue() {
 }
 
 function getRecentOrdersForTable() {
+  const sortState = recentOrdersSort;
   return [...currentDetailedOrders].sort((a, b) => {
-    const aKey = Date.parse(String(a?.created_at || a?.ordered_at || a?.sent_at || "")) || 0;
-    const bKey = Date.parse(String(b?.created_at || b?.ordered_at || b?.sent_at || "")) || 0;
-    return bKey - aKey || String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
+    const key = sortState.key;
+    let compare = 0;
+
+    if (key === "ordered_at" || key === "created_at") {
+      compare = compareSortableValues(a?.[key], b?.[key], {
+        direction: sortState.direction,
+        date: true,
+      });
+    } else if (key === "order_id") {
+      compare = compareSortableValues(a?.order_id, b?.order_id, {
+        direction: sortState.direction,
+      });
+    } else {
+      compare = compareSortableValues(a?.[key], b?.[key], {
+        direction: sortState.direction,
+        numeric: true,
+      });
+    }
+
+    if (compare !== 0) return compare;
+    return compareSortableValues(a?.created_at, b?.created_at, { direction: "desc", date: true });
   });
 }
 
@@ -1408,6 +1473,7 @@ function renderRecentOrdersTable() {
   if (els.recentOrdersNextBtn) {
     els.recentOrdersNextBtn.disabled = currentRecentOrdersPage >= totalPages;
   }
+  updateSortIndicators("recent", recentOrdersSort);
 }
 
 function getOpenOrdersForTable() {
@@ -1997,7 +2063,9 @@ els.productSalesPrevBtn?.addEventListener("click", () => {
 els.productSalesNextBtn?.addEventListener("click", () => {
   const totalPages = Math.max(
     1,
-    Math.ceil(filterProductItems(getSortedProductSales(), currentProductSalesFilters).length / PRODUCT_SALES_PAGE_SIZE),
+    Math.ceil(
+      filterProductItems(getSortedProductSalesForTable(), currentProductSalesFilters).length / PRODUCT_SALES_PAGE_SIZE,
+    ),
   );
   if (currentProductSalesPage >= totalPages) return;
   currentProductSalesPage += 1;
@@ -2063,33 +2131,56 @@ els.preApprovalOrdersBody?.addEventListener("click", (event) => {
   renderSelectedOrderDetails();
   renderPreApprovalOrdersTable();
 });
-document.querySelectorAll(".admin-sort-btn[data-table-sort]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const tableId = String(button.getAttribute("data-table-sort") || "").trim();
-    const key = String(button.getAttribute("data-sort-key") || "").trim();
-    if (!tableId || !key) return;
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".admin-sort-btn[data-table-sort]");
+  if (!button) return;
 
-    if (tableId === "open") {
-      if (openOrdersSort.key === key) {
-        openOrdersSort.direction = openOrdersSort.direction === "asc" ? "desc" : "asc";
-      } else {
-        openOrdersSort = { key, direction: "desc" };
-      }
-      currentOpenOrdersPage = 1;
-      renderOpenOrdersTable();
-      return;
-    }
+  const tableId = String(button.getAttribute("data-table-sort") || "").trim();
+  const key = String(button.getAttribute("data-sort-key") || "").trim();
+  if (!tableId || !key) return;
 
-    if (tableId === "pre-approval") {
-      if (preApprovalOrdersSort.key === key) {
-        preApprovalOrdersSort.direction = preApprovalOrdersSort.direction === "asc" ? "desc" : "asc";
-      } else {
-        preApprovalOrdersSort = { key, direction: "desc" };
-      }
-      currentPreApprovalOrdersPage = 1;
-      renderPreApprovalOrdersTable();
+  if (tableId === "open") {
+    if (openOrdersSort.key === key) {
+      openOrdersSort.direction = openOrdersSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      openOrdersSort = { key, direction: "desc" };
     }
-  });
+    currentOpenOrdersPage = 1;
+    renderOpenOrdersTable();
+    return;
+  }
+
+  if (tableId === "pre-approval") {
+    if (preApprovalOrdersSort.key === key) {
+      preApprovalOrdersSort.direction = preApprovalOrdersSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      preApprovalOrdersSort = { key, direction: "desc" };
+    }
+    currentPreApprovalOrdersPage = 1;
+    renderPreApprovalOrdersTable();
+    return;
+  }
+
+  if (tableId === "recent") {
+    if (recentOrdersSort.key === key) {
+      recentOrdersSort.direction = recentOrdersSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      recentOrdersSort = { key, direction: "desc" };
+    }
+    currentRecentOrdersPage = 1;
+    renderRecentOrdersTable();
+    return;
+  }
+
+  if (tableId === "product-sales") {
+    if (productSalesSort.key === key) {
+      productSalesSort.direction = productSalesSort.direction === "asc" ? "desc" : "asc";
+    } else {
+      productSalesSort = { key, direction: "desc" };
+    }
+    currentProductSalesPage = 1;
+    renderProductSales();
+  }
 });
 els.openRankedOrderFormBtn?.addEventListener("click", openRankedOrderForm);
 window.addEventListener("focus", () => {
