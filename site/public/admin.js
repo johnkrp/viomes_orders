@@ -207,9 +207,7 @@ function restoreAdminStateView(state) {
 
   fillSearchFields(state.searchFields || state.currentCustomerSearchFilters || {});
   setCurrentCustomerSearchFilters(state.currentCustomerSearchFilters || state.searchFields || {});
-  currentSalesTimeRange = String(state.currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE)
-    .trim()
-    .toLowerCase();
+  currentSalesTimeRange = normalizeSalesTimeRange(state.currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE);
   syncSalesTimeRangeControls(currentSalesTimeRange);
   setSearchPanelCollapsed(Boolean(state.searchPanelCollapsed));
 
@@ -240,23 +238,26 @@ function getSalesTimeRangeControls() {
   return Array.from(document.querySelectorAll(".sales-time-range-control"));
 }
 
+function normalizeSalesTimeRange(value) {
+  const normalized = String(value || DEFAULT_SALES_TIME_RANGE).trim().toLowerCase();
+  const allowedValues = new Set(["1m", "3m", "6m", "12m", "this_year", "last_year", "all"]);
+  return allowedValues.has(normalized) ? normalized : DEFAULT_SALES_TIME_RANGE;
+}
+
 function syncSalesTimeRangeControls(value) {
+  const normalizedValue = normalizeSalesTimeRange(value);
   getSalesTimeRangeControls().forEach((control) => {
-    if (control) control.value = value;
+    if (control) control.value = normalizedValue;
   });
 }
 
 function getSelectedSalesTimeRange() {
   const firstControl = getSalesTimeRangeControls()[0];
-  return String(firstControl?.value || currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE)
-    .trim()
-    .toLowerCase();
+  return normalizeSalesTimeRange(firstControl?.value || currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE);
 }
 
 function normalizeSalesTimeRangeControlsText() {
   const labelsByValue = {
-    "1w": "Τελευταίες 7 ημέρες",
-    "2w": "Τελευταίες 14 ημέρες",
     "1m": "Τελευταίος 1 μήνας",
     "3m": "Τελευταίοι 3 μήνες",
     "6m": "Τελευταίοι 6 μήνες",
@@ -938,7 +939,7 @@ function renderSelectedOrderDetails() {
       </div>
       <div class="admin-order-note">${escapeHtml(selectedOrder.notes || "Χωρίς σημειώσεις")}</div>
       <div class="admin-order-meta">
-        <span>Αποστολή: ${escapeHtml(formatDate(selectedOrder.sent_at))}</span>
+        <span>Τιμολόγηση: ${escapeHtml(formatDate(selectedOrder.created_at))}</span>
         <span>Μέση έκπτωση: ${escapeHtml(formatPercentRoundedUp(selectedOrder.average_discount_pct))}</span>
       </div>
       <div class="admin-table-wrap admin-order-table-wrap">
@@ -1257,8 +1258,8 @@ function renderTopProductsValue() {
 
 function getRecentOrdersForTable() {
   return [...currentDetailedOrders].sort((a, b) => {
-    const aKey = Date.parse(String(a?.sent_at || a?.ordered_at || a?.created_at || "")) || 0;
-    const bKey = Date.parse(String(b?.sent_at || b?.ordered_at || b?.created_at || "")) || 0;
+    const aKey = Date.parse(String(a?.created_at || a?.ordered_at || a?.sent_at || "")) || 0;
+    const bKey = Date.parse(String(b?.created_at || b?.ordered_at || b?.sent_at || "")) || 0;
     return bKey - aKey || String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
   });
 }
@@ -1278,7 +1279,7 @@ function renderRecentOrdersTable() {
             <tr>
               <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
               <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
-              <td>${escapeHtml(formatDate(item.sent_at))}</td>
+              <td>${escapeHtml(formatDate(item.created_at))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
@@ -1707,7 +1708,7 @@ els.productSalesDescriptionFilter?.addEventListener("input", () => {
 });
 getSalesTimeRangeControls().forEach((control) => {
   control.addEventListener("change", () => {
-    currentSalesTimeRange = String(control.value || DEFAULT_SALES_TIME_RANGE).trim().toLowerCase();
+    currentSalesTimeRange = normalizeSalesTimeRange(control.value || DEFAULT_SALES_TIME_RANGE);
     syncSalesTimeRangeControls(currentSalesTimeRange);
     if (!currentCustomerCode) return;
     fetchCustomerStats(currentCustomerCode, currentBranchCode, currentCustomerSearchFilters);
