@@ -15,19 +15,6 @@ Operational scripts used by Plesk/local maintenance.
   - Verifies imported row counts, duplicate logical sales lines, and imported-order collisions.
   - Exits non-zero if integrity checks fail.
 
-- `nightly-import.sh`
-  - Plesk scheduled-task entrypoint.
-  - Historically reads a daily sales file such as `backend/today.csv`.
-  - Runs importer with `--mode=incremental`.
-  - Exports `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
-  - Requires `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` to be set by the environment or scheduler.
-
-- `manual-reload-sales.sh`
-  - Server-side wrapper for a clean rebuild from canonical yearly sales files.
-  - Creates a timestamped log file and runs integrity checks after the reload.
-  - Exports `ENTERSOFT_IMPORT_TIMEOUT_SECONDS=7200` by default.
-  - Requires `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` to be set by the environment or shell.
-
 - `reset-business-data.js`
   - Clears business/import tables while keeping admin tables.
 
@@ -49,20 +36,19 @@ In incremental mode, history is preserved in `imported_sales_lines`.
 
 Current practical daily workflow:
 
-- import daily factual sales CSVs with `--sales-files=...`
-- import `backend/new-kart.csv` with `--ledger-file=...`
+- upload `backend/yearly-factuals.csv`
+- upload `backend/yearly-receivables.csv`
+- replace only sales year `2026`
+- replace the full ledger snapshot
 
 Sales overlap handling:
 
 - exact logical duplicates are skipped
 - revised overlapping rows can replace older rows by business key when the importer can resolve a single match safely
 
-The daily file does not need to contain only one day.
-It may contain several recent days or overlap with yearly files as long as overlapping rows are logically identical.
+Current ledger note:
 
-Daily ledger note:
-
-- `new-kart.csv` is now the current daily ledger source
+- `yearly-receivables.csv` is the current scheduled ledger source
 - it populates both `imported_customer_ledgers` and `imported_customer_ledger_lines`
 - the admin balances panel depends on that ledger import, not only on the old snapshot table
 
@@ -73,7 +59,7 @@ $env:MYSQL_PASSWORD="YOUR_PASS"
 npm run dedupe:sales -- --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
 ```
 
-To validate import integrity after a reload or nightly run, use:
+To validate import integrity after an import run, use:
 
 ```powershell
 $env:MYSQL_PASSWORD="YOUR_PASS"
@@ -92,30 +78,15 @@ export MYSQL_PASSWORD='YOUR_PASSWORD'
 npm run import:entersoft -- --mode=replace_sales_year --replace-sales-year=2026 --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
-`npm run reload:sales -- ...` now does this automatically and records the run as `full_refresh` in `import_runs`.
-
-Typical daily server commands:
-
-```bash
-cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-export MYSQL_PASSWORD='YOUR_PASSWORD'
-npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
-```
-
-```bash
-cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-export MYSQL_PASSWORD='YOUR_PASSWORD'
-npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
-```
+`npm run reload:sales -- ...` still does a full rebuild and records the run as `full_refresh` in `import_runs`.
 
 ## Operational Notes
 
-- Long imports should be run through these shell scripts, SSH, or Plesk Scheduled Tasks, not interactive web requests.
+- Long imports should be run through direct shell commands, SSH, or Plesk Scheduled Tasks, not interactive web requests.
 - A `504` in the Plesk web UI usually means the request path timed out, not that the DB necessarily failed.
 - The importer uses a single transaction. If it fails before commit, other sessions may still show `0` rows and the final state may remain empty after rollback.
-- `manual-reload-sales.sh` is the preferred script for a clean rebuild because it creates a timestamped log file and then runs integrity checks.
 - Ad hoc `npm run import:entersoft` executions also create a dedicated importer log file under `site/logs/imports/`.
-- Do not commit server credentials into these shell wrappers; keep DB configuration in host-level environment variables or scheduler configuration.
+- Keep DB configuration in host-level environment variables or scheduler configuration.
 - Do not pass `MYSQL_PASSWORD` as a CLI flag. Keep it in the environment so it does not leak through shell history or process listings.
 
 ## Daily Upload Workflow
@@ -169,7 +140,7 @@ Recommended Plesk Scheduled Tasks:
 Factuals import:
 
 ```bash
-cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && MYSQL_PASSWORD='YOUR_DB_PASSWORD' node scripts/run-entersoft-import.js --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site && MYSQL_PASSWORD='YOUR_DB_PASSWORD' node scripts/run-entersoft-import.js --mode=replace_sales_year --replace-sales-year=2026 --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 Receivables import:
@@ -182,16 +153,5 @@ Recommended timing:
 
 - run factuals first
 - run receivables a few minutes later
+- run integrity check after both
 - use `Errors only` notifications in Plesk
-
-## Typical Plesk command
-
-```bash
-/bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/nightly-import.sh
-```
-
-Manual rebuild command:
-
-```bash
-/bin/bash /var/www/vhosts/viomes.gr/orders.viomes.gr/site/scripts/manual-reload-sales.sh
-```

@@ -17,7 +17,7 @@ This file captures the important product, admin, import, and operational changes
 - Active production DB:
   - MySQL/MariaDB on `213.158.90.203`
 
-Legacy FastAPI code under `backend/app/*` and `backend/main.py` is still dormant/reference-only.
+Legacy FastAPI code under `backend/legacy_fastapi/` is still dormant/reference-only.
 
 ## Important Product Features Now In Place
 

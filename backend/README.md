@@ -27,23 +27,25 @@ Python importer -> MySQL/MariaDB -> Node runtime in site/
 
 Not a supported production path:
 
-- legacy FastAPI backend files in this folder
+- legacy FastAPI backend files under `legacy_fastapi/`
 - old SQLite/demo flows unless explicitly re-enabled
 
 ## Current Daily Inputs
 
 Daily operational inputs going forward:
 
-- daily sales/factual CSVs
-  - imported incrementally into `imported_sales_lines`
-- `new-kart.csv`
-  - daily ledger export
-  - source of truth for admin balances/ledger movements
+- `yearly-factuals.csv`
+  - scheduled sales import
+  - replaces only the current sales year in `imported_sales_lines`
+- `yearly-receivables.csv`
+  - scheduled ledger snapshot
+  - replaces `imported_customer_ledgers` and `imported_customer_ledger_lines`
 
 No longer the primary daily app import inputs:
 
 - `karteles.csv`
 - `eispr*.csv`
+- `new-kart.csv`
 
 ## Current Import Outputs
 
@@ -61,7 +63,7 @@ Daily ledger import outputs:
 - `imported_customer_ledgers`
   - latest row per customer
 - `imported_customer_ledger_lines`
-  - all movement rows from `new-kart.csv`
+  - all movement rows from the current receivables snapshot
 
 Important ledger line fields:
 
@@ -89,27 +91,27 @@ Important ledger line fields:
   - `net_value / (qty * unit_price)`
   - when imported discount columns are zero
 
-### Daily ledger file
+### Current ledger file
 
-- `new-kart.csv` is treated as the current daily ledger source
+- `yearly-receivables.csv` is treated as the current scheduled ledger source
 - importer replaces the previous ledger snapshot/movement dataset deterministically
 - latest per-customer row feeds the admin summary cards
 - full movement rows feed the admin ledger table
 
 ## Commands
 
-### Daily sales import
+### Replace current sales year from uploaded factuals
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+npm run import:entersoft -- --mode=replace_sales_year --replace-sales-year=2026 --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
-### Daily ledger import
+### Replace ledger snapshot from uploaded receivables
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-receivables.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ### Dedupe sales history

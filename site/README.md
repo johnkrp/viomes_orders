@@ -13,7 +13,7 @@ This folder is the active production runtime.
 - `lib/`
   - DB access, schema init, providers, import helpers
 - `scripts/`
-  - operational wrappers for import/reset/check tasks
+  - operational import/reset/check tasks
 
 ## Supported Runtime Matrix
 
@@ -60,7 +60,7 @@ Current behavior:
 
 The old receivables/open-invoice semantics are no longer the active model for this panel.
 
-The admin balances area now behaves as a daily ledger view driven by the imported daily ledger export:
+The admin balances area now behaves as a ledger view driven by the latest imported ledger snapshot:
 
 - `Ανοιχτό υπόλοιπο`
   - latest `Υπόλοιπο`
@@ -100,7 +100,7 @@ Current import-backed read models used by the runtime:
 
 - If the DB looks correct but the live UI still shows old behavior, the deployed Node process likely needs redeploy/restart.
 - The live app will not pick up backend/provider changes until the deployed process restarts.
-- The ledger movement table depends on the latest `new-kart.csv` import, not just on legacy `imported_customer_ledgers` snapshot rows.
+- The ledger movement table depends on the latest receivables import, not just on legacy `imported_customer_ledgers` snapshot rows.
 
 ## Admin User Management
 

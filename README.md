@@ -13,7 +13,7 @@ This repo currently consists of two connected systems:
   - active Python import/ETL tooling
   - imports Entersoft exports into MySQL/MariaDB
 
-The active production path is Node + MySQL. The old FastAPI code under `backend/app/*` and `backend/main.py` is dormant/reference-only.
+The active production path is Node + MySQL. The old FastAPI code now lives under `backend/legacy_fastapi/` and is dormant/reference-only.
 
 ## Current Production Architecture
 
@@ -62,22 +62,24 @@ Important current behavior:
 
 Current daily operational inputs:
 
-- daily sales/factual CSVs
-  - imported incrementally into `imported_sales_lines`
-- `backend/new-kart.csv`
-  - daily customer ledger export
-  - source of truth for the balances/ledger panel in admin
+- `backend/yearly-factuals.csv`
+  - scheduled sales import
+  - replaces only the current sales year in `imported_sales_lines`
+- `backend/yearly-receivables.csv`
+  - scheduled customer ledger snapshot
+  - replaces `imported_customer_ledgers` and `imported_customer_ledger_lines`
 
 No longer the primary daily app inputs:
 
 - `backend/karteles.csv`
 - `backend/eispr*.csv`
+- `backend/new-kart.csv`
 
 ## Admin Balances / Ledger Panel
 
 The admin panel no longer treats this area as open-invoice aging.
 
-It now uses `new-kart.csv` and shows:
+It now uses the latest imported ledger snapshot and shows:
 
 - `Ανοιχτό υπόλοιπο`
   - latest `Υπόλοιπο`
@@ -116,11 +118,11 @@ GET /api/health
 
 ## Import Commands
 
-### Incremental daily sales import
+### Replace current sales year from uploaded factuals
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/cur-week.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+npm run import:entersoft -- --mode=replace_sales_year --replace-sales-year=2026 --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-factuals.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ### Dedupe after daily sales import
@@ -137,11 +139,11 @@ cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
 npm run check:import-integrity -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
-### Daily ledger import
+### Replace ledger snapshot from uploaded receivables
 
 ```bash
 cd /var/www/vhosts/viomes.gr/orders.viomes.gr/site
-npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/new-kart.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+npm run import:entersoft -- --ledger-file=/var/www/vhosts/viomes.gr/orders.viomes.gr/backend/yearly-receivables.csv --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
 
 ### Full reset + reload from canonical yearly sales files
@@ -155,10 +157,10 @@ npm run reload:sales -- --sales-files=/var/www/vhosts/viomes.gr/orders.viomes.gr
 
 - Long imports should be run from shell or scheduled tasks, not interactive browser requests.
 - Keep `MYSQL_PASSWORD` in the shell, scheduler, or host environment. Do not pass it as a CLI flag.
-- For daily off-server exports, the intended pattern is: upload `yearly-factuals.csv` and `yearly-receivables.csv` into the server `backend` folder via SFTP/FTP, then let Plesk Scheduled Tasks run the importer commands. See [site/scripts/README.md](/d:/Desktop/programming/viomes/order_form/site/scripts/README.md) for the current WinSCP/PowerShell and Plesk command examples.
+- For daily off-server exports, the intended pattern is: upload `yearly-factuals.csv` and `yearly-receivables.csv` into the server `backend` folder via SFTP/FTP, then let Plesk Scheduled Tasks run the direct importer commands. See [site/scripts/README.md](/d:/Desktop/programming/viomes/order_form/site/scripts/README.md) for the current WinSCP/PowerShell and Plesk command examples.
 - If the DB looks correct but the UI still shows old behavior, the deployed Node app likely needs redeploy/restart.
 - Same-origin runtime fixes do not take effect until the deployed app process is restarted.
-- `new-kart.csv` import populates both:
+- The active receivables import populates both:
   - `imported_customer_ledgers`
   - `imported_customer_ledger_lines`
 

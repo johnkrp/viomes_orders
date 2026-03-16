@@ -15,10 +15,17 @@ backend/today.csv
 backend/lastweek.csv
 site/node_modules/
 site/*.log
+site/logs/
 .tmp/
 automation/
 automation/windows/*.txt
 automation/windows/*.bat
 automation/windows/*.log
+reports/
+backend/new-kart.csv
+backend/yearly-factuals.csv
+backend/yearly-receivables.csv
+backend/archive/legacy-inputs/
+backend/legacy_fastapi/app.db
 .DS_Store
 Thumbs.db
