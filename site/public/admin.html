@@ -428,183 +428,101 @@
               <section class="panel admin-panel admin-panel-subtle">
                 <div class="panel-head panel-head-inline">
                   <div>
-                    <h2>Κορυφαία είδη ανά τεμάχια</h2>
-                    <p class="admin-panel-note">Είδη με τη μεγαλύτερη ζήτηση σε όγκο.</p>
+                    <h2>Παραγγελίες προς έγκριση</h2>
+                    <p class="admin-panel-note">Έγγραφα ΠΑΡ που δεν έχουν εγκριθεί ακόμη.</p>
                   </div>
                   <div class="admin-inline-controls">
                     <label class="field admin-compact-field">
-                      <span>Ξ ΞµΟΞ―ΞΏΞ΄ΞΏΟ‚</span>
-                      <select class="sales-time-range-control">
-                        <option value="1m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΟ‚ 1 ΞΌΞ®Ξ½Ξ±Ο‚</option>
-                        <option value="3m" selected>Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 3 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                        <option value="6m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 6 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                        <option value="12m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 12 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                        <option value="this_year">Ξ¤ΟΞ­Ο‡ΞΏΞ½ Ξ­Ο„ΞΏΟ‚</option>
-                        <option value="last_year">Ξ ΟΞΏΞ·Ξ³ΞΏΟΞΌΞµΞ½ΞΏ Ξ­Ο„ΞΏΟ‚</option>
-                        <option value="all">Ξ‘Ο€Ο Ο„Ξ·Ξ½ Ξ±ΟΟ‡Ξ®</option>
+                      <span>Περίοδος</span>
+                      <select id="preApprovalOrdersSalesTimeRange" class="sales-time-range-control">
+                        <option value="1m">Τελευταίος 1 μήνας</option>
+                        <option value="3m" selected>Τελευταίοι 3 μήνες</option>
+                        <option value="6m">Τελευταίοι 6 μήνες</option>
+                        <option value="12m">Τελευταίοι 12 μήνες</option>
+                        <option value="this_year">Τρέχον έτος</option>
+                        <option value="last_year">Προηγούμενο έτος</option>
+                        <option value="all">Από την αρχή</option>
                       </select>
                     </label>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
-                  <table class="admin-table admin-top-qty-table">
+                  <table class="admin-table admin-pre-approval-orders-table">
                     <thead>
                       <tr>
-                        <th>Κωδικός</th>
-                        <th>Περιγραφή</th>
+                        <th>ID</th>
+                        <th>Ημερομηνία παραγγελίας</th>
+                        <th>Ημερομηνία καταχώρησης</th>
+                        <th class="admin-table-number">Γραμμές</th>
                         <th class="admin-table-number">Τεμάχια</th>
-                        <th class="admin-table-number">Παραγγελίες</th>
-                        <th class="admin-table-number">Τζίρος</th>
+                        <th class="admin-table-number">Αξία</th>
+                        <th class="admin-table-number">Μέση έκπτωση</th>
+                        <th>Ενέργεια</th>
                       </tr>
                     </thead>
-                    <tbody id="topProductsQtyBody">
+                    <tbody id="preApprovalOrdersBody">
                       <tr>
-                        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                        <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
                       </tr>
                     </tbody>
                   </table>
+                </div>
+                <div class="admin-pagination" id="preApprovalOrdersPagination" hidden>
+                  <button id="preApprovalOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
+                  <span id="preApprovalOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
+                  <button id="preApprovalOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
                 </div>
               </section>
 
               <section class="panel admin-panel admin-panel-subtle">
                 <div class="panel-head panel-head-inline">
                   <div>
-                    <h2>Κορυφαία είδη ανά τζίρο</h2>
-                    <p class="admin-panel-note">Είδη με τη μεγαλύτερη συνεισφορά στον τζίρο.</p>
+                    <h2>Παραγγελίες προς εκτέλεση</h2>
+                    <p class="admin-panel-note">Έγγραφα ΠΔΣ που βρίσκονται σε στάδιο εκτέλεσης και δεν έχουν τιμολογηθεί ακόμη.</p>
                   </div>
                   <div class="admin-inline-controls">
                     <label class="field admin-compact-field">
-                      <span>Ξ ΞµΟΞ―ΞΏΞ΄ΞΏΟ‚</span>
-                      <select class="sales-time-range-control">
-                        <option value="1m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΟ‚ 1 ΞΌΞ®Ξ½Ξ±Ο‚</option>
-                        <option value="3m" selected>Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 3 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                        <option value="6m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 6 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                        <option value="12m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 12 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                        <option value="this_year">Ξ¤ΟΞ­Ο‡ΞΏΞ½ Ξ­Ο„ΞΏΟ‚</option>
-                        <option value="last_year">Ξ ΟΞΏΞ·Ξ³ΞΏΟΞΌΞµΞ½ΞΏ Ξ­Ο„ΞΏΟ‚</option>
-                        <option value="all">Ξ‘Ο€Ο Ο„Ξ·Ξ½ Ξ±ΟΟ‡Ξ®</option>
+                      <span>Περίοδος</span>
+                      <select id="openOrdersSalesTimeRange" class="sales-time-range-control">
+                        <option value="1m">Τελευταίος 1 μήνας</option>
+                        <option value="3m" selected>Τελευταίοι 3 μήνες</option>
+                        <option value="6m">Τελευταίοι 6 μήνες</option>
+                        <option value="12m">Τελευταίοι 12 μήνες</option>
+                        <option value="this_year">Τρέχον έτος</option>
+                        <option value="last_year">Προηγούμενο έτος</option>
+                        <option value="all">Από την αρχή</option>
                       </select>
                     </label>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
-                  <table class="admin-table admin-top-value-table">
+                  <table class="admin-table admin-open-orders-table">
                     <thead>
                       <tr>
-                        <th>Κωδικός</th>
-                        <th>Περιγραφή</th>
-                        <th class="admin-table-number">Τζίρος</th>
+                        <th>ID</th>
+                        <th>Ημερομηνία παραγγελίας</th>
+                        <th>Ημερομηνία καταχώρησης</th>
+                        <th class="admin-table-number">Γραμμές</th>
                         <th class="admin-table-number">Τεμάχια</th>
-                        <th class="admin-table-number">Μέση τιμή μονάδας</th>
+                        <th class="admin-table-number">Αξία</th>
+                        <th class="admin-table-number">Μέση έκπτωση</th>
+                        <th>Ενέργεια</th>
                       </tr>
                     </thead>
-                    <tbody id="topProductsValueBody">
+                    <tbody id="openOrdersBody">
                       <tr>
-                        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                        <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
+                <div class="admin-pagination" id="openOrdersPagination" hidden>
+                  <button id="openOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
+                  <span id="openOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
+                  <button id="openOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
+                </div>
               </section>
             </div>
-
-            <section class="panel admin-panel admin-panel-subtle">
-              <div class="panel-head panel-head-inline">
-                <div>
-                  <h2>Παραγγελίες προς έγκριση</h2>
-                  <p class="admin-panel-note">Έγγραφα ΠΑΡ που δεν έχουν εγκριθεί ακόμη.</p>
-                </div>
-                <div class="admin-inline-controls">
-                  <label class="field admin-compact-field">
-                    <span>Περίοδος</span>
-                    <select id="preApprovalOrdersSalesTimeRange" class="sales-time-range-control">
-                      <option value="1m">Τελευταίος 1 μήνας</option>
-                      <option value="3m" selected>Τελευταίοι 3 μήνες</option>
-                      <option value="6m">Τελευταίοι 6 μήνες</option>
-                      <option value="12m">Τελευταίοι 12 μήνες</option>
-                      <option value="this_year">Τρέχον έτος</option>
-                      <option value="last_year">Προηγούμενο έτος</option>
-                      <option value="all">Από την αρχή</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
-              <div class="admin-table-wrap">
-                <table class="admin-table admin-pre-approval-orders-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Ημερομηνία παραγγελίας</th>
-                      <th>Ημερομηνία καταχώρησης</th>
-                      <th class="admin-table-number">Γραμμές</th>
-                      <th class="admin-table-number">Τεμάχια</th>
-                      <th class="admin-table-number">Αξία</th>
-                      <th class="admin-table-number">Μέση έκπτωση</th>
-                      <th>Ενέργεια</th>
-                    </tr>
-                  </thead>
-                  <tbody id="preApprovalOrdersBody">
-                    <tr>
-                      <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="admin-pagination" id="preApprovalOrdersPagination" hidden>
-                <button id="preApprovalOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
-                <span id="preApprovalOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
-                <button id="preApprovalOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
-              </div>
-            </section>
-
-            <section class="panel admin-panel admin-panel-subtle">
-              <div class="panel-head panel-head-inline">
-                <div>
-                  <h2>Παραγγελίες προς εκτέλεση</h2>
-                  <p class="admin-panel-note">Έγγραφα ΠΔΣ που βρίσκονται σε στάδιο εκτέλεσης και δεν έχουν τιμολογηθεί ακόμη.</p>
-                </div>
-                <div class="admin-inline-controls">
-                  <label class="field admin-compact-field">
-                    <span>Περίοδος</span>
-                    <select id="openOrdersSalesTimeRange" class="sales-time-range-control">
-                      <option value="1m">Τελευταίος 1 μήνας</option>
-                      <option value="3m" selected>Τελευταίοι 3 μήνες</option>
-                      <option value="6m">Τελευταίοι 6 μήνες</option>
-                      <option value="12m">Τελευταίοι 12 μήνες</option>
-                      <option value="this_year">Τρέχον έτος</option>
-                      <option value="last_year">Προηγούμενο έτος</option>
-                      <option value="all">Από την αρχή</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
-              <div class="admin-table-wrap">
-                <table class="admin-table admin-open-orders-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Ημερομηνία παραγγελίας</th>
-                      <th>Ημερομηνία καταχώρησης</th>
-                      <th class="admin-table-number">Γραμμές</th>
-                      <th class="admin-table-number">Τεμάχια</th>
-                      <th class="admin-table-number">Αξία</th>
-                      <th class="admin-table-number">Μέση έκπτωση</th>
-                      <th>Ενέργεια</th>
-                    </tr>
-                  </thead>
-                  <tbody id="openOrdersBody">
-                    <tr>
-                      <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="admin-pagination" id="openOrdersPagination" hidden>
-                <button id="openOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
-                <span id="openOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
-                <button id="openOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
-              </div>
-            </section>
 
             <section class="panel admin-panel admin-panel-subtle">
               <div class="panel-head panel-head-inline">

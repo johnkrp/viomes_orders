@@ -797,16 +797,20 @@ function resetStats() {
   resetProductTableFilters();
   currentTopProductsByQty = [];
   currentTopProductsByValue = [];
-  els.topProductsQtyBody.innerHTML = `
-    <tr>
-      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-    </tr>
-  `;
-  els.topProductsValueBody.innerHTML = `
-    <tr>
-      <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-    </tr>
-  `;
+  if (els.topProductsQtyBody) {
+    els.topProductsQtyBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      </tr>
+    `;
+  }
+  if (els.topProductsValueBody) {
+    els.topProductsValueBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      </tr>
+    `;
+  }
   const recentOrdersHeadRow = document.querySelector(".admin-recent-orders-table thead tr");
   if (recentOrdersHeadRow) {
     recentOrdersHeadRow.innerHTML = `
@@ -1264,6 +1268,7 @@ function renderProductSales() {
 }
 
 function renderTopProductsQty() {
+  if (!els.topProductsQtyBody) return;
   const filteredItems = currentTopProductsByQty;
   els.topProductsQtyBody.innerHTML = filteredItems.length
     ? filteredItems
@@ -1287,6 +1292,7 @@ function renderTopProductsQty() {
 }
 
 function renderTopProductsValue() {
+  if (!els.topProductsValueBody) return;
   const filteredItems = currentTopProductsByValue;
   els.topProductsValueBody.innerHTML = filteredItems.length
     ? filteredItems
