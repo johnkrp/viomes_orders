@@ -256,6 +256,8 @@ function normalizeSalesTimeRangeControlsText() {
     "3m": "Τελευταίοι 3 μήνες",
     "6m": "Τελευταίοι 6 μήνες",
     "12m": "Τελευταίοι 12 μήνες",
+    this_year: "Τρέχον έτος",
+    last_year: "Προηγούμενο έτος",
     all: "Από την αρχή",
   };
 

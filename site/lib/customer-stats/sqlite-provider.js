@@ -65,9 +65,12 @@ const SALES_TIME_RANGE_DAYS = {
   "12m": 365,
 };
 
+const SALES_TIME_RANGE_YEAR_MODES = new Set(["this_year", "last_year"]);
+
 function normalizeSalesTimeRange(value) {
   const normalized = String(value || "").trim().toLowerCase();
   if (normalized === "all") return "all";
+  if (SALES_TIME_RANGE_YEAR_MODES.has(normalized)) return normalized;
   if (Object.hasOwn(SALES_TIME_RANGE_DAYS, normalized)) return normalized;
   return "3m";
 }
@@ -79,6 +82,17 @@ function buildDateWindowFilter(now, salesTimeRange, dateColumn) {
       salesTimeRange: normalizedRange,
       clause: "",
       params: [],
+    };
+  }
+
+  if (normalizedRange === "this_year" || normalizedRange === "last_year") {
+    const year = normalizedRange === "this_year" ? now.getFullYear() : now.getFullYear() - 1;
+    const start = `${year}-01-01`;
+    const end = `${year}-12-31`;
+    return {
+      salesTimeRange: normalizedRange,
+      clause: ` AND SUBSTR(${dateColumn}, 1, 10) BETWEEN ? AND ?`,
+      params: [start, end],
     };
   }
 
