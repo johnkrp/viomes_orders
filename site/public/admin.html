@@ -511,6 +511,55 @@
             <section class="panel admin-panel admin-panel-subtle">
               <div class="panel-head panel-head-inline">
                 <div>
+                  <h2>Παραγγελίες προς έγκριση</h2>
+                  <p class="admin-panel-note">Έγγραφα ΠΑΡ που δεν έχουν εγκριθεί ακόμη.</p>
+                </div>
+                <div class="admin-inline-controls">
+                  <label class="field admin-compact-field">
+                    <span>Περίοδος</span>
+                    <select id="preApprovalOrdersSalesTimeRange" class="sales-time-range-control">
+                      <option value="1m">Τελευταίος 1 μήνας</option>
+                      <option value="3m" selected>Τελευταίοι 3 μήνες</option>
+                      <option value="6m">Τελευταίοι 6 μήνες</option>
+                      <option value="12m">Τελευταίοι 12 μήνες</option>
+                      <option value="this_year">Τρέχον έτος</option>
+                      <option value="last_year">Προηγούμενο έτος</option>
+                      <option value="all">Από την αρχή</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="admin-table-wrap">
+                <table class="admin-table admin-pre-approval-orders-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Ημερομηνία παραγγελίας</th>
+                      <th>Ημερομηνία καταχώρησης</th>
+                      <th class="admin-table-number">Γραμμές</th>
+                      <th class="admin-table-number">Τεμάχια</th>
+                      <th class="admin-table-number">Αξία</th>
+                      <th class="admin-table-number">Μέση έκπτωση</th>
+                      <th>Ενέργεια</th>
+                    </tr>
+                  </thead>
+                  <tbody id="preApprovalOrdersBody">
+                    <tr>
+                      <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="admin-pagination" id="preApprovalOrdersPagination" hidden>
+                <button id="preApprovalOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
+                <span id="preApprovalOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
+                <button id="preApprovalOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
+              </div>
+            </section>
+
+            <section class="panel admin-panel admin-panel-subtle">
+              <div class="panel-head panel-head-inline">
+                <div>
                   <h2>Παραγγελίες προς εκτέλεση</h2>
                   <p class="admin-panel-note">Έγγραφα ΠΔΣ που βρίσκονται σε στάδιο εκτέλεσης και δεν έχουν τιμολογηθεί ακόμη.</p>
                 </div>

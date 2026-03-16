@@ -23,6 +23,10 @@ const EXECUTED_ORDER_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
 const OPEN_EXECUTION_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
   FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
 );
+const PRE_APPROVAL_DOCUMENT_TYPES = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes.includes("ΠΑΡ")
+  ? ["ΠΑΡ"]
+  : ["ΠΑΡ", ...FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes];
+const PRE_APPROVAL_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(PRE_APPROVAL_DOCUMENT_TYPES);
 
 function createMonthlyBuckets() {
   return Array.from({ length: 12 }, (_, index) => ({
@@ -817,16 +821,16 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 open_orders.ordered_at,
                 open_orders.sent_at,
                 open_orders.total_lines,
-                COALESCE(SUM(COALESCE(lines.qty_base, 0)), 0) AS total_pieces,
-                COALESCE(SUM(COALESCE(lines.net_value, 0)), 0) AS total_net_value,
+                COALESCE(SUM(COALESCE(open_lines.qty_base, 0)), 0) AS total_pieces,
+                COALESCE(SUM(COALESCE(open_lines.net_value, 0)), 0) AS total_net_value,
                 open_orders.average_discount_pct,
                 open_orders.document_type
               FROM imported_open_orders open_orders
-              LEFT JOIN imported_sales_lines lines
-                ON lines.customer_code = open_orders.customer_code
-               AND lines.document_no = open_orders.document_no
-               AND lines.order_date = open_orders.created_at
-               AND COALESCE(lines.document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}
+              LEFT JOIN imported_sales_lines open_lines
+                ON open_lines.customer_code = open_orders.customer_code
+               AND open_lines.document_no = open_orders.document_no
+               AND open_lines.order_date = open_orders.created_at
+               AND COALESCE(open_lines.document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}
               WHERE open_orders.customer_code = ?
                 ${importedOrdersDateWindowFilter.clause}
               GROUP BY
@@ -907,6 +911,71 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               ...importedLinesDateWindowFilter.params,
             ],
           );
+
+      const preApprovalOrders = await db.all(
+        `
+          SELECT
+            pending.order_id,
+            pending.document_no,
+            pending.created_at,
+            pending.ordered_at,
+            pending.sent_at,
+            pending.total_lines,
+            pending.total_pieces,
+            pending.total_net_value,
+            pending.average_discount_pct,
+            pending.document_type
+          FROM (
+            SELECT
+              ${importedOrderIdExpression} AS order_id,
+              document_no,
+              customer_code,
+              order_date AS created_at,
+              MAX(ordered_at) AS ordered_at,
+              MAX(sent_at) AS sent_at,
+              COUNT(*) AS total_lines,
+              COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+              COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+              COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+              MAX(document_type) AS document_type
+            FROM imported_sales_lines
+            WHERE customer_code = ?
+              AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+            GROUP BY customer_code, document_no, order_date
+          ) pending
+          LEFT JOIN (
+            SELECT
+              customer_code,
+              MAX(ordered_at) AS ordered_at,
+              MAX(sent_at) AS sent_at,
+              COUNT(*) AS total_lines,
+              COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+            FROM imported_sales_lines
+            WHERE customer_code = ?
+              AND (
+                COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
+                OR COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
+              )${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+            GROUP BY customer_code, document_no, order_date
+          ) progressed
+            ON progressed.customer_code = pending.customer_code
+           AND COALESCE(progressed.ordered_at, '') = COALESCE(pending.ordered_at, '')
+           AND COALESCE(progressed.sent_at, '') = COALESCE(pending.sent_at, '')
+           AND progressed.total_lines = pending.total_lines
+           AND ROUND(progressed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+          WHERE progressed.customer_code IS NULL
+          ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
+          LIMIT 100
+        `,
+        [
+          code,
+          ...importedDataFilter.params,
+          ...importedLinesDateWindowFilter.params,
+          code,
+          ...importedDataFilter.params,
+          ...importedLinesDateWindowFilter.params,
+        ],
+      );
 
       const detailedOrderHeaders = await db.all(
         `
@@ -1012,6 +1081,57 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
         );
 
         detailedOpenOrders.push({
+          order_id: order.order_id,
+          document_type: order.document_type || "",
+          created_at: order.created_at,
+          ordered_at: order.ordered_at || order.created_at,
+          sent_at: order.sent_at || null,
+          notes: "",
+          total_lines: asInteger(order.total_lines),
+          total_pieces: asInteger(order.total_pieces),
+          total_net_value: asMoney(order.total_net_value),
+          average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
+          lines: lines.map((line) => ({
+            code: line.code,
+            description: line.description,
+            qty: asInteger(line.qty),
+            unit_price: asMoney(line.unit_price),
+            discount_pct: asRoundedUpPercent(line.discount_pct),
+            line_net_value: asMoney(line.line_net_value),
+          })),
+        });
+      }
+
+      const detailedPreApprovalOrders = [];
+      for (const order of preApprovalOrders) {
+        const lines = await db.all(
+          `
+            SELECT
+              item_code AS code,
+              item_description AS description,
+              COALESCE(qty_base, 0) AS qty,
+              unit_price,
+              ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
+              COALESCE(net_value, 0) AS line_net_value
+            FROM imported_sales_lines
+            WHERE customer_code = ?
+              AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})
+              ${importedDataFilter.clause}
+              ${importedLinesDateWindowFilter.clause}
+              AND document_no = ?
+              AND order_date = ?
+            ORDER BY item_code ASC
+          `,
+          [
+            code,
+            ...importedDataFilter.params,
+            ...importedLinesDateWindowFilter.params,
+            order.document_no,
+            order.created_at,
+          ],
+        );
+
+        detailedPreApprovalOrders.push({
           order_id: order.order_id,
           document_type: order.document_type || "",
           created_at: order.created_at,
@@ -1149,8 +1269,20 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           total_net_value: asMoney(order.total_net_value),
           average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
         })),
+        pre_approval_orders: preApprovalOrders.map((order) => ({
+          order_id: order.order_id,
+          document_type: order.document_type || "",
+          created_at: order.created_at,
+          ordered_at: order.ordered_at || order.created_at,
+          sent_at: order.sent_at || null,
+          total_lines: asInteger(order.total_lines),
+          total_pieces: asInteger(order.total_pieces),
+          total_net_value: asMoney(order.total_net_value),
+          average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
+        })),
         detailed_orders: detailedOrders,
         detailed_open_orders: detailedOpenOrders,
+        detailed_pre_approval_orders: detailedPreApprovalOrders,
       };
     },
   };

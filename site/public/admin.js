@@ -33,6 +33,7 @@ const PRODUCT_SALES_PAGE_SIZE = 10;
 const RECEIVABLES_PAGE_SIZE = 5;
 const RECENT_ORDERS_PAGE_SIZE = 10;
 const OPEN_ORDERS_PAGE_SIZE = 10;
+const PRE_APPROVAL_ORDERS_PAGE_SIZE = 10;
 const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
@@ -48,7 +49,9 @@ const IMPORT_DATASET_LABELS = {
 
 let currentDetailedOrders = [];
 let currentDetailedOpenOrders = [];
+let currentDetailedPreApprovalOrders = [];
 let currentOpenOrders = [];
+let currentPreApprovalOrders = [];
 let currentProductSales = [];
 let currentTopProductsByQty = [];
 let currentTopProductsByValue = [];
@@ -59,6 +62,7 @@ let currentProductSalesPage = 1;
 let currentReceivablesPage = 1;
 let currentRecentOrdersPage = 1;
 let currentOpenOrdersPage = 1;
+let currentPreApprovalOrdersPage = 1;
 let currentProductSalesFilters = { code: "", description: "" };
 let currentCustomerCode = null;
 let currentBranchCode = "";
@@ -155,6 +159,11 @@ const els = {
   openOrdersPrevBtn: document.getElementById("openOrdersPrevBtn"),
   openOrdersNextBtn: document.getElementById("openOrdersNextBtn"),
   openOrdersPageInfo: document.getElementById("openOrdersPageInfo"),
+  preApprovalOrdersBody: document.getElementById("preApprovalOrdersBody"),
+  preApprovalOrdersPagination: document.getElementById("preApprovalOrdersPagination"),
+  preApprovalOrdersPrevBtn: document.getElementById("preApprovalOrdersPrevBtn"),
+  preApprovalOrdersNextBtn: document.getElementById("preApprovalOrdersNextBtn"),
+  preApprovalOrdersPageInfo: document.getElementById("preApprovalOrdersPageInfo"),
   detailedOrdersList: document.getElementById("detailedOrdersList"),
 };
 
@@ -201,6 +210,7 @@ function saveAdminState() {
       currentReceivablesPage,
       currentRecentOrdersPage,
       currentOpenOrdersPage,
+      currentPreApprovalOrdersPage,
       selectedOrderId,
       branchSelectorSearch: els.branchSelectorSearch?.value || "",
       productSalesMetric: els.productSalesMetric?.value || "revenue",
@@ -231,6 +241,7 @@ function restoreAdminStateView(state) {
     currentReceivablesPage = Math.max(1, Number(state.currentReceivablesPage) || 1);
     currentRecentOrdersPage = Math.max(1, Number(state.currentRecentOrdersPage) || 1);
     currentOpenOrdersPage = Math.max(1, Number(state.currentOpenOrdersPage) || 1);
+    currentPreApprovalOrdersPage = Math.max(1, Number(state.currentPreApprovalOrdersPage) || 1);
     selectedOrderId = state.selectedOrderId || null;
     if (els.productSalesMetric) {
       els.productSalesMetric.value = state.productSalesMetric === "pieces" ? "pieces" : "revenue";
@@ -240,6 +251,7 @@ function restoreAdminStateView(state) {
     }
     renderProductSales();
     renderReceivablesTable();
+    renderPreApprovalOrdersTable();
     renderRecentOrdersTable();
     renderSelectedOrderDetails();
   }
@@ -532,6 +544,7 @@ function findDetailedOrder(orderId) {
   return (
     currentDetailedOrders.find((order) => String(order.order_id) === normalizedId) ||
     currentDetailedOpenOrders.find((order) => String(order.order_id) === normalizedId) ||
+    currentDetailedPreApprovalOrders.find((order) => String(order.order_id) === normalizedId) ||
     null
   );
 }
@@ -814,6 +827,7 @@ function resetStats() {
   `;
   currentRecentOrdersPage = 1;
   currentOpenOrdersPage = 1;
+  currentPreApprovalOrdersPage = 1;
   if (els.recentOrdersPagination) els.recentOrdersPagination.hidden = true;
   if (els.recentOrdersPageInfo) els.recentOrdersPageInfo.textContent = "Σελίδα 1 από 1";
   if (els.openOrdersBody) {
@@ -825,10 +839,21 @@ function resetStats() {
   }
   if (els.openOrdersPagination) els.openOrdersPagination.hidden = true;
   if (els.openOrdersPageInfo) els.openOrdersPageInfo.textContent = "Σελίδα 1 από 1";
+  if (els.preApprovalOrdersBody) {
+    els.preApprovalOrdersBody.innerHTML = `
+      <tr>
+        <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      </tr>
+    `;
+  }
+  if (els.preApprovalOrdersPagination) els.preApprovalOrdersPagination.hidden = true;
+  if (els.preApprovalOrdersPageInfo) els.preApprovalOrdersPageInfo.textContent = "Σελίδα 1 από 1";
   if (els.openRankedOrderFormBtn) els.openRankedOrderFormBtn.disabled = true;
   currentDetailedOrders = [];
   currentDetailedOpenOrders = [];
+  currentDetailedPreApprovalOrders = [];
   currentOpenOrders = [];
+  currentPreApprovalOrders = [];
   selectedOrderId = null;
   els.detailedOrdersList.innerHTML = `
     <article class="admin-order-card admin-order-empty">
@@ -1355,6 +1380,69 @@ function getOpenOrdersForTable() {
   });
 }
 
+function getPreApprovalOrdersForTable() {
+  return [...currentPreApprovalOrders].sort((a, b) => {
+    const aKey = Date.parse(String(a?.ordered_at || a?.created_at || a?.sent_at || "")) || 0;
+    const bKey = Date.parse(String(b?.ordered_at || b?.created_at || b?.sent_at || "")) || 0;
+    return bKey - aKey || String(b?.order_id || "").localeCompare(String(a?.order_id || ""));
+  });
+}
+
+function renderPreApprovalOrdersTable() {
+  const preApprovalOrders = getPreApprovalOrdersForTable();
+  const totalPages = Math.max(1, Math.ceil(preApprovalOrders.length / PRE_APPROVAL_ORDERS_PAGE_SIZE));
+  currentPreApprovalOrdersPage = Math.min(currentPreApprovalOrdersPage, totalPages);
+  const start = (currentPreApprovalOrdersPage - 1) * PRE_APPROVAL_ORDERS_PAGE_SIZE;
+  const pageItems = preApprovalOrders.slice(start, start + PRE_APPROVAL_ORDERS_PAGE_SIZE);
+
+  els.preApprovalOrdersBody.innerHTML = pageItems.length
+    ? pageItems
+        .map((item) => {
+          const isActive = String(selectedOrderId || "") === String(item.order_id || "");
+          return `
+            <tr>
+              <td>${escapeHtml(formatDisplayOrderId(item.order_id))}</td>
+              <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
+              <td>${escapeHtml(formatDate(item.created_at))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
+              <td class="admin-table-number">${escapeHtml(formatPercentRoundedUp(item.average_discount_pct))}</td>
+              <td class="admin-table-action">
+                <button
+                  type="button"
+                  class="btn ghost admin-order-select${isActive ? " is-active" : ""}"
+                  data-order-id="${escapeHtml(item.order_id)}"
+                >
+                  Προβολή
+                </button>
+              </td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `
+        <tr>
+          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς έγκριση.</td>
+        </tr>
+      `;
+
+  if (els.preApprovalOrdersPagination) {
+    els.preApprovalOrdersPagination.hidden = !preApprovalOrders.length;
+  }
+  if (els.preApprovalOrdersPageInfo) {
+    els.preApprovalOrdersPageInfo.textContent = preApprovalOrders.length
+      ? `Σελίδα ${currentPreApprovalOrdersPage} από ${totalPages}`
+      : "Σελίδα 1 από 1";
+  }
+  if (els.preApprovalOrdersPrevBtn) {
+    els.preApprovalOrdersPrevBtn.disabled = currentPreApprovalOrdersPage <= 1;
+  }
+  if (els.preApprovalOrdersNextBtn) {
+    els.preApprovalOrdersNextBtn.disabled = currentPreApprovalOrdersPage >= totalPages;
+  }
+}
+
 function renderOpenOrdersTable() {
   const openOrders = getOpenOrdersForTable();
   const totalPages = Math.max(1, Math.ceil(openOrders.length / OPEN_ORDERS_PAGE_SIZE));
@@ -1420,13 +1508,19 @@ function renderStats(data) {
   const topProductsByQty = Array.isArray(data?.top_products_by_qty) ? data.top_products_by_qty : [];
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const openOrders = Array.isArray(data?.open_orders) ? data.open_orders : [];
+  const preApprovalOrders = Array.isArray(data?.pre_approval_orders) ? data.pre_approval_orders : [];
   const detailedOpenOrders = Array.isArray(data?.detailed_open_orders) ? data.detailed_open_orders : [];
+  const detailedPreApprovalOrders = Array.isArray(data?.detailed_pre_approval_orders)
+    ? data.detailed_pre_approval_orders
+    : [];
   const isBranchView = customer.aggregation_level === "branch";
   lastRenderedStatsPayload = data;
 
   currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
   currentDetailedOpenOrders = detailedOpenOrders;
+  currentDetailedPreApprovalOrders = detailedPreApprovalOrders;
   currentOpenOrders = openOrders;
+  currentPreApprovalOrders = preApprovalOrders;
   currentProductSales = Array.isArray(productSales.items) ? productSales.items : [];
   currentTopProductsByQty = topProductsByQty;
   currentTopProductsByValue = topProductsByValue;
@@ -1437,6 +1531,7 @@ function renderStats(data) {
   currentProductSalesPage = 1;
   currentRecentOrdersPage = 1;
   currentOpenOrdersPage = 1;
+  currentPreApprovalOrdersPage = 1;
   resetProductTableFilters();
 
   const metaParts = [customer.code, customer.email];
@@ -1476,6 +1571,7 @@ function renderStats(data) {
   renderProductSales();
   renderTopProductsQty();
   renderTopProductsValue();
+  renderPreApprovalOrdersTable();
   renderOpenOrdersTable();
   renderRecentOrdersTable();
   renderSelectedOrderDetails();
@@ -1845,11 +1941,25 @@ els.openOrdersPrevBtn?.addEventListener("click", () => {
   currentOpenOrdersPage -= 1;
   renderOpenOrdersTable();
 });
+els.preApprovalOrdersPrevBtn?.addEventListener("click", () => {
+  if (currentPreApprovalOrdersPage <= 1) return;
+  currentPreApprovalOrdersPage -= 1;
+  renderPreApprovalOrdersTable();
+});
 els.openOrdersNextBtn?.addEventListener("click", () => {
   const totalPages = Math.max(1, Math.ceil(getOpenOrdersForTable().length / OPEN_ORDERS_PAGE_SIZE));
   if (currentOpenOrdersPage >= totalPages) return;
   currentOpenOrdersPage += 1;
   renderOpenOrdersTable();
+});
+els.preApprovalOrdersNextBtn?.addEventListener("click", () => {
+  const totalPages = Math.max(
+    1,
+    Math.ceil(getPreApprovalOrdersForTable().length / PRE_APPROVAL_ORDERS_PAGE_SIZE),
+  );
+  if (currentPreApprovalOrdersPage >= totalPages) return;
+  currentPreApprovalOrdersPage += 1;
+  renderPreApprovalOrdersTable();
 });
 els.recentOrdersNextBtn?.addEventListener("click", () => {
   const totalPages = Math.max(1, Math.ceil(getRecentOrdersForTable().length / RECENT_ORDERS_PAGE_SIZE));
@@ -1872,6 +1982,14 @@ els.openOrdersBody?.addEventListener("click", (event) => {
   selectedOrderId = button.getAttribute("data-order-id");
   renderSelectedOrderDetails();
   renderOpenOrdersTable();
+});
+els.preApprovalOrdersBody?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-order-id]");
+  if (!button) return;
+
+  selectedOrderId = button.getAttribute("data-order-id");
+  renderSelectedOrderDetails();
+  renderPreApprovalOrdersTable();
 });
 els.openRankedOrderFormBtn?.addEventListener("click", openRankedOrderForm);
 window.addEventListener("focus", () => {
