@@ -345,6 +345,19 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           `,
           [code],
         );
+        const rangeSummary = await db.get(
+          `
+            SELECT
+              COUNT(DISTINCT o.id) AS total_orders,
+              COALESCE(SUM(ol.qty_pieces), 0) AS total_pieces,
+              COALESCE(SUM(ol.line_net_value), 0) AS total_revenue
+            FROM orders o
+            LEFT JOIN order_lines ol ON ol.order_id = o.id
+            WHERE o.customer_code = ?
+              ${orderDateWindowFilter.clause}
+          `,
+          [code, ...orderDateWindowFilter.params],
+        );
         const revenueWindows = await loadRevenueWindows(db, "orders", "customer_code", "created_at", code, now);
 
         const productQuery = `
@@ -532,6 +545,11 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             days_since_last_order: buildDaysSinceLastOrder(summary.last_order_date, now),
             last_order_date: summary.last_order_date,
           },
+          range_summary: {
+            total_orders: asInteger(rangeSummary?.total_orders),
+            total_pieces: asInteger(rangeSummary?.total_pieces),
+            total_revenue: asMoney(rangeSummary?.total_revenue),
+          },
           monthly_sales: {
             current_year:
               monthlyYearlySeries.find((entry) => entry.year === currentYear)?.months ||
@@ -664,6 +682,42 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               ) order_totals
             `,
             [code, ...importedDataFilter.params],
+          );
+      const rangeSummary = useImportedProjections
+        ? await db.get(
+            `
+              SELECT
+                COUNT(*) AS total_orders,
+                COALESCE(SUM(total_pieces), 0) AS total_pieces,
+                COALESCE(SUM(total_net_value), 0) AS total_revenue
+              FROM imported_orders
+              WHERE customer_code = ?
+                AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
+                ${importedOrdersDateWindowFilter.clause}
+            `,
+            [code, ...importedOrdersDateWindowFilter.params],
+          )
+        : await db.get(
+            `
+              SELECT
+                COUNT(*) AS total_orders,
+                COALESCE(SUM(total_pieces), 0) AS total_pieces,
+                COALESCE(SUM(total_net_value), 0) AS total_revenue
+              FROM (
+                SELECT
+                  document_no,
+                  order_date AS created_at,
+                  COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
+                  COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value
+                FROM imported_sales_lines
+                WHERE customer_code = ?
+                  AND ${importedExpressions.countInOrderTotals} = 1
+                  AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}
+                  ${importedLinesDateWindowFilter.clause}
+                GROUP BY document_no, order_date
+              ) executed
+            `,
+            [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
           );
       const revenueWindows = useImportedProjections
         ? await loadRevenueWindows(db, "imported_orders", "customer_code", "created_at", code, now)
@@ -1224,6 +1278,11 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           average_days_between_orders: buildAverageDaysBetweenOrders(summaryRecentOrders),
           days_since_last_order: buildDaysSinceLastOrder(summary.last_order_date, now),
           last_order_date: summary.last_order_date,
+        },
+        range_summary: {
+          total_orders: asInteger(rangeSummary?.total_orders),
+          total_pieces: asInteger(rangeSummary?.total_pieces),
+          total_revenue: asMoney(rangeSummary?.total_revenue),
         },
         monthly_sales: {
             current_year:

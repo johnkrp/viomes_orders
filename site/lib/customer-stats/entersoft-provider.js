@@ -158,92 +158,96 @@ function mapPayload(rawPayload, customerCode, responseShape) {
   const root = rawPayload?.data ?? rawPayload;
   const customer = getByPath(root, "customer") || {};
   const summary = getByPath(root, "summary") || {};
+  const rangeSummary = getByPath(root, "range_summary") ?? summary.range_summary;
 
   if (!customer.code && !customer.name && !summary.total_orders && !Array.isArray(root?.recent_orders)) {
     throw createCustomerNotFoundError(customerCode);
   }
 
-  return normalizeStatsPayload(
-    {
-      customer: {
-        code: customer.code ?? customer.customer_code ?? customerCode,
-        name: customer.name ?? customer.customer_name ?? customer.trade_name ?? "",
-        email: customer.email ?? customer.email_address ?? null,
-        aggregation_level: customer.aggregation_level ?? customer.level ?? "store",
-        branch_code: customer.branch_code ?? customer.store_code ?? customer.branch?.code ?? null,
-        branch_description:
-          customer.branch_description ??
-          customer.store_description ??
-          customer.branch?.description ??
-          null,
-        chain_name: customer.chain_name ?? customer.parent_name ?? null,
-      },
-      summary: {
-        total_orders: summary.total_orders ?? summary.order_count ?? 0,
-        total_pieces: summary.total_pieces ?? summary.total_qty ?? summary.qty ?? 0,
-        total_revenue: summary.total_revenue ?? summary.net_value ?? summary.value ?? 0,
-        revenue_3m: summary.revenue_3m ?? summary.revenue_last_3m,
-        revenue_6m: summary.revenue_6m ?? summary.revenue_last_6m,
-        revenue_12m: summary.revenue_12m ?? summary.revenue_last_12m,
-        average_order_value: summary.average_order_value ?? summary.avg_order_value,
-        average_days_between_orders:
-          summary.average_days_between_orders ?? summary.avg_days_between_orders,
-        days_since_last_order: summary.days_since_last_order,
-        last_order_date: summary.last_order_date ?? summary.latest_order_date ?? null,
-      },
-      monthly_sales: {
-        current_year: mapMonthlyRows(
-          getByPath(root, "monthly_sales.current_year") ?? getByPath(root, "sales_by_month.current_year"),
-        ),
-        previous_year: mapMonthlyRows(
-          getByPath(root, "monthly_sales.previous_year") ?? getByPath(root, "sales_by_month.previous_year"),
-        ),
-      },
-      product_sales: {
-        metric: getByPath(root, "product_sales.metric") ?? getByPath(root, "products.metric") ?? "revenue",
-        items: mapProductRows(getByPath(root, "product_sales.items") ?? getByPath(root, "products.items")),
-      },
-      receivables: {
-        currency:
-          getByPath(root, "receivables.currency") ??
-          getByPath(root, "ledger.currency") ??
-          "EUR",
-        open_balance:
-          getByPath(root, "receivables.open_balance") ?? getByPath(root, "ledger.open_balance") ?? 0,
-        overdue_balance:
-          getByPath(root, "receivables.overdue_balance") ??
-          getByPath(root, "ledger.overdue_balance") ??
-          0,
-        progressive_credit:
-          getByPath(root, "receivables.progressive_credit") ??
-          getByPath(root, "receivables.total_credit") ??
-          getByPath(root, "ledger.progressive_credit") ??
-          getByPath(root, "ledger.total_credit") ??
-          0,
-        items: mapReceivableItems(
-          getByPath(root, "receivables.items") ?? getByPath(root, "ledger.items"),
-        ),
-      },
-      top_products_by_qty: mapProductRows(
-        getByPath(root, "top_products_by_qty") ?? getByPath(root, "products_by_qty"),
+  const normalizedPayload = {
+    customer: {
+      code: customer.code ?? customer.customer_code ?? customerCode,
+      name: customer.name ?? customer.customer_name ?? customer.trade_name ?? "",
+      email: customer.email ?? customer.email_address ?? null,
+      aggregation_level: customer.aggregation_level ?? customer.level ?? "store",
+      branch_code: customer.branch_code ?? customer.store_code ?? customer.branch?.code ?? null,
+      branch_description:
+        customer.branch_description ??
+        customer.store_description ??
+        customer.branch?.description ??
+        null,
+      chain_name: customer.chain_name ?? customer.parent_name ?? null,
+    },
+    summary: {
+      total_orders: summary.total_orders ?? summary.order_count ?? 0,
+      total_pieces: summary.total_pieces ?? summary.total_qty ?? summary.qty ?? 0,
+      total_revenue: summary.total_revenue ?? summary.net_value ?? summary.value ?? 0,
+      revenue_3m: summary.revenue_3m ?? summary.revenue_last_3m,
+      revenue_6m: summary.revenue_6m ?? summary.revenue_last_6m,
+      revenue_12m: summary.revenue_12m ?? summary.revenue_last_12m,
+      average_order_value: summary.average_order_value ?? summary.avg_order_value,
+      average_days_between_orders:
+        summary.average_days_between_orders ?? summary.avg_days_between_orders,
+      days_since_last_order: summary.days_since_last_order,
+      last_order_date: summary.last_order_date ?? summary.latest_order_date ?? null,
+    },
+    monthly_sales: {
+      current_year: mapMonthlyRows(
+        getByPath(root, "monthly_sales.current_year") ?? getByPath(root, "sales_by_month.current_year"),
       ),
-      top_products_by_value: mapProductRows(
-        getByPath(root, "top_products_by_value") ?? getByPath(root, "products_by_value"),
-      ),
-      available_branches: mapAvailableBranches(
-        getByPath(root, "available_branches") ??
-          getByPath(root, "branches") ??
-          getByPath(root, "customer.available_branches"),
-      ),
-      recent_orders: mapRecentOrders(
-        getByPath(root, "recent_orders") ?? getByPath(root, "recent_documents"),
-      ),
-      detailed_orders: mapDetailedOrders(
-        getByPath(root, "detailed_orders") ?? getByPath(root, "order_details"),
+      previous_year: mapMonthlyRows(
+        getByPath(root, "monthly_sales.previous_year") ?? getByPath(root, "sales_by_month.previous_year"),
       ),
     },
-    customerCode,
-  );
+    product_sales: {
+      metric: getByPath(root, "product_sales.metric") ?? getByPath(root, "products.metric") ?? "revenue",
+      items: mapProductRows(getByPath(root, "product_sales.items") ?? getByPath(root, "products.items")),
+    },
+    receivables: {
+      currency:
+        getByPath(root, "receivables.currency") ??
+        getByPath(root, "ledger.currency") ??
+        "EUR",
+      open_balance:
+        getByPath(root, "receivables.open_balance") ?? getByPath(root, "ledger.open_balance") ?? 0,
+      overdue_balance:
+        getByPath(root, "receivables.overdue_balance") ??
+        getByPath(root, "ledger.overdue_balance") ??
+        0,
+      progressive_credit:
+        getByPath(root, "receivables.progressive_credit") ??
+        getByPath(root, "receivables.total_credit") ??
+        getByPath(root, "ledger.progressive_credit") ??
+        getByPath(root, "ledger.total_credit") ??
+        0,
+      items: mapReceivableItems(
+        getByPath(root, "receivables.items") ?? getByPath(root, "ledger.items"),
+      ),
+    },
+    top_products_by_qty: mapProductRows(
+      getByPath(root, "top_products_by_qty") ?? getByPath(root, "products_by_qty"),
+    ),
+    top_products_by_value: mapProductRows(
+      getByPath(root, "top_products_by_value") ?? getByPath(root, "products_by_value"),
+    ),
+    available_branches: mapAvailableBranches(
+      getByPath(root, "available_branches") ??
+        getByPath(root, "branches") ??
+        getByPath(root, "customer.available_branches"),
+    ),
+    recent_orders: mapRecentOrders(
+      getByPath(root, "recent_orders") ?? getByPath(root, "recent_documents"),
+    ),
+    detailed_orders: mapDetailedOrders(
+      getByPath(root, "detailed_orders") ?? getByPath(root, "order_details"),
+    ),
+  };
+
+  if (rangeSummary) {
+    normalizedPayload.range_summary = rangeSummary;
+  }
+
+  return normalizeStatsPayload(normalizedPayload, customerCode);
 }
 
 export function createEntersoftCustomerStatsProvider(options = {}) {

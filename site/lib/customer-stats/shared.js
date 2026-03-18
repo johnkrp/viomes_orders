@@ -168,6 +168,9 @@ export function normalizeStatsPayload(payload, customerCode) {
   }
 
   const summary = payload?.summary || {};
+  const hasRangeSummary =
+    payload && Object.prototype.hasOwnProperty.call(payload, "range_summary");
+  const rangeSummary = hasRangeSummary ? payload.range_summary || {} : null;
   const recentOrders = Array.isArray(payload?.recent_orders) ? payload.recent_orders : [];
   const openOrders = Array.isArray(payload?.open_orders) ? payload.open_orders : [];
   const preApprovalOrders = Array.isArray(payload?.pre_approval_orders) ? payload.pre_approval_orders : [];
@@ -221,6 +224,13 @@ export function normalizeStatsPayload(payload, customerCode) {
         summary.days_since_last_order ?? buildDaysSinceLastOrder(summary.last_order_date, now),
       last_order_date: summary.last_order_date || null,
     },
+    range_summary: hasRangeSummary
+      ? {
+          total_orders: asInteger(rangeSummary?.total_orders),
+          total_pieces: asInteger(rangeSummary?.total_pieces),
+          total_revenue: asMoney(rangeSummary?.total_revenue),
+        }
+      : null,
     monthly_sales: {
       current_year: currentYearSeries,
       previous_year: previousYearSeries,

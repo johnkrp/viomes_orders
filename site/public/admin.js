@@ -58,6 +58,11 @@ let currentProductSales = [];
 let currentTopProductsByQty = [];
 let currentTopProductsByValue = [];
 let currentSearchResults = [];
+let allRangeDetailedOrders = [];
+let allRangeStatsKey = "";
+const rangeSummaryCache = new Map();
+const rangeSummaryPending = new Set();
+let currentAllRangeRequestId = 0;
 let selectedOrderId = null;
 let currentReceivables = [];
 let currentProductSalesPage = 1;
@@ -269,10 +274,35 @@ function getSalesTimeRangeControls() {
   return Array.from(document.querySelectorAll(".sales-time-range-control"));
 }
 
+function getAllTimeRangeControls() {
+  return Array.from(
+    document.querySelectorAll(".sales-time-range-control, .card-time-range-control"),
+  );
+}
+
 function normalizeSalesTimeRange(value) {
   const normalized = String(value || DEFAULT_SALES_TIME_RANGE).trim().toLowerCase();
   const allowedValues = new Set(["1m", "3m", "6m", "12m", "this_year", "last_year", "all"]);
   return allowedValues.has(normalized) ? normalized : DEFAULT_SALES_TIME_RANGE;
+}
+
+function buildRangeSummaryKey(statsKey, range) {
+  return `${statsKey}::${normalizeSalesTimeRange(range)}`;
+}
+
+function cacheRangeSummary(statsKey, range, summary) {
+  if (!statsKey || !range || !summary) return;
+  const key = buildRangeSummaryKey(statsKey, range);
+  rangeSummaryCache.set(key, {
+    total_orders: Number(summary.total_orders ?? 0),
+    total_pieces: Number(summary.total_pieces ?? 0),
+    total_revenue: Number(summary.total_revenue ?? 0),
+  });
+}
+
+function getCachedRangeSummary(statsKey, range) {
+  if (!statsKey || !range) return null;
+  return rangeSummaryCache.get(buildRangeSummaryKey(statsKey, range)) || null;
 }
 
 function syncSalesTimeRangeControls(value) {
@@ -298,7 +328,7 @@ function normalizeSalesTimeRangeControlsText() {
     all: "2024 και μετά",
   };
 
-  getSalesTimeRangeControls().forEach((control) => {
+  getAllTimeRangeControls().forEach((control) => {
     const labelText = control.closest("label")?.querySelector("span");
     if (labelText) labelText.textContent = "Περίοδος";
 
@@ -522,6 +552,36 @@ function parseIsoDate(value) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getCardTimeRangeValue(target) {
+  const control = document.querySelector(`.card-time-range-control[data-range-target="${target}"]`);
+  return normalizeSalesTimeRange(control?.value || DEFAULT_SALES_TIME_RANGE);
+}
+
+function filterOrdersByRange(orders, range, now = new Date()) {
+  const normalized = normalizeSalesTimeRange(range);
+  if (normalized === "all") {
+    return Array.isArray(orders) ? [...orders] : [];
+  }
+
+  if (normalized === "this_year" || normalized === "last_year") {
+    const year = normalized === "this_year" ? now.getFullYear() : now.getFullYear() - 1;
+    const start = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31, 23, 59, 59, 999);
+    return (Array.isArray(orders) ? orders : []).filter((order) => {
+      const date = parseIsoDate(order?.ordered_at || order?.created_at);
+      return date ? date >= start && date <= end : false;
+    });
+  }
+
+  const daysByRange = { "1m": 30, "3m": 90, "6m": 180, "12m": 365 };
+  const days = daysByRange[normalized] || 90;
+  const cutoff = new Date(now.getTime() - days * 86400000);
+  return (Array.isArray(orders) ? orders : []).filter((order) => {
+    const date = parseIsoDate(order?.ordered_at || order?.created_at);
+    return date ? date >= cutoff : false;
+  });
 }
 
 function formatMoney(value) {
@@ -823,6 +883,10 @@ function resetStats() {
   lastRenderedStatsPayload = null;
   resetBranchSelector();
   currentSalesTimeRange = getSelectedSalesTimeRange();
+  allRangeDetailedOrders = [];
+  allRangeStatsKey = "";
+  rangeSummaryCache.clear();
+  rangeSummaryPending.clear();
   els.customerNameHeading.textContent = "Πελάτης";
   els.customerMeta.textContent = "-";
   if (els.totalOrdersValue) els.totalOrdersValue.textContent = "0";
@@ -1714,8 +1778,8 @@ function renderStats(data) {
   if (els.totalOrdersValue) {
     els.totalOrdersValue.textContent = formatNumber(summary.total_orders ?? 0);
   }
-  els.totalPiecesValue.textContent = formatNumber(summary.total_pieces ?? 0);
-  els.totalRevenueValue.textContent = formatMoney(summary.total_revenue);
+  if (els.totalPiecesValue) els.totalPiecesValue.textContent = formatNumber(summary.total_pieces ?? 0);
+  if (els.totalRevenueValue) els.totalRevenueValue.textContent = formatMoney(summary.total_revenue);
   els.averageOrderValue.textContent = formatMoney(summary.average_order_value);
   if (els.daysSinceLastOrderValue) {
     els.daysSinceLastOrderValue.textContent = formatDays(summary.days_since_last_order);
@@ -1726,7 +1790,56 @@ function renderStats(data) {
   const recentExecutedOrdersForTable = getRecentOrdersForTable();
   const preApprovalCount = preApprovalOrdersForTable.length;
   const openCount = openOrdersForTable.length;
-  const recentExecutedCount = recentExecutedOrdersForTable.length;
+  const now = new Date();
+  const statsKey = `${customer.code || ""}::${customer.branch_code || ""}`;
+  if (data?.range_summary) {
+    cacheRangeSummary(statsKey, currentSalesTimeRange, data.range_summary);
+  }
+  const detailedOrdersForCards =
+    allRangeDetailedOrders.length && allRangeStatsKey === statsKey
+      ? allRangeDetailedOrders
+      : currentDetailedOrders;
+  const recentRange = getCardTimeRangeValue("recent_executed");
+  if (!getCachedRangeSummary(statsKey, recentRange)) {
+    void fetchRangeSummary(
+      recentRange,
+      customer.code,
+      customer.branch_code || "",
+      currentCustomerSearchFilters,
+    );
+  }
+  const recentRangeSummary = getCachedRangeSummary(statsKey, recentRange);
+  const recentExecutedCount = recentRangeSummary
+    ? Number(recentRangeSummary.total_orders || 0)
+    : filterOrdersByRange(detailedOrdersForCards, recentRange, now).length;
+  const piecesRange = getCardTimeRangeValue("total_pieces");
+  const revenueRange = getCardTimeRangeValue("total_revenue");
+  if (!getCachedRangeSummary(statsKey, piecesRange)) {
+    void fetchRangeSummary(
+      piecesRange,
+      customer.code,
+      customer.branch_code || "",
+      currentCustomerSearchFilters,
+    );
+  }
+  if (!getCachedRangeSummary(statsKey, revenueRange)) {
+    void fetchRangeSummary(
+      revenueRange,
+      customer.code,
+      customer.branch_code || "",
+      currentCustomerSearchFilters,
+    );
+  }
+  const piecesRangeSummary = getCachedRangeSummary(statsKey, piecesRange);
+  const revenueRangeSummary = getCachedRangeSummary(statsKey, revenueRange);
+  const ordersForPieces = filterOrdersByRange(detailedOrdersForCards, piecesRange, now);
+  const ordersForRevenue = filterOrdersByRange(detailedOrdersForCards, revenueRange, now);
+  const piecesTotal = piecesRangeSummary
+    ? Number(piecesRangeSummary.total_pieces || 0)
+    : ordersForPieces.reduce((sum, order) => sum + Number(order?.total_pieces || 0), 0);
+  const revenueTotal = revenueRangeSummary
+    ? Number(revenueRangeSummary.total_revenue || 0)
+    : ordersForRevenue.reduce((sum, order) => sum + Number(order?.total_net_value || 0), 0);
   const activeDocumentIds = new Set(
     [...preApprovalOrdersForTable, ...openOrdersForTable]
       .map((order) => String(order?.order_id || ""))
@@ -1738,6 +1851,12 @@ function renderStats(data) {
   els.acceptedOrdersValue.textContent = formatNumber(preApprovalCount);
   els.inProgressOrdersValue.textContent = formatNumber(openCount);
   els.invoicedOrdersValue.textContent = formatNumber(recentExecutedCount);
+  if (els.totalPiecesValue) {
+    els.totalPiecesValue.textContent = formatNumber(piecesTotal);
+  }
+  if (els.totalRevenueValue) {
+    els.totalRevenueValue.textContent = formatMoney(revenueTotal);
+  }
   if (els.lastOrderDateValue) {
     els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
   }
@@ -1877,6 +1996,7 @@ async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = 
     );
     if (requestId !== currentStatsRequestId) return;
     renderStats(payload);
+    void fetchAllRangeStats(customerCode, branchCode, scopeFilters);
     setCurrentCustomerSearchFilters({
       ...currentCustomerSearchFilters,
       ...scopeFilters,
@@ -1897,6 +2017,89 @@ async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = 
     if (requestId === currentStatsRequestId) {
       await setStatsLoading(false);
     }
+  }
+}
+
+async function fetchAllRangeStats(customerCode, branchCode = "", scopeFilters = currentCustomerSearchFilters) {
+  if (!customerCode) return;
+  const requestId = ++currentAllRangeRequestId;
+  try {
+    const params = new URLSearchParams();
+    if (branchCode) params.set("branch_code", branchCode);
+    const normalizedScopeFilters = {
+      branch_code: String(scopeFilters?.branch_code || "").trim(),
+      branch_description: String(scopeFilters?.branch_description || "").trim(),
+    };
+    if (normalizedScopeFilters.branch_code) {
+      params.set("filter_branch_code", normalizedScopeFilters.branch_code);
+    }
+    if (normalizedScopeFilters.branch_description) {
+      params.set("filter_branch_description", normalizedScopeFilters.branch_description);
+    }
+    params.set("sales_time_range", "all");
+    const payload = await apiFetch(
+      `/api/admin/customers/${encodeURIComponent(customerCode)}/stats${params.toString() ? `?${params.toString()}` : ""}`,
+      { method: "GET" },
+    );
+    if (requestId !== currentAllRangeRequestId) return;
+    const key = `${payload?.customer?.code || customerCode}::${payload?.customer?.branch_code || branchCode || ""}`;
+    allRangeStatsKey = key;
+    allRangeDetailedOrders = Array.isArray(payload?.detailed_orders) ? payload.detailed_orders : [];
+    if (payload?.range_summary) {
+      cacheRangeSummary(key, "all", payload.range_summary);
+    }
+    if (!lastRenderedStatsPayload) return;
+    const currentKey = `${currentCustomerCode || customerCode}::${currentBranchCode || branchCode || ""}`;
+    if (currentKey !== key) return;
+    renderStats(lastRenderedStatsPayload);
+  } catch (_error) {
+    // Ignore background fetch errors for all-range stats.
+  }
+}
+
+async function fetchRangeSummary(
+  range,
+  customerCode = currentCustomerCode,
+  branchCode = currentBranchCode,
+  scopeFilters = currentCustomerSearchFilters,
+) {
+  if (!customerCode) return;
+  const normalizedRange = normalizeSalesTimeRange(range);
+  const statsKey = `${customerCode || ""}::${branchCode || ""}`;
+  const cacheKey = buildRangeSummaryKey(statsKey, normalizedRange);
+  if (rangeSummaryPending.has(cacheKey)) return;
+  rangeSummaryPending.add(cacheKey);
+
+  try {
+    const params = new URLSearchParams();
+    if (branchCode) params.set("branch_code", branchCode);
+    const normalizedScopeFilters = {
+      branch_code: String(scopeFilters?.branch_code || "").trim(),
+      branch_description: String(scopeFilters?.branch_description || "").trim(),
+    };
+    if (normalizedScopeFilters.branch_code) {
+      params.set("filter_branch_code", normalizedScopeFilters.branch_code);
+    }
+    if (normalizedScopeFilters.branch_description) {
+      params.set("filter_branch_description", normalizedScopeFilters.branch_description);
+    }
+    params.set("sales_time_range", normalizedRange);
+    const payload = await apiFetch(
+      `/api/admin/customers/${encodeURIComponent(customerCode)}/stats${params.toString() ? `?${params.toString()}` : ""}`,
+      { method: "GET" },
+    );
+    const key = `${payload?.customer?.code || customerCode}::${payload?.customer?.branch_code || branchCode || ""}`;
+    if (payload?.range_summary) {
+      cacheRangeSummary(key, normalizedRange, payload.range_summary);
+    }
+    if (!lastRenderedStatsPayload) return;
+    const currentKey = `${currentCustomerCode || customerCode}::${currentBranchCode || branchCode || ""}`;
+    if (currentKey !== key) return;
+    renderStats(lastRenderedStatsPayload);
+  } catch (_error) {
+    // Ignore background errors for card range summaries.
+  } finally {
+    rangeSummaryPending.delete(cacheKey);
   }
 }
 
@@ -2085,6 +2288,21 @@ getSalesTimeRangeControls().forEach((control) => {
     syncSalesTimeRangeControls(currentSalesTimeRange);
     if (!currentCustomerCode) return;
     fetchCustomerStats(currentCustomerCode, currentBranchCode, currentCustomerSearchFilters);
+  });
+});
+document.querySelectorAll(".card-time-range-control").forEach((control) => {
+  control.addEventListener("change", () => {
+    if (!lastRenderedStatsPayload) return;
+    const selectedRange = normalizeSalesTimeRange(control.value || DEFAULT_SALES_TIME_RANGE);
+    if (currentCustomerCode) {
+      void fetchRangeSummary(
+        selectedRange,
+        currentCustomerCode,
+        currentBranchCode,
+        currentCustomerSearchFilters,
+      );
+    }
+    renderStats(lastRenderedStatsPayload);
   });
 });
 els.receivablesPrevBtn?.addEventListener("click", () => {
