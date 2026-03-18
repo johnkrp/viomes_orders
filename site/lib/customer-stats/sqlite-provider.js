@@ -883,10 +883,10 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               LEFT JOIN (
                 SELECT
                   customer_code,
-                  MAX(ordered_at) AS ordered_at,
-                  MAX(sent_at) AS sent_at,
+                  order_date AS created_at,
                   COUNT(*) AS total_lines,
-                  COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+                  COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+                  COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
                 FROM imported_sales_lines
                 WHERE customer_code = ?
                   AND ${importedExpressions.countInOrderTotals} = 1
@@ -894,10 +894,10 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
                 GROUP BY customer_code, document_no, order_date
               ) executed
                 ON executed.customer_code = pending.customer_code
-               AND COALESCE(executed.ordered_at, '') = COALESCE(pending.ordered_at, '')
-               AND COALESCE(executed.sent_at, '') = COALESCE(pending.sent_at, '')
+               AND executed.created_at = pending.created_at
                AND executed.total_lines = pending.total_lines
-               AND ROUND(executed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+               AND executed.total_pieces = pending.total_pieces
+               AND ROUND(executed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
               WHERE executed.customer_code IS NULL
               ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
               LIMIT 100
@@ -946,10 +946,10 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
           LEFT JOIN (
             SELECT
               customer_code,
-              MAX(ordered_at) AS ordered_at,
-              MAX(sent_at) AS sent_at,
+              order_date AS created_at,
               COUNT(*) AS total_lines,
-              COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+              COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+              COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
             FROM imported_sales_lines
             WHERE customer_code = ?
               AND (
@@ -959,10 +959,10 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             GROUP BY customer_code, document_no, order_date
           ) progressed
             ON progressed.customer_code = pending.customer_code
-           AND COALESCE(progressed.ordered_at, '') = COALESCE(pending.ordered_at, '')
-           AND COALESCE(progressed.sent_at, '') = COALESCE(pending.sent_at, '')
+           AND progressed.created_at = pending.created_at
            AND progressed.total_lines = pending.total_lines
-           AND ROUND(progressed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+           AND progressed.total_pieces = pending.total_pieces
+           AND ROUND(progressed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
           WHERE progressed.customer_code IS NULL
           ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
           LIMIT 100
