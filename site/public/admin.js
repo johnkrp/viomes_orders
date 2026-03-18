@@ -36,6 +36,13 @@ const OPEN_ORDERS_PAGE_SIZE = 10;
 const PRE_APPROVAL_ORDERS_PAGE_SIZE = 10;
 const OPEN_ORDERS_TIME_RANGE_DAYS = 30;
 const PRE_APPROVAL_TIME_RANGE_DAYS = 10;
+const SALES_TIME_RANGE_DAYS = {
+  "1m": 30,
+  "3m": 90,
+  "6m": 180,
+  "12m": 365,
+};
+const SALES_TIME_RANGE_ALL_START_YEAR = 2024;
 const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
@@ -127,9 +134,9 @@ const els = {
   averageOrderValue: document.getElementById("averageOrderValue"),
   daysSinceLastOrderValue: document.getElementById("daysSinceLastOrderValue"),
   averageDaysBetweenOrdersValue: document.getElementById("averageDaysBetweenOrdersValue"),
-  revenue3mValue: document.getElementById("revenue3mValue"),
-  revenue6mValue: document.getElementById("revenue6mValue"),
-  revenue12mValue: document.getElementById("revenue12mValue"),
+  acceptedOrdersValue: document.getElementById("acceptedOrdersValue"),
+  inProgressOrdersValue: document.getElementById("inProgressOrdersValue"),
+  invoicedOrdersValue: document.getElementById("invoicedOrdersValue"),
   lastOrderDateValue: document.getElementById("lastOrderDateValue"),
   monthlySalesBody: document.getElementById("monthlySalesBody"),
   monthlyYearOneHeading: document.getElementById("monthlyYearOneHeading"),
@@ -523,6 +530,49 @@ function parseIsoDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function buildSalesTimeRangeWindow(range, now = new Date()) {
+  const normalized = normalizeSalesTimeRange(range);
+  if (normalized === "all") {
+    return {
+      start: new Date(SALES_TIME_RANGE_ALL_START_YEAR, 0, 1),
+      end: null,
+    };
+  }
+
+  if (normalized === "this_year" || normalized === "last_year") {
+    const year = normalized === "this_year" ? now.getFullYear() : now.getFullYear() - 1;
+    return {
+      start: new Date(year, 0, 1),
+      end: new Date(year, 11, 31, 23, 59, 59, 999),
+    };
+  }
+
+  const days = SALES_TIME_RANGE_DAYS[normalized];
+  if (!days) {
+    return { start: null, end: null };
+  }
+  return {
+    start: new Date(now.getTime() - days * 86400000),
+    end: null,
+  };
+}
+
+function isWithinSalesTimeRange(dateValue, range, now = new Date()) {
+  const date = parseIsoDate(dateValue);
+  if (!date) return false;
+  const window = buildSalesTimeRangeWindow(range, now);
+  if (window.start && date < window.start) return false;
+  if (window.end && date > window.end) return false;
+  return true;
+}
+
+function filterOrdersBySalesTimeRange(orders, range, now = new Date()) {
+  return (Array.isArray(orders) ? orders : []).filter((order) => {
+    const dateValue = order?.ordered_at || order?.created_at;
+    return isWithinSalesTimeRange(dateValue, range, now);
+  });
+}
+
 function formatMoney(value) {
   return new Intl.NumberFormat("el-GR", {
     style: "currency",
@@ -830,9 +880,9 @@ function resetStats() {
   els.averageOrderValue.textContent = "-";
   els.daysSinceLastOrderValue.textContent = "-";
   els.averageDaysBetweenOrdersValue.textContent = "-";
-  els.revenue3mValue.textContent = "-";
-  els.revenue6mValue.textContent = "-";
-  els.revenue12mValue.textContent = "-";
+  els.acceptedOrdersValue.textContent = "-";
+  els.inProgressOrdersValue.textContent = "-";
+  els.invoicedOrdersValue.textContent = "-";
   els.lastOrderDateValue.textContent = "-";
   resetMonthlySales();
   resetReceivables();
@@ -1667,6 +1717,7 @@ function renderStats(data) {
   const topProductsByValue = Array.isArray(data?.top_products_by_value) ? data.top_products_by_value : [];
   const openOrders = Array.isArray(data?.open_orders) ? data.open_orders : [];
   const preApprovalOrders = Array.isArray(data?.pre_approval_orders) ? data.pre_approval_orders : [];
+  const detailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
   const detailedOpenOrders = Array.isArray(data?.detailed_open_orders) ? data.detailed_open_orders : [];
   const detailedPreApprovalOrders = Array.isArray(data?.detailed_pre_approval_orders)
     ? data.detailed_pre_approval_orders
@@ -1674,7 +1725,7 @@ function renderStats(data) {
   const isBranchView = customer.aggregation_level === "branch";
   lastRenderedStatsPayload = data;
 
-  currentDetailedOrders = Array.isArray(data?.detailed_orders) ? data.detailed_orders : [];
+  currentDetailedOrders = detailedOrders;
   currentDetailedOpenOrders = detailedOpenOrders;
   currentDetailedPreApprovalOrders = detailedPreApprovalOrders;
   currentOpenOrders = openOrders;
@@ -1714,9 +1765,18 @@ function renderStats(data) {
   els.averageOrderValue.textContent = formatMoney(summary.average_order_value);
   els.daysSinceLastOrderValue.textContent = formatDays(summary.days_since_last_order);
   els.averageDaysBetweenOrdersValue.textContent = formatDays(summary.average_days_between_orders);
-  els.revenue3mValue.textContent = formatMoney(summary.revenue_3m);
-  els.revenue6mValue.textContent = formatMoney(summary.revenue_6m);
-  els.revenue12mValue.textContent = formatMoney(summary.revenue_12m);
+  const salesRange = getSelectedSalesTimeRange();
+  const now = new Date();
+  const openOrdersInRange = filterOrdersBySalesTimeRange(openOrders, salesRange, now);
+  const invoicedOrdersInRange = filterOrdersBySalesTimeRange(detailedOrders, salesRange, now);
+  const acceptedOrderIds = new Set(
+    [...openOrdersInRange, ...invoicedOrdersInRange]
+      .map((order) => String(order?.order_id || ""))
+      .filter(Boolean),
+  );
+  els.acceptedOrdersValue.textContent = formatNumber(acceptedOrderIds.size);
+  els.inProgressOrdersValue.textContent = formatNumber(openOrdersInRange.length);
+  els.invoicedOrdersValue.textContent = formatNumber(invoicedOrdersInRange.length);
   els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
   renderBranchSelector(customer.code, availableBranches, customer.branch_code || "");
 
