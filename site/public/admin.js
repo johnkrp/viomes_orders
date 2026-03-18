@@ -34,6 +34,8 @@ const RECEIVABLES_PAGE_SIZE = 5;
 const RECENT_ORDERS_PAGE_SIZE = 10;
 const OPEN_ORDERS_PAGE_SIZE = 10;
 const PRE_APPROVAL_ORDERS_PAGE_SIZE = 10;
+const OPEN_ORDERS_TIME_RANGE_DAYS = 30;
+const PRE_APPROVAL_TIME_RANGE_DAYS = 10;
 const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
@@ -513,6 +515,12 @@ function formatDateTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function parseIsoDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function formatMoney(value) {
@@ -1477,8 +1485,14 @@ function renderRecentOrdersTable() {
 }
 
 function getOpenOrdersForTable() {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - OPEN_ORDERS_TIME_RANGE_DAYS * 86400000);
+  const filtered = currentOpenOrders.filter((order) => {
+    const date = parseIsoDate(order?.created_at);
+    return date ? date >= cutoff : false;
+  });
   const sortState = openOrdersSort;
-  return [...currentOpenOrders].sort((a, b) => {
+  return [...filtered].sort((a, b) => {
     const key = sortState.key;
     let compare = 0;
     if (key === "created_at") {
@@ -1502,8 +1516,14 @@ function getOpenOrdersForTable() {
 }
 
 function getPreApprovalOrdersForTable() {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - PRE_APPROVAL_TIME_RANGE_DAYS * 86400000);
+  const filtered = currentPreApprovalOrders.filter((order) => {
+    const date = parseIsoDate(order?.created_at);
+    return date ? date >= cutoff : false;
+  });
   const sortState = preApprovalOrdersSort;
-  return [...currentPreApprovalOrders].sort((a, b) => {
+  return [...filtered].sort((a, b) => {
     const key = sortState.key;
     let compare = 0;
     if (key === "created_at") {

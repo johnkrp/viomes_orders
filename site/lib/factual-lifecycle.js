@@ -64,7 +64,7 @@ const OPEN_EXECUTION_DOCUMENT_TYPES = uniqueSorted(
   ).map((row) => String(row["Από "] || "").trim()),
 );
 
-const PRE_EXECUTION_DOCUMENT_TYPES = uniqueSorted(
+const PRE_EXECUTION_DOCUMENT_TYPES_RAW = uniqueSorted(
   FACTUAL_RULES.filter((row) => {
     const closing = String(row["Κίνηση κλεισίματος εκκρεμοτήτων αποθήκης"] || "").trim();
     return (
@@ -73,6 +73,12 @@ const PRE_EXECUTION_DOCUMENT_TYPES = uniqueSorted(
       String(row["Από "] || "").trim()
     );
   }).map((row) => String(row["Από "] || "").trim()),
+);
+
+const PRE_EXECUTION_DOCUMENT_TYPES = uniqueSorted(
+  PRE_EXECUTION_DOCUMENT_TYPES_RAW.filter(
+    (docType) => !OPEN_EXECUTION_DOCUMENT_TYPES.includes(docType),
+  ),
 );
 
 export const FACTUAL_LIFECYCLE_RULES = Object.freeze({
