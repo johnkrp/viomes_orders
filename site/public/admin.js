@@ -294,7 +294,7 @@ function normalizeSalesTimeRangeControlsText() {
     "12m": "Τελευταίοι 12 μήνες",
     this_year: "Τρέχον έτος",
     last_year: "Προηγούμενο έτος",
-    all: "Από την αρχή",
+    all: "2024 και μετά",
   };
 
   getSalesTimeRangeControls().forEach((control) => {

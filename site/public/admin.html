@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="el">
   <head>
     <meta charset="utf-8" />
@@ -237,15 +237,57 @@
 
               <div class="admin-stat-grid">
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Σύνολο παραγγελιών</span>
+                  <div class="admin-stat-card-head">
+                    <span class="admin-stat-label">Σύνολο παραγγελιών</span>
+                    <label class="admin-stat-range">
+                      <span class="sr-only">Περίοδος</span>
+                      <select class="sales-time-range-control">
+                      <option value="1m">Τελευταίος 1 μήνας</option>
+                      <option value="3m" selected>Τελευταίοι 3 μήνες</option>
+                      <option value="6m">Τελευταίοι 6 μήνες</option>
+                      <option value="12m">Τελευταίοι 12 μήνες</option>
+                      <option value="this_year">Τρέχον έτος</option>
+                      <option value="last_year">Προηγούμενο έτος</option>
+                      <option value="all">2024 και μετά</option>
+                      </select>
+                    </label>
+                  </div>
                   <strong id="totalOrdersValue">0</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Σύνολο τεμαχίων</span>
+                  <div class="admin-stat-card-head">
+                    <span class="admin-stat-label">Σύνολο τεμαχίων</span>
+                    <label class="admin-stat-range">
+                      <span class="sr-only">Περίοδος</span>
+                      <select class="sales-time-range-control">
+                      <option value="1m">Τελευταίος 1 μήνας</option>
+                      <option value="3m" selected>Τελευταίοι 3 μήνες</option>
+                      <option value="6m">Τελευταίοι 6 μήνες</option>
+                      <option value="12m">Τελευταίοι 12 μήνες</option>
+                      <option value="this_year">Τρέχον έτος</option>
+                      <option value="last_year">Προηγούμενο έτος</option>
+                      <option value="all">2024 και μετά</option>
+                      </select>
+                    </label>
+                  </div>
                   <strong id="totalPiecesValue">0</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Σύνολο τζίρου</span>
+                  <div class="admin-stat-card-head">
+                    <span class="admin-stat-label">Σύνολο τζίρου</span>
+                    <label class="admin-stat-range">
+                      <span class="sr-only">Περίοδος</span>
+                      <select class="sales-time-range-control">
+                      <option value="1m">Τελευταίος 1 μήνας</option>
+                      <option value="3m" selected>Τελευταίοι 3 μήνες</option>
+                      <option value="6m">Τελευταίοι 6 μήνες</option>
+                      <option value="12m">Τελευταίοι 12 μήνες</option>
+                      <option value="this_year">Τρέχον έτος</option>
+                      <option value="last_year">Προηγούμενο έτος</option>
+                      <option value="all">2024 και μετά</option>
+                      </select>
+                    </label>
+                  </div>
                   <strong id="totalRevenueValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
@@ -374,7 +416,7 @@
                       <option value="12m">Τελευταίοι 12 μήνες</option>
                       <option value="this_year">Τρέχον έτος</option>
                       <option value="last_year">Προηγούμενο έτος</option>
-                      <option value="all">Από την αρχή</option>
+                      <option value="all">2024 και μετά</option>
                     </select>
                   </label>
                   <label class="field admin-compact-field">
@@ -441,7 +483,7 @@
                         <option value="12m">Τελευταίοι 12 μήνες</option>
                         <option value="this_year">Τρέχον έτος</option>
                         <option value="last_year">Προηγούμενο έτος</option>
-                        <option value="all">Από την αρχή</option>
+                        <option value="all">2024 και μετά</option>
                       </select>
                     </label>
                   </div>
@@ -489,7 +531,7 @@
                         <option value="12m">Τελευταίοι 12 μήνες</option>
                         <option value="this_year">Τρέχον έτος</option>
                         <option value="last_year">Προηγούμενο έτος</option>
-                        <option value="all">Από την αρχή</option>
+                        <option value="all">2024 και μετά</option>
                       </select>
                     </label>
                   </div>
@@ -630,3 +672,4 @@
     <script src="admin.js"></script>
   </body>
 </html>
+
