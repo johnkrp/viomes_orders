@@ -825,7 +825,7 @@ function resetStats() {
   currentSalesTimeRange = getSelectedSalesTimeRange();
   els.customerNameHeading.textContent = "Πελάτης";
   els.customerMeta.textContent = "-";
-  els.totalOrdersValue.textContent = "0";
+  if (els.totalOrdersValue) els.totalOrdersValue.textContent = "0";
   els.totalPiecesValue.textContent = "0";
   els.totalRevenueValue.textContent = "-";
   if (els.activeDocumentsValue) els.activeDocumentsValue.textContent = "0";
@@ -835,7 +835,7 @@ function resetStats() {
   els.acceptedOrdersValue.textContent = "-";
   els.inProgressOrdersValue.textContent = "-";
   els.invoicedOrdersValue.textContent = "-";
-  els.lastOrderDateValue.textContent = "-";
+  if (els.lastOrderDateValue) els.lastOrderDateValue.textContent = "-";
   resetMonthlySales();
   resetReceivables();
   resetProductSales();
@@ -1711,7 +1711,9 @@ function renderStats(data) {
 
   els.customerNameHeading.textContent = customer.name || "Άγνωστος πελάτης";
   els.customerMeta.textContent = metaParts.filter(Boolean).join(" | ") || "-";
-  els.totalOrdersValue.textContent = formatNumber(summary.total_orders ?? 0);
+  if (els.totalOrdersValue) {
+    els.totalOrdersValue.textContent = formatNumber(summary.total_orders ?? 0);
+  }
   els.totalPiecesValue.textContent = formatNumber(summary.total_pieces ?? 0);
   els.totalRevenueValue.textContent = formatMoney(summary.total_revenue);
   els.averageOrderValue.textContent = formatMoney(summary.average_order_value);
@@ -1736,7 +1738,9 @@ function renderStats(data) {
   els.acceptedOrdersValue.textContent = formatNumber(preApprovalCount);
   els.inProgressOrdersValue.textContent = formatNumber(openCount);
   els.invoicedOrdersValue.textContent = formatNumber(recentExecutedCount);
-  els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
+  if (els.lastOrderDateValue) {
+    els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
+  }
   renderBranchSelector(customer.code, availableBranches, customer.branch_code || "");
 
   renderMonthlySales(monthlySales);
