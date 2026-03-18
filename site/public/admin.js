@@ -828,7 +828,7 @@ function resetStats() {
   els.totalOrdersValue.textContent = "0";
   els.totalPiecesValue.textContent = "0";
   els.totalRevenueValue.textContent = "-";
-  els.activeDocumentsValue.textContent = "0";
+  if (els.activeDocumentsValue) els.activeDocumentsValue.textContent = "0";
   els.averageOrderValue.textContent = "-";
   if (els.daysSinceLastOrderValue) els.daysSinceLastOrderValue.textContent = "-";
   els.averageDaysBetweenOrdersValue.textContent = "-";
@@ -1730,7 +1730,9 @@ function renderStats(data) {
       .map((order) => String(order?.order_id || ""))
       .filter(Boolean),
   );
-  els.activeDocumentsValue.textContent = formatNumber(activeDocumentIds.size);
+  if (els.activeDocumentsValue) {
+    els.activeDocumentsValue.textContent = formatNumber(activeDocumentIds.size);
+  }
   els.acceptedOrdersValue.textContent = formatNumber(preApprovalCount);
   els.inProgressOrdersValue.textContent = formatNumber(openCount);
   els.invoicedOrdersValue.textContent = formatNumber(recentExecutedCount);
