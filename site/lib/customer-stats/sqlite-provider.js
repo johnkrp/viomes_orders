@@ -121,6 +121,19 @@ function buildImportedOrderIdExpression(sqlDialect) {
     : "customer_code || '::' || order_date || '::' || document_no";
 }
 
+function buildImportedOrderRefExpression(sqlDialect) {
+  if (sqlDialect === "mysql") {
+    return "NULLIF(TRIM(SUBSTRING_INDEX(note_1, ':', -1)), '')";
+  }
+
+  return `NULLIF(TRIM(
+    CASE
+      WHEN INSTR(note_1, ':') > 0 THEN SUBSTR(note_1, INSTR(note_1, ':') + 1)
+      ELSE note_1
+    END
+  ), '')`;
+}
+
 function asRoundedUpPercent(value) {
   const numericValue = Number(value ?? 0);
   if (!Number.isFinite(numericValue)) return 0;
@@ -912,6 +925,7 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             ],
           );
 
+      const importedOrderRefExpression = buildImportedOrderRefExpression(sqlDialect);
       const preApprovalOrders = await db.all(
         `
           SELECT
@@ -937,7 +951,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
               COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
               COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
-              MAX(document_type) AS document_type
+              MAX(document_type) AS document_type,
+              MAX(${importedOrderRefExpression}) AS order_ref
             FROM imported_sales_lines
             WHERE customer_code = ?
               AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
@@ -949,7 +964,8 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
               order_date AS created_at,
               COUNT(*) AS total_lines,
               COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-              COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
+              COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+              MAX(${importedOrderRefExpression}) AS order_ref
             FROM imported_sales_lines
             WHERE customer_code = ?
               AND (
@@ -959,10 +975,16 @@ export function createSqliteCustomerStatsProvider({ db, sqlDialect = "sqlite" })
             GROUP BY customer_code, document_no, order_date
           ) progressed
             ON progressed.customer_code = pending.customer_code
-           AND progressed.created_at = pending.created_at
-           AND progressed.total_lines = pending.total_lines
-           AND progressed.total_pieces = pending.total_pieces
-           AND ROUND(progressed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
+           AND (
+             (progressed.order_ref IS NOT NULL AND progressed.order_ref <> '' AND progressed.order_ref = pending.order_ref)
+             OR (
+               (pending.order_ref IS NULL OR pending.order_ref = '' OR progressed.order_ref IS NULL OR progressed.order_ref = '')
+               AND progressed.created_at = pending.created_at
+               AND progressed.total_lines = pending.total_lines
+               AND progressed.total_pieces = pending.total_pieces
+               AND ROUND(progressed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
+             )
+           )
           WHERE progressed.customer_code IS NULL
           ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
           LIMIT 100

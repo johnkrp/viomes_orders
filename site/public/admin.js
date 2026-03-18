@@ -36,13 +36,6 @@ const OPEN_ORDERS_PAGE_SIZE = 10;
 const PRE_APPROVAL_ORDERS_PAGE_SIZE = 10;
 const OPEN_ORDERS_TIME_RANGE_DAYS = 30;
 const PRE_APPROVAL_TIME_RANGE_DAYS = 10;
-const SALES_TIME_RANGE_DAYS = {
-  "1m": 30,
-  "3m": 90,
-  "6m": 180,
-  "12m": 365,
-};
-const SALES_TIME_RANGE_ALL_START_YEAR = 2024;
 const SEARCH_LOADING_MIN_VISIBLE_MS = 250;
 const STATS_LOADING_MIN_VISIBLE_MS = 300;
 const DEFAULT_SALES_TIME_RANGE = "3m";
@@ -131,6 +124,7 @@ const els = {
   totalOrdersValue: document.getElementById("totalOrdersValue"),
   totalPiecesValue: document.getElementById("totalPiecesValue"),
   totalRevenueValue: document.getElementById("totalRevenueValue"),
+  activeDocumentsValue: document.getElementById("activeDocumentsValue"),
   averageOrderValue: document.getElementById("averageOrderValue"),
   daysSinceLastOrderValue: document.getElementById("daysSinceLastOrderValue"),
   averageDaysBetweenOrdersValue: document.getElementById("averageDaysBetweenOrdersValue"),
@@ -530,49 +524,6 @@ function parseIsoDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function buildSalesTimeRangeWindow(range, now = new Date()) {
-  const normalized = normalizeSalesTimeRange(range);
-  if (normalized === "all") {
-    return {
-      start: new Date(SALES_TIME_RANGE_ALL_START_YEAR, 0, 1),
-      end: null,
-    };
-  }
-
-  if (normalized === "this_year" || normalized === "last_year") {
-    const year = normalized === "this_year" ? now.getFullYear() : now.getFullYear() - 1;
-    return {
-      start: new Date(year, 0, 1),
-      end: new Date(year, 11, 31, 23, 59, 59, 999),
-    };
-  }
-
-  const days = SALES_TIME_RANGE_DAYS[normalized];
-  if (!days) {
-    return { start: null, end: null };
-  }
-  return {
-    start: new Date(now.getTime() - days * 86400000),
-    end: null,
-  };
-}
-
-function isWithinSalesTimeRange(dateValue, range, now = new Date()) {
-  const date = parseIsoDate(dateValue);
-  if (!date) return false;
-  const window = buildSalesTimeRangeWindow(range, now);
-  if (window.start && date < window.start) return false;
-  if (window.end && date > window.end) return false;
-  return true;
-}
-
-function filterOrdersBySalesTimeRange(orders, range, now = new Date()) {
-  return (Array.isArray(orders) ? orders : []).filter((order) => {
-    const dateValue = order?.ordered_at || order?.created_at;
-    return isWithinSalesTimeRange(dateValue, range, now);
-  });
-}
-
 function formatMoney(value) {
   return new Intl.NumberFormat("el-GR", {
     style: "currency",
@@ -877,8 +828,9 @@ function resetStats() {
   els.totalOrdersValue.textContent = "0";
   els.totalPiecesValue.textContent = "0";
   els.totalRevenueValue.textContent = "-";
+  els.activeDocumentsValue.textContent = "0";
   els.averageOrderValue.textContent = "-";
-  els.daysSinceLastOrderValue.textContent = "-";
+  if (els.daysSinceLastOrderValue) els.daysSinceLastOrderValue.textContent = "-";
   els.averageDaysBetweenOrdersValue.textContent = "-";
   els.acceptedOrdersValue.textContent = "-";
   els.inProgressOrdersValue.textContent = "-";
@@ -1763,20 +1715,25 @@ function renderStats(data) {
   els.totalPiecesValue.textContent = formatNumber(summary.total_pieces ?? 0);
   els.totalRevenueValue.textContent = formatMoney(summary.total_revenue);
   els.averageOrderValue.textContent = formatMoney(summary.average_order_value);
-  els.daysSinceLastOrderValue.textContent = formatDays(summary.days_since_last_order);
+  if (els.daysSinceLastOrderValue) {
+    els.daysSinceLastOrderValue.textContent = formatDays(summary.days_since_last_order);
+  }
   els.averageDaysBetweenOrdersValue.textContent = formatDays(summary.average_days_between_orders);
-  const salesRange = getSelectedSalesTimeRange();
-  const now = new Date();
-  const openOrdersInRange = filterOrdersBySalesTimeRange(openOrders, salesRange, now);
-  const invoicedOrdersInRange = filterOrdersBySalesTimeRange(detailedOrders, salesRange, now);
-  const acceptedOrderIds = new Set(
-    [...openOrdersInRange, ...invoicedOrdersInRange]
+  const preApprovalOrdersForTable = getPreApprovalOrdersForTable();
+  const openOrdersForTable = getOpenOrdersForTable();
+  const recentExecutedOrdersForTable = getRecentOrdersForTable();
+  const preApprovalCount = preApprovalOrdersForTable.length;
+  const openCount = openOrdersForTable.length;
+  const recentExecutedCount = recentExecutedOrdersForTable.length;
+  const activeDocumentIds = new Set(
+    [...preApprovalOrdersForTable, ...openOrdersForTable]
       .map((order) => String(order?.order_id || ""))
       .filter(Boolean),
   );
-  els.acceptedOrdersValue.textContent = formatNumber(acceptedOrderIds.size);
-  els.inProgressOrdersValue.textContent = formatNumber(openOrdersInRange.length);
-  els.invoicedOrdersValue.textContent = formatNumber(invoicedOrdersInRange.length);
+  els.activeDocumentsValue.textContent = formatNumber(activeDocumentIds.size);
+  els.acceptedOrdersValue.textContent = formatNumber(preApprovalCount);
+  els.inProgressOrdersValue.textContent = formatNumber(openCount);
+  els.invoicedOrdersValue.textContent = formatNumber(recentExecutedCount);
   els.lastOrderDateValue.textContent = formatDate(summary.last_order_date);
   renderBranchSelector(customer.code, availableBranches, customer.branch_code || "");
 

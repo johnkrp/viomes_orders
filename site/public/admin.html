@@ -237,8 +237,20 @@
 
               <div class="admin-stat-grid">
                 <article class="admin-stat-card">
+                  <span class="admin-stat-label">Σύνολο ενεργών παραστατικών</span>
+                  <strong id="activeDocumentsValue">0</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Παραγγελίες προς έγκριση</span>
+                  <strong id="acceptedOrdersValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
+                  <span class="admin-stat-label">Παραγγελίες προς εκτέλεση</span>
+                  <strong id="inProgressOrdersValue">-</strong>
+                </article>
+                <article class="admin-stat-card">
                   <div class="admin-stat-card-head">
-                    <span class="admin-stat-label">Σύνολο παραγγελιών</span>
+                    <span class="admin-stat-label">Πρόσφατες εκτελεσμένες</span>
                     <label class="admin-stat-range">
                       <span class="sr-only">Περίοδος</span>
                       <select class="sales-time-range-control">
@@ -252,7 +264,7 @@
                       </select>
                     </label>
                   </div>
-                  <strong id="totalOrdersValue">0</strong>
+                  <strong id="invoicedOrdersValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
                   <div class="admin-stat-card-head">
@@ -295,42 +307,8 @@
                   <strong id="averageOrderValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Ημέρες από την τελευταία παραγγελία</span>
-                  <strong id="daysSinceLastOrderValue">-</strong>
-                </article>
-                <article class="admin-stat-card">
                   <span class="admin-stat-label">Μέσο διάστημα</span>
                   <strong id="averageDaysBetweenOrdersValue">-</strong>
-                </article>
-                <article class="admin-stat-card">
-                  <span class="admin-stat-label">Παραγγελίες εγκεκριμένες</span>
-                  <strong id="acceptedOrdersValue">-</strong>
-                </article>
-                <article class="admin-stat-card">
-                  <span class="admin-stat-label">Παραγγελίες σε εξέλιξη</span>
-                  <strong id="inProgressOrdersValue">-</strong>
-                </article>
-                <article class="admin-stat-card">
-                  <div class="admin-stat-card-head">
-                    <span class="admin-stat-label">Παραγγελίες τιμολογημένες</span>
-                    <label class="admin-stat-range">
-                      <span class="sr-only">Περίοδος</span>
-                      <select class="sales-time-range-control">
-                        <option value="1m">Τελευταίος 1 μήνας</option>
-                        <option value="3m" selected>Τελευταίοι 3 μήνες</option>
-                        <option value="6m">Τελευταίοι 6 μήνες</option>
-                        <option value="12m">Τελευταίοι 12 μήνες</option>
-                        <option value="this_year">Τρέχον έτος</option>
-                        <option value="last_year">Προηγούμενο έτος</option>
-                        <option value="all">2024 και μετά</option>
-                      </select>
-                    </label>
-                  </div>
-                  <strong id="invoicedOrdersValue">-</strong>
-                </article>
-                <article class="admin-stat-card">
-                  <span class="admin-stat-label">Τελευταία παραγγελία</span>
-                  <strong id="lastOrderDateValue">-</strong>
                 </article>
               </div>
             </section>
@@ -487,20 +465,6 @@
                     <h2>Παραγγελίες προς έγκριση</h2>
                     <p class="admin-panel-note">Έγγραφα ΠΑΡ που δεν έχουν εγκριθεί ακόμη.</p>
                   </div>
-                  <div class="admin-inline-controls">
-                    <label class="field admin-compact-field">
-                      <span>Περίοδος</span>
-                      <select id="preApprovalOrdersSalesTimeRange" class="sales-time-range-control">
-                        <option value="1m">Τελευταίος 1 μήνας</option>
-                        <option value="3m" selected>Τελευταίοι 3 μήνες</option>
-                        <option value="6m">Τελευταίοι 6 μήνες</option>
-                        <option value="12m">Τελευταίοι 12 μήνες</option>
-                        <option value="this_year">Τρέχον έτος</option>
-                        <option value="last_year">Προηγούμενο έτος</option>
-                        <option value="all">2024 και μετά</option>
-                      </select>
-                    </label>
-                  </div>
                 </div>
                 <div class="admin-table-wrap">
                   <table class="admin-table admin-pre-approval-orders-table">
@@ -534,20 +498,6 @@
                   <div>
                     <h2>Παραγγελίες προς εκτέλεση</h2>
                     <p class="admin-panel-note">Έγγραφα ΠΔΣ που βρίσκονται σε στάδιο εκτέλεσης και δεν έχουν τιμολογηθεί ακόμη.</p>
-                  </div>
-                  <div class="admin-inline-controls">
-                    <label class="field admin-compact-field">
-                      <span>Περίοδος</span>
-                      <select id="openOrdersSalesTimeRange" class="sales-time-range-control">
-                        <option value="1m">Τελευταίος 1 μήνας</option>
-                        <option value="3m" selected>Τελευταίοι 3 μήνες</option>
-                        <option value="6m">Τελευταίοι 6 μήνες</option>
-                        <option value="12m">Τελευταίοι 12 μήνες</option>
-                        <option value="this_year">Τρέχον έτος</option>
-                        <option value="last_year">Προηγούμενο έτος</option>
-                        <option value="all">2024 και μετά</option>
-                      </select>
-                    </label>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
