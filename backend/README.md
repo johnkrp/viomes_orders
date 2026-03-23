@@ -137,3 +137,11 @@ If a file is not used by `import_entersoft.py` or the current Node wrappers in `
 ```powershell
 python -m unittest discover -s backend/tests
 ```
+
+## Shared Lifecycle Artifact
+
+If you change `factual_rules.csv`, regenerate the checked-in lifecycle artifact:
+
+```powershell
+python backend/generate_factual_lifecycle_rules.py
+```

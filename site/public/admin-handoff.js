@@ -1,0 +1,69 @@
+import { ORDER_FORM_IMPORT_KEY, ORDER_FORM_RANKING_KEY } from "./admin-constants.js";
+
+export function buildOrderFormDraftFromSelectedOrder(order, customerNameHeading) {
+  const customerName = String(order?.customer_name || customerNameHeading?.textContent || "").trim();
+  return {
+    customerName,
+    customerEmail: String(order?.customer_email || "").trim(),
+    notes: String(order?.notes || "").trim(),
+    sourceOrderId: String(order?.order_id || "").trim(),
+    lines: Array.isArray(order?.lines)
+      ? order.lines
+          .filter((line) => line?.code && Number(line?.qty || 0) > 0)
+          .map((line) => ({
+            code: String(line.code).trim(),
+            qty: Number(line.qty || 0),
+            description: String(line.description || "").trim(),
+          }))
+      : [],
+  };
+}
+
+export function openSelectedOrderInOrderForm(context, orderId) {
+  const order = context.findDetailedOrder(orderId);
+  if (!order) {
+    context.setStatus("Η επιλεγμένη παραγγελία δεν βρέθηκε.", "error");
+    return;
+  }
+
+  const draft = buildOrderFormDraftFromSelectedOrder(order, context.elements.customerNameHeading);
+  if (!draft.lines.length) {
+    context.setStatus("Η επιλεγμένη παραγγελία δεν έχει γραμμές ειδών για φόρτωση.", "error");
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(ORDER_FORM_IMPORT_KEY, JSON.stringify(draft));
+    window.location.href = "index.html";
+  } catch (_error) {
+    context.setStatus("Δεν ήταν δυνατή η μεταφορά της παραγγελίας στη φόρμα.", "error");
+  }
+}
+
+export function openRankedOrderForm(context) {
+  const customer = context.state.lastRenderedStatsPayload?.customer || {};
+  const rankedCodes = context.getSortedProductSales()
+    .map((item) => String(item?.code || "").trim())
+    .filter(Boolean);
+
+  if (!context.state.currentCustomerCode || !rankedCodes.length) {
+    context.setStatus("Δεν υπάρχουν αρκετά στοιχεία για κατάταξη ειδών πελάτη.", "error");
+    return;
+  }
+
+  const draft = {
+    customerName: customer.name || "",
+    customerEmail: customer.email || "",
+    customerCode: context.state.currentCustomerCode,
+    branchCode: context.state.currentBranchCode || "",
+    rankedCodes,
+    salesTimeRange: context.state.currentSalesTimeRange,
+  };
+
+  try {
+    window.sessionStorage.setItem(ORDER_FORM_RANKING_KEY, JSON.stringify(draft));
+    window.location.href = "index.html";
+  } catch (_error) {
+    context.setStatus("Δεν ήταν δυνατή η αποθήκευση της κατάταξης για τη φόρμα παραγγελίας.", "error");
+  }
+}

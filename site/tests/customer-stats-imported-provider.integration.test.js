@@ -4,6 +4,7 @@ import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import { createSqliteCustomerStatsProvider } from "../lib/customer-stats/sqlite-provider.js";
 import { initDatabaseSchema } from "../lib/db/init-schema.js";
+import { FACTUAL_LIFECYCLE_RULES } from "../lib/factual-lifecycle.js";
 
 async function openTestDb() {
   const raw = await open({
@@ -384,6 +385,152 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(scopedPayload.available_branches[0].branch_code, "B1");
     assert.equal(scopedPayload.summary.total_orders, 1);
     assert.equal(scopedPayload.summary.total_revenue, 175.6);
+  } finally {
+    await db.close();
+  }
+});
+
+test("SQLite-backed imported stats excludes progressed pre-approvals and executed open orders in scoped fallback mode", async () => {
+  const db = await openTestDb();
+  const currentYear = new Date().getUTCFullYear();
+  const openType = FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes[0];
+  const executedType = FACTUAL_LIFECYCLE_RULES.executedOrderDocumentTypes[0];
+  const preApprovalType = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes[0];
+
+  try {
+    await db.run(
+      `
+        INSERT INTO imported_sales_lines(
+          source_file, order_date, order_year, order_month, document_no, document_type,
+          item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
+          discount_pct_1, discount_pct_2, discount_pct_total,
+          customer_code, customer_name, delivery_code, delivery_description, account_code,
+          account_description, branch_code, branch_description, note_1
+        )
+        VALUES
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "2026.CSV",
+        `${currentYear}-03-01`,
+        currentYear,
+        3,
+        "OPEN-1",
+        openType,
+        "P1",
+        "Open order",
+        "PCS",
+        10,
+        10,
+        10,
+        100,
+        0,
+        0,
+        0,
+        "C777",
+        "Branch Scoped Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "ref:open-1",
+        "2026.CSV",
+        `${currentYear}-03-01`,
+        currentYear,
+        3,
+        "EXEC-1",
+        executedType,
+        "P1",
+        "Executed order",
+        "PCS",
+        10,
+        10,
+        10,
+        100,
+        0,
+        0,
+        0,
+        "C777",
+        "Branch Scoped Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "ref:open-1",
+        "2026.CSV",
+        `${currentYear}-03-02`,
+        currentYear,
+        3,
+        "PRE-1",
+        preApprovalType,
+        "P2",
+        "Pre approval",
+        "PCS",
+        5,
+        5,
+        10,
+        50,
+        0,
+        0,
+        0,
+        "C777",
+        "Branch Scoped Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "ref:pre-1",
+        "2026.CSV",
+        `${currentYear}-03-03`,
+        currentYear,
+        3,
+        "PROG-1",
+        openType,
+        "P2",
+        "Progressed order",
+        "PCS",
+        5,
+        5,
+        10,
+        50,
+        0,
+        0,
+        0,
+        "C777",
+        "Branch Scoped Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "ref:pre-1",
+      ],
+    );
+
+    const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
+    const payload = await provider.getCustomerStats("C777", {
+      branchCode: "B1",
+      salesTimeRange: "all",
+    });
+
+    assert.equal(payload.customer.aggregation_level, "branch");
+    assert.equal(payload.customer.branch_code, "B1");
+    assert.equal(payload.open_orders.length, 1);
+    assert.equal(payload.pre_approval_orders.length, 0);
+    assert.equal(payload.detailed_open_orders.length, 1);
+    assert.equal(payload.detailed_pre_approval_orders.length, 0);
+    assert.equal(payload.recent_orders.length, 1);
+    assert.equal(payload.open_orders[0].order_id, `C777::${currentYear}-03-03::PROG-1`);
   } finally {
     await db.close();
   }

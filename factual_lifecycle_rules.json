@@ -1,0 +1,19 @@
+{
+  "executedOrderDocumentTypes": [
+    "ΑΠΛ",
+    "ΤΔΑ",
+    "ΤΙΠ"
+  ],
+  "openExecutionDocumentTypes": [
+    "ΠΔΣ"
+  ],
+  "preExecutionDocumentTypes": [
+    "ΕΑΠ",
+    "ΠΑΡ"
+  ],
+  "nonExecutedDocumentTypes": [
+    "ΕΑΠ",
+    "ΠΑΡ",
+    "ΠΔΣ"
+  ]
+}

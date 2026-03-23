@@ -4,6 +4,10 @@ Latest session handoff:
 
 - `PROJECT_HANDOFF_2026-03-13.md`
 
+Durable repo reference:
+
+- `docs/project-map.md`
+
 This repo currently consists of two connected systems:
 
 - `site/`
@@ -177,4 +181,10 @@ Python importer tests:
 
 ```powershell
 python -m unittest discover -s backend/tests
+```
+
+Regenerate the shared lifecycle artifact after changing `backend/factual_rules.csv`:
+
+```powershell
+python backend/generate_factual_lifecycle_rules.py
 ```
