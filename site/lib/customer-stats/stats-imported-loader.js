@@ -1,17 +1,15 @@
 import {
+  FACTUAL_LIFECYCLE_RULES,
+  buildDocumentTypeSqlList,
+} from "../factual-lifecycle.js";
+import { IMPORTED_DISCOUNT_PERCENT_EXPRESSION } from "../imported-sales.js";
+import {
   asInteger,
   asMoney,
   buildAverageDaysBetweenOrders,
   buildDaysSinceLastOrder,
   createCustomerNotFoundError,
 } from "./shared.js";
-import {
-  buildDetailedOrder,
-  buildReceivables,
-  buildSummaryOrder,
-  mergeMonthlyRows,
-} from "./stats-shaping.js";
-import { buildCutoffDateString, buildDateWindowFilter, loadRevenueWindows } from "./stats-time-range.js";
 import {
   buildImportedAnalyticsExpressions,
   buildImportedBranchClause,
@@ -23,8 +21,17 @@ import {
   loadImportedLedgerSnapshot,
   shouldUseImportedProjections,
 } from "./stats-imported-helpers.js";
-import { IMPORTED_DISCOUNT_PERCENT_EXPRESSION } from "../imported-sales.js";
-import { FACTUAL_LIFECYCLE_RULES, buildDocumentTypeSqlList } from "../factual-lifecycle.js";
+import {
+  buildDetailedOrder,
+  buildReceivables,
+  buildSummaryOrder,
+  mergeMonthlyRows,
+} from "./stats-shaping.js";
+import {
+  buildCutoffDateString,
+  buildDateWindowFilter,
+  loadRevenueWindows,
+} from "./stats-time-range.js";
 
 const EXECUTED_ORDER_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
   FACTUAL_LIFECYCLE_RULES.executedOrderDocumentTypes,
@@ -32,10 +39,13 @@ const EXECUTED_ORDER_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
 const OPEN_EXECUTION_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
   FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
 );
-const PRE_APPROVAL_DOCUMENT_TYPES = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes.includes("Ξ Ξ‘Ξ΅")
-  ? ["Ξ Ξ‘Ξ΅"]
-  : ["Ξ Ξ‘Ξ΅", ...FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes];
-const PRE_APPROVAL_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(PRE_APPROVAL_DOCUMENT_TYPES);
+const PRE_APPROVAL_DOCUMENT_TYPES =
+  FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes.includes("Ξ Ξ‘Ξ΅")
+    ? ["Ξ Ξ‘Ξ΅"]
+    : ["Ξ Ξ‘Ξ΅", ...FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes];
+const PRE_APPROVAL_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
+  PRE_APPROVAL_DOCUMENT_TYPES,
+);
 
 export async function loadImportedCustomerStats(context) {
   const {
@@ -58,7 +68,9 @@ export async function loadImportedCustomerStats(context) {
     branchDescription: branchScopeDescription,
   });
   const importedLedger = await loadImportedLedgerSnapshot(db, code);
-  const importedLedgerLines = importedLedger ? await loadImportedLedgerLines(db, code) : [];
+  const importedLedgerLines = importedLedger
+    ? await loadImportedLedgerLines(db, code)
+    : [];
   const availableBranches = await loadImportedCustomerBranches(db, code, {
     branchCode: branchScopeCode,
     branchDescription: branchScopeDescription,
@@ -68,8 +80,16 @@ export async function loadImportedCustomerStats(context) {
     : branchScope;
   const importedExpressions = buildImportedAnalyticsExpressions();
   const importedOrderIdExpression = buildImportedOrderIdExpression(sqlDialect);
-  const importedLinesDateWindowFilter = buildDateWindowFilter(now, salesTimeRange, "order_date");
-  const importedOrdersDateWindowFilter = buildDateWindowFilter(now, salesTimeRange, "created_at");
+  const importedLinesDateWindowFilter = buildDateWindowFilter(
+    now,
+    salesTimeRange,
+    "order_date",
+  );
+  const importedOrdersDateWindowFilter = buildDateWindowFilter(
+    now,
+    salesTimeRange,
+    "created_at",
+  );
 
   const customer = useImportedProjections
     ? await db.get(
@@ -178,11 +198,22 @@ export async function loadImportedCustomerStats(context) {
             GROUP BY document_no, order_date
           ) executed
         `,
-        [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
+        [
+          code,
+          ...importedDataFilter.params,
+          ...importedLinesDateWindowFilter.params,
+        ],
       );
 
   const revenueWindows = useImportedProjections
-    ? await loadRevenueWindows(db, "imported_orders", "customer_code", "created_at", code, now)
+    ? await loadRevenueWindows(
+        db,
+        "imported_orders",
+        "customer_code",
+        "created_at",
+        code,
+        now,
+      )
     : await db.get(
         `
           SELECT
@@ -224,11 +255,20 @@ export async function loadImportedCustomerStats(context) {
       GROUP BY item_code
       ORDER BY item_code ASC
     `,
-    [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
+    [
+      code,
+      ...importedDataFilter.params,
+      ...importedLinesDateWindowFilter.params,
+    ],
   );
 
   const topProductsByQty = [...allProductSales]
-    .sort((a, b) => b.pieces - a.pieces || b.revenue - a.revenue || a.code.localeCompare(b.code))
+    .sort(
+      (a, b) =>
+        b.pieces - a.pieces ||
+        b.revenue - a.revenue ||
+        a.code.localeCompare(b.code),
+    )
     .slice(0, 10)
     .map((row) => ({
       code: row.code,
@@ -240,7 +280,12 @@ export async function loadImportedCustomerStats(context) {
     }));
 
   const topProductsByValue = [...allProductSales]
-    .sort((a, b) => b.revenue - a.revenue || b.pieces - a.pieces || a.code.localeCompare(b.code))
+    .sort(
+      (a, b) =>
+        b.revenue - a.revenue ||
+        b.pieces - a.pieces ||
+        a.code.localeCompare(b.code),
+    )
     .slice(0, 10)
     .map((row) => ({
       code: row.code,
@@ -337,7 +382,11 @@ export async function loadImportedCustomerStats(context) {
           ORDER BY COALESCE(MAX(sent_at), MAX(ordered_at), order_date) DESC, document_no DESC
           LIMIT 100
         `,
-        [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
+        [
+          code,
+          ...importedDataFilter.params,
+          ...importedLinesDateWindowFilter.params,
+        ],
       );
 
   const openOrdersRows = useImportedProjections
@@ -376,7 +425,11 @@ export async function loadImportedCustomerStats(context) {
             open_orders.document_no DESC
           LIMIT 100
         `,
-        [code, ...importedDataFilter.params, ...importedOrdersDateWindowFilter.params],
+        [
+          code,
+          ...importedDataFilter.params,
+          ...importedOrdersDateWindowFilter.params,
+        ],
       )
     : await db.all(
         `
@@ -441,7 +494,8 @@ export async function loadImportedCustomerStats(context) {
         ],
       );
 
-  const importedOrderRefExpression = buildImportedOrderRefExpression(sqlDialect);
+  const importedOrderRefExpression =
+    buildImportedOrderRefExpression(sqlDialect);
   const preApprovalOrdersRows = await db.all(
     `
       SELECT
@@ -494,7 +548,7 @@ export async function loadImportedCustomerStats(context) {
        AND (
          (progressed.order_ref IS NOT NULL AND progressed.order_ref <> '' AND progressed.order_ref = pending.order_ref)
          OR (
-           (pending.order_ref IS NULL OR pending.order_ref = '' OR progressed.order_ref IS NULL OR progressed.order_ref = '')
+           ((pending.order_ref IS NULL OR pending.order_ref = '') AND (progressed.order_ref IS NULL OR progressed.order_ref = ''))
            AND progressed.created_at = pending.created_at
            AND progressed.total_lines = pending.total_lines
            AND progressed.total_pieces = pending.total_pieces
@@ -535,7 +589,11 @@ export async function loadImportedCustomerStats(context) {
       ORDER BY COALESCE(MAX(sent_at), MAX(ordered_at), order_date) DESC, document_no DESC
       LIMIT 100
     `,
-    [code, ...importedDataFilter.params, ...importedLinesDateWindowFilter.params],
+    [
+      code,
+      ...importedDataFilter.params,
+      ...importedLinesDateWindowFilter.params,
+    ],
   );
 
   const detailedOrders = [];
@@ -600,7 +658,12 @@ export async function loadImportedCustomerStats(context) {
       ],
     );
 
-    detailedOpenOrders.push(buildDetailedOrder(order, lines, { notes: "", document_type: order.document_type || "" }));
+    detailedOpenOrders.push(
+      buildDetailedOrder(order, lines, {
+        notes: "",
+        document_type: order.document_type || "",
+      }),
+    );
   }
 
   const detailedPreApprovalOrders = [];
@@ -632,7 +695,12 @@ export async function loadImportedCustomerStats(context) {
       ],
     );
 
-    detailedPreApprovalOrders.push(buildDetailedOrder(order, lines, { notes: "", document_type: order.document_type || "" }));
+    detailedPreApprovalOrders.push(
+      buildDetailedOrder(order, lines, {
+        notes: "",
+        document_type: order.document_type || "",
+      }),
+    );
   }
 
   const currentYear = now.getUTCFullYear();
@@ -667,8 +735,12 @@ export async function loadImportedCustomerStats(context) {
       name: customer.name,
       email: customer.email || importedLedger?.email || null,
       aggregation_level: selectedBranchCode ? "branch" : "customer",
-      branch_code: selectedBranchCode ? customer.branch_code || selectedBranchCode : null,
-      branch_description: selectedBranchCode ? customer.branch_description || null : null,
+      branch_code: selectedBranchCode
+        ? customer.branch_code || selectedBranchCode
+        : null,
+      branch_description: selectedBranchCode
+        ? customer.branch_description || null
+        : null,
     },
     summary: {
       total_orders: totalOrders,
@@ -677,9 +749,15 @@ export async function loadImportedCustomerStats(context) {
       revenue_3m: asMoney(revenueWindows.revenue_3m),
       revenue_6m: asMoney(revenueWindows.revenue_6m),
       revenue_12m: asMoney(revenueWindows.revenue_12m),
-      average_order_value: totalOrders ? asMoney(totalRevenue / totalOrders) : 0,
-      average_days_between_orders: buildAverageDaysBetweenOrders(summaryRecentOrders),
-      days_since_last_order: buildDaysSinceLastOrder(summary.last_order_date, now),
+      average_order_value: totalOrders
+        ? asMoney(totalRevenue / totalOrders)
+        : 0,
+      average_days_between_orders:
+        buildAverageDaysBetweenOrders(summaryRecentOrders),
+      days_since_last_order: buildDaysSinceLastOrder(
+        summary.last_order_date,
+        now,
+      ),
       last_order_date: summary.last_order_date,
     },
     rangeSummary: {
