@@ -32,12 +32,9 @@
   - then loads only the CSV contents (snapshot replace).
 
 ## Credentials / Connection
-- DB details provided via screenshot:
-  - Host: `213.158.90.203`
-  - Port: `3306`
-  - DB: `admin_viomes_orders`
-  - User: `admin_viomes_app`
-  - Password: `Yudd042&`
+- Connection values were provided out-of-band during the session.
+- Plaintext credentials are intentionally omitted from this repo summary.
+- Treat any previously shared credentials as compromised and rotate them.
 - Used a short `pymysql` script to compare CSV vs DB (one-off; not stored).
 
 ## Notes / Constraints

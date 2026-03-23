@@ -11,6 +11,13 @@ Operational scripts used by Plesk/local maintenance.
   - Honors `ENTERSOFT_IMPORT_LOG_DIR` and `ENTERSOFT_IMPORT_LOG_FILE` when set.
   - Uses an internal default timeout of `1800s` for daily/incremental runs and `10800s` for file-based/full-reload runs unless an env override is provided.
 
+- `preflight-entersoft-import.js`
+  - Validates import inputs before running the importer.
+  - Checks required DB env (`MYSQL_DATABASE`, `MYSQL_USER`) and warns if `MYSQL_PASSWORD` is empty.
+  - Verifies importer path, Python availability, and CSV file existence/readability.
+  - Tests MySQL connectivity and reports missing import tables as warnings.
+  - Supports the same non-secret CLI DB overrides as the importer (`--mysql-host`, `--mysql-port`, `--mysql-database`, `--mysql-user`).
+
 - `check-import-integrity.js`
   - Verifies imported row counts, duplicate logical sales lines, and imported-order collisions.
   - Exits non-zero if integrity checks fail.
@@ -69,6 +76,15 @@ npm run check:import-integrity -- --mysql-host=127.0.0.1 --mysql-port=3306 --mys
 Use `full_refresh` instead when you want to rebuild from canonical yearly files.
 
 Use `replace_sales_year` when a new yearly file should replace only one sales year while preserving older years already imported.
+
+Run a preflight check before each manual or scheduled import:
+
+```powershell
+$env:MYSQL_PASSWORD="YOUR_PASS"
+npm run preflight:import -- --mode=replace_sales_year --replace-sales-year=2026 --sales-files=../backend/yearly-factuals.csv --ledger-file=../backend/yearly-receivables.csv --mysql-host=127.0.0.1 --mysql-port=3306 --mysql-database=YOUR_DB --mysql-user=YOUR_USER
+```
+
+If preflight fails, do not run the importer until the reported errors are fixed.
 
 Example: replace existing 2026 sales rows, keep 2024/2025, then import the fresh 2026 yearly file:
 
