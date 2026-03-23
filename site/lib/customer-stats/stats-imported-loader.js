@@ -46,6 +46,15 @@ const PRE_APPROVAL_DOCUMENT_TYPES =
 const PRE_APPROVAL_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
   PRE_APPROVAL_DOCUMENT_TYPES,
 );
+const PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
+  Array.from(
+    new Set([
+      ...FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
+      ...FACTUAL_LIFECYCLE_RULES.executedOrderDocumentTypes,
+      "ΠΑΑ",
+    ]),
+  ),
+);
 
 export async function loadImportedCustomerStats(context) {
   const {
@@ -531,42 +540,58 @@ export async function loadImportedCustomerStats(context) {
       LEFT JOIN (
         SELECT
           customer_code,
+          ${importedOrderRefExpression} AS order_ref,
+          COUNT(*) AS total_lines,
+          COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+          COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
+        FROM imported_sales_lines
+        WHERE customer_code = ?
+          AND COALESCE(document_type, '') IN (${PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL})
+          AND ${importedOrderRefExpression} IS NOT NULL${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+        GROUP BY customer_code, ${importedOrderRefExpression}
+      ) progressed_by_ref
+        ON progressed_by_ref.customer_code = pending.customer_code
+       AND (
+         (
+           pending.order_ref IS NOT NULL
+           AND pending.order_ref <> ''
+           AND progressed_by_ref.order_ref = pending.order_ref
+           AND progressed_by_ref.total_lines >= pending.total_lines
+           AND progressed_by_ref.total_pieces >= pending.total_pieces
+           AND ROUND(progressed_by_ref.total_net_value, 2) >= ROUND(pending.total_net_value, 2)
+         )
+       )
+      LEFT JOIN (
+        SELECT
+          customer_code,
           order_date AS created_at,
           COUNT(*) AS total_lines,
           COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
           COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
-          MAX(${importedOrderRefExpression}) AS order_ref
+          COALESCE(MAX(${importedOrderRefExpression}), '') AS order_ref
         FROM imported_sales_lines
         WHERE customer_code = ?
-          AND (
-            COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
-            OR COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
-          )${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+          AND COALESCE(document_type, '') IN (${PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL})
+          AND (${importedOrderRefExpression} IS NULL OR ${importedOrderRefExpression} = '')${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
         GROUP BY customer_code, document_no, order_date
-      ) progressed
-        ON progressed.customer_code = pending.customer_code
+      ) progressed_no_ref
+        ON progressed_no_ref.customer_code = pending.customer_code
        AND (
-         (
-           progressed.order_ref IS NOT NULL
-           AND progressed.order_ref <> ''
-           AND progressed.order_ref = pending.order_ref
-           AND progressed.total_lines >= pending.total_lines
-           AND progressed.total_pieces >= pending.total_pieces
-           AND ROUND(progressed.total_net_value, 2) >= ROUND(pending.total_net_value, 2)
-         )
-         OR (
-           ((pending.order_ref IS NULL OR pending.order_ref = '') AND (progressed.order_ref IS NULL OR progressed.order_ref = ''))
-           AND progressed.created_at = pending.created_at
-           AND progressed.total_lines = pending.total_lines
-           AND progressed.total_pieces = pending.total_pieces
-           AND ROUND(progressed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
-         )
+         ((pending.order_ref IS NULL OR pending.order_ref = '') AND (progressed_no_ref.order_ref IS NULL OR progressed_no_ref.order_ref = ''))
+         AND progressed_no_ref.created_at = pending.created_at
+         AND progressed_no_ref.total_lines = pending.total_lines
+         AND progressed_no_ref.total_pieces = pending.total_pieces
+         AND ROUND(progressed_no_ref.total_net_value, 2) = ROUND(pending.total_net_value, 2)
        )
-      WHERE progressed.customer_code IS NULL
+      WHERE progressed_by_ref.customer_code IS NULL
+        AND progressed_no_ref.customer_code IS NULL
       ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
       LIMIT 100
     `,
     [
+      code,
+      ...importedDataFilter.params,
+      ...importedLinesDateWindowFilter.params,
       code,
       ...importedDataFilter.params,
       ...importedLinesDateWindowFilter.params,
