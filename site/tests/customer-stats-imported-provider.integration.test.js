@@ -637,3 +637,149 @@ test("SQLite-backed imported stats keeps referenced pre-approvals when progresse
     await db.close();
   }
 });
+
+test("SQLite-backed imported stats keeps partially progressed referenced pre-approvals", async () => {
+  const db = await openTestDb();
+  const currentYear = new Date().getUTCFullYear();
+  const openType = FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes[0];
+  const preApprovalType = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes[0];
+
+  try {
+    await db.run(
+      `
+        INSERT INTO imported_customers(customer_code, customer_name, delivery_code, delivery_description, source_file)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      ["C779", "Partial Progress Customer", "D1", "Main", "2026.CSV"],
+    );
+
+    await db.run(
+      `
+        INSERT INTO imported_sales_lines(
+          source_file, order_date, order_year, order_month, document_no, document_type,
+          item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
+          discount_pct_1, discount_pct_2, discount_pct_total,
+          customer_code, customer_name, delivery_code, delivery_description, account_code,
+          account_description, branch_code, branch_description, note_1
+        )
+        VALUES
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        "2026.CSV",
+        `${currentYear}-03-23`,
+        currentYear,
+        3,
+        "PRE-PARTIAL-1",
+        preApprovalType,
+        "P1",
+        "Pre approval line 1",
+        "PCS",
+        1,
+        1,
+        10,
+        10,
+        0,
+        0,
+        0,
+        "C779",
+        "Partial Progress Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "Αρ.Παραγγελίας:REF-PARTIAL-1",
+        "2026.CSV",
+        `${currentYear}-03-23`,
+        currentYear,
+        3,
+        "PRE-PARTIAL-1",
+        preApprovalType,
+        "P2",
+        "Pre approval line 2",
+        "PCS",
+        1,
+        1,
+        10,
+        10,
+        0,
+        0,
+        0,
+        "C779",
+        "Partial Progress Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "Αρ.Παραγγελίας:REF-PARTIAL-1",
+        "2026.CSV",
+        `${currentYear}-03-24`,
+        currentYear,
+        3,
+        "OPEN-PARTIAL-1",
+        openType,
+        "P1",
+        "Open line 1",
+        "PCS",
+        1,
+        1,
+        10,
+        10,
+        0,
+        0,
+        0,
+        "C779",
+        "Partial Progress Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "Αρ.Παραγγελίας:REF-PARTIAL-1",
+        "2026.CSV",
+        `${currentYear}-03-24`,
+        currentYear,
+        3,
+        "OPEN-PARTIAL-1",
+        openType,
+        "P2",
+        "Open line 2",
+        "PCS",
+        1,
+        0,
+        10,
+        0,
+        0,
+        0,
+        0,
+        "C779",
+        "Partial Progress Customer",
+        "D1",
+        "Main",
+        "A1",
+        "Account",
+        "B1",
+        "Branch 1",
+        "Αρ.Παραγγελίας:REF-PARTIAL-1",
+      ],
+    );
+
+    const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
+    const payload = await provider.getCustomerStats("C779", {
+      salesTimeRange: "all",
+    });
+
+    assert.equal(payload.pre_approval_orders.length, 1);
+    assert.equal(payload.pre_approval_orders[0].order_id, `C779::${currentYear}-03-23::PRE-PARTIAL-1`);
+  } finally {
+    await db.close();
+  }
+});

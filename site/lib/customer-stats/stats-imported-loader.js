@@ -546,7 +546,14 @@ export async function loadImportedCustomerStats(context) {
       ) progressed
         ON progressed.customer_code = pending.customer_code
        AND (
-         (progressed.order_ref IS NOT NULL AND progressed.order_ref <> '' AND progressed.order_ref = pending.order_ref)
+         (
+           progressed.order_ref IS NOT NULL
+           AND progressed.order_ref <> ''
+           AND progressed.order_ref = pending.order_ref
+           AND progressed.total_lines >= pending.total_lines
+           AND progressed.total_pieces >= pending.total_pieces
+           AND ROUND(progressed.total_net_value, 2) >= ROUND(pending.total_net_value, 2)
+         )
          OR (
            ((pending.order_ref IS NULL OR pending.order_ref = '') AND (progressed.order_ref IS NULL OR progressed.order_ref = ''))
            AND progressed.created_at = pending.created_at
