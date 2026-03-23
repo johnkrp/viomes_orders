@@ -540,15 +540,30 @@ export async function loadImportedCustomerStats(context) {
       LEFT JOIN (
         SELECT
           customer_code,
-          ${importedOrderRefExpression} AS order_ref,
-          COUNT(*) AS total_lines,
-          COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-          COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
-        FROM imported_sales_lines
-        WHERE customer_code = ?
-          AND COALESCE(document_type, '') IN (${PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL})
-          AND ${importedOrderRefExpression} IS NOT NULL${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-        GROUP BY customer_code, ${importedOrderRefExpression}
+          order_ref,
+          COALESCE(MAX(CASE WHEN is_rejection = 0 THEN total_lines END), 0)
+            + COALESCE(MAX(CASE WHEN is_rejection = 1 THEN total_lines END), 0) AS total_lines,
+          COALESCE(MAX(CASE WHEN is_rejection = 0 THEN total_pieces END), 0)
+            + COALESCE(MAX(CASE WHEN is_rejection = 1 THEN total_pieces END), 0) AS total_pieces,
+          COALESCE(MAX(CASE WHEN is_rejection = 0 THEN total_net_value END), 0)
+            + COALESCE(MAX(CASE WHEN is_rejection = 1 THEN total_net_value END), 0) AS total_net_value
+        FROM (
+          SELECT
+            customer_code,
+            ${importedOrderRefExpression} AS order_ref,
+            document_no,
+            order_date,
+            CASE WHEN MAX(COALESCE(document_type, '')) = 'ΠΑΑ' THEN 1 ELSE 0 END AS is_rejection,
+            COUNT(*) AS total_lines,
+            COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+            COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
+          FROM imported_sales_lines
+          WHERE customer_code = ?
+            AND COALESCE(document_type, '') IN (${PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL})
+            AND ${importedOrderRefExpression} IS NOT NULL${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+          GROUP BY customer_code, ${importedOrderRefExpression}, document_no, order_date
+        ) progressed_docs
+        GROUP BY customer_code, order_ref
       ) progressed_by_ref
         ON progressed_by_ref.customer_code = pending.customer_code
        AND (
