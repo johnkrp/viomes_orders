@@ -20,6 +20,7 @@ let restoredOrderFormState = loadOrderFormState();
 let importedOrderDraft = loadImportedOrderDraft();
 let importedCatalogCodes = new Set();
 let rankedCatalogCodes = [];
+let productHistoryMap = {};
 
 const cart = new Map();
 
@@ -241,6 +242,7 @@ function applyCustomerRankingDraft(draft) {
   rankedCatalogCodes = Array.isArray(draft.rankedCodes)
     ? draft.rankedCodes.map((value) => String(value || "").trim()).filter(Boolean)
     : [];
+  productHistoryMap = typeof draft.productHistoryMap === "object" && draft.productHistoryMap ? draft.productHistoryMap : {};
 
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
@@ -293,6 +295,18 @@ function escapeHtml(value) {
       "'": "&#039;",
     }[char];
   });
+}
+
+function buildHistoryBadge(orderCount) {
+  if (!Number.isFinite(orderCount) || orderCount < 0) return "";
+  
+  if (orderCount === 0) {
+    return '<span class="history-badge never-ordered" title="Ποτέ δεν παραγγέλθηκε">●</span>';
+  } else if (orderCount === 1) {
+    return '<span class="history-badge once-ordered" title="Παραγγέλθηκε 1 φορά">◐</span>';
+  } else {
+    return `<span class="history-badge many-times-ordered" title="Παραγγέλθηκε ${orderCount} φορές">${orderCount}</span>`;
+  }
 }
 
 function normalizeText(value) {
@@ -546,6 +560,7 @@ function clearTopFilters(event) {
   clearToolbarQty();
   importedCatalogCodes.clear();
   rankedCatalogCodes = [];
+  productHistoryMap = {};
   setToolbarMsg("");
   currentPage = 1;
   lastQuery = "";
@@ -753,10 +768,12 @@ function closeImgModal() {
 
 function createCatalogRow(product) {
   const image = product.image_url || PLACEHOLDER_PACKSHOT;
+  const orderCount = productHistoryMap[String(product.code || "").trim()] || 0;
+  const historyBadge = rankedCatalogCodes.length ? buildHistoryBadge(orderCount) : "";
 
   return `
     <tr data-id="${product.id}">
-      <td class="td-code">${escapeHtml(product.code)}</td>
+      <td class="td-code">${escapeHtml(product.code)}${historyBadge}</td>
       <td class="td-desc">
         <div style="font-weight:600;">${escapeHtml(product.description || "")}</div>
       </td>

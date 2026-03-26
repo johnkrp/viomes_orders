@@ -405,6 +405,32 @@ button.secondary:hover,
   font-weight: 800;
   white-space: nowrap;
   text-align: center;
+  position: relative;
+}
+
+.history-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.history-badge.never-ordered {
+  color: #d1d5db;
+  opacity: 0.5;
+}
+
+.history-badge.once-ordered {
+  color: #f59e0b;
+}
+
+.history-badge.many-times-ordered {
+  color: #10b981;
+  font-weight: 600;
 }
 
 .td-desc {

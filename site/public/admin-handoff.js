@@ -42,7 +42,8 @@ export function openSelectedOrderInOrderForm(context, orderId) {
 
 export function openRankedOrderForm(context) {
   const customer = context.state.lastRenderedStatsPayload?.customer || {};
-  const rankedCodes = context.getSortedProductSales()
+  const productSales = context.getSortedProductSales();
+  const rankedCodes = productSales
     .map((item) => String(item?.code || "").trim())
     .filter(Boolean);
 
@@ -51,12 +52,22 @@ export function openRankedOrderForm(context) {
     return;
   }
 
+  // Build product history map: code -> order count
+  const productHistoryMap = {};
+  for (const sale of productSales) {
+    const code = String(sale?.code || "").trim();
+    if (code) {
+      productHistoryMap[code] = Number(sale?.orders || 0);
+    }
+  }
+
   const draft = {
     customerName: customer.name || "",
     customerEmail: customer.email || "",
     customerCode: context.state.currentCustomerCode,
     branchCode: context.state.currentBranchCode || "",
     rankedCodes,
+    productHistoryMap,
     salesTimeRange: context.state.currentSalesTimeRange,
   };
 
