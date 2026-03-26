@@ -455,7 +455,7 @@ test("SQLite-backed imported stats excludes progressed pre-approvals and execute
         "Branch 1",
         "ref:open-1",
         "2026.CSV",
-        `${currentYear}-03-01`,
+        `${currentYear}-03-02`,
         currentYear,
         3,
         "EXEC-1",
