@@ -1,7 +1,15 @@
-import { ORDER_FORM_IMPORT_KEY, ORDER_FORM_RANKING_KEY } from "./admin-constants.js";
+import {
+  ORDER_FORM_IMPORT_KEY,
+  ORDER_FORM_RANKING_KEY,
+} from "./admin-constants.js";
 
-export function buildOrderFormDraftFromSelectedOrder(order, customerNameHeading) {
-  const customerName = String(order?.customer_name || customerNameHeading?.textContent || "").trim();
+export function buildOrderFormDraftFromSelectedOrder(
+  order,
+  customerNameHeading,
+) {
+  const customerName = String(
+    order?.customer_name || customerNameHeading?.textContent || "",
+  ).trim();
   return {
     customerName,
     customerEmail: String(order?.customer_email || "").trim(),
@@ -26,9 +34,15 @@ export function openSelectedOrderInOrderForm(context, orderId) {
     return;
   }
 
-  const draft = buildOrderFormDraftFromSelectedOrder(order, context.elements.customerNameHeading);
+  const draft = buildOrderFormDraftFromSelectedOrder(
+    order,
+    context.elements.customerNameHeading,
+  );
   if (!draft.lines.length) {
-    context.setStatus("Η επιλεγμένη παραγγελία δεν έχει γραμμές ειδών για φόρτωση.", "error");
+    context.setStatus(
+      "Η επιλεγμένη παραγγελία δεν έχει γραμμές ειδών για φόρτωση.",
+      "error",
+    );
     return;
   }
 
@@ -36,7 +50,10 @@ export function openSelectedOrderInOrderForm(context, orderId) {
     window.sessionStorage.setItem(ORDER_FORM_IMPORT_KEY, JSON.stringify(draft));
     window.location.href = "index.html";
   } catch (_error) {
-    context.setStatus("Δεν ήταν δυνατή η μεταφορά της παραγγελίας στη φόρμα.", "error");
+    context.setStatus(
+      "Δεν ήταν δυνατή η μεταφορά της παραγγελίας στη φόρμα.",
+      "error",
+    );
   }
 }
 
@@ -48,7 +65,10 @@ export function openRankedOrderForm(context) {
     .filter(Boolean);
 
   if (!context.state.currentCustomerCode || !rankedCodes.length) {
-    context.setStatus("Δεν υπάρχουν αρκετά στοιχεία για κατάταξη ειδών πελάτη.", "error");
+    context.setStatus(
+      "Δεν υπάρχουν αρκετά στοιχεία για κατάταξη ειδών πελάτη.",
+      "error",
+    );
     return;
   }
 
@@ -72,9 +92,15 @@ export function openRankedOrderForm(context) {
   };
 
   try {
-    window.sessionStorage.setItem(ORDER_FORM_RANKING_KEY, JSON.stringify(draft));
+    window.sessionStorage.setItem(
+      ORDER_FORM_RANKING_KEY,
+      JSON.stringify(draft),
+    );
     window.location.href = "index.html";
   } catch (_error) {
-    context.setStatus("Δεν ήταν δυνατή η αποθήκευση της κατάταξης για τη φόρμα παραγγελίας.", "error");
+    context.setStatus(
+      "Δεν ήταν δυνατή η αποθήκευση της κατάταξης για τη φόρμα παραγγελίας.",
+      "error",
+    );
   }
 }

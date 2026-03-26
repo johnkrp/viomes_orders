@@ -3,8 +3,10 @@
 const API_BASE = "";
 const ORDERS_EMAIL = "sales@viomes.gr";
 const PAGE_SIZE = 20;
-const PLACEHOLDER_PACKSHOT = "https://via.placeholder.com/300x300?text=Packshot";
-const PLACEHOLDER_CART_IMAGE = "https://via.placeholder.com/80x80?text=Packshot";
+const PLACEHOLDER_PACKSHOT =
+  "https://via.placeholder.com/300x300?text=Packshot";
+const PLACEHOLDER_CART_IMAGE =
+  "https://via.placeholder.com/80x80?text=Packshot";
 const ORDER_FORM_STATE_KEY = "viomes.orderForm.state.v1";
 const ORDER_FORM_IMPORT_KEY = "viomes.orderForm.import.v1";
 const ORDER_FORM_RANKING_KEY = "viomes.orderForm.ranking.v1";
@@ -140,23 +142,28 @@ function restoreOrderFormFields(state) {
 }
 
 function restoreDraftCatalogInputs(state) {
-  const rawEntries = state?.draftCatalogInputs && typeof state.draftCatalogInputs === "object"
-    ? Object.entries(state.draftCatalogInputs)
-    : [];
-  draftCatalogInputs = new Map(rawEntries.map(([code, value]) => [code, value || {}]));
+  const rawEntries =
+    state?.draftCatalogInputs && typeof state.draftCatalogInputs === "object"
+      ? Object.entries(state.draftCatalogInputs)
+      : [];
+  draftCatalogInputs = new Map(
+    rawEntries.map(([code, value]) => [code, value || {}]),
+  );
 }
 
 function restoreImportedCatalogCodes(state) {
-  const codes = Array.isArray(state?.importedCatalogCodes) ? state.importedCatalogCodes : [];
+  const codes = Array.isArray(state?.importedCatalogCodes)
+    ? state.importedCatalogCodes
+    : [];
   importedCatalogCodes = new Set(
-    codes
-      .map((value) => String(value || "").trim())
-      .filter(Boolean),
+    codes.map((value) => String(value || "").trim()).filter(Boolean),
   );
 }
 
 function restoreRankedCatalogCodes(state) {
-  const codes = Array.isArray(state?.rankedCatalogCodes) ? state.rankedCatalogCodes : [];
+  const codes = Array.isArray(state?.rankedCatalogCodes)
+    ? state.rankedCatalogCodes
+    : [];
   rankedCatalogCodes = codes
     .map((value) => String(value || "").trim())
     .filter(Boolean);
@@ -165,7 +172,11 @@ function restoreRankedCatalogCodes(state) {
 function buildCartItemFromCatalog(product, qty, fallbackDescription = "") {
   return {
     code: product.code,
-    title: product.description || productTitle(product) || fallbackDescription || product.code,
+    title:
+      product.description ||
+      productTitle(product) ||
+      fallbackDescription ||
+      product.code,
     qty,
     image_url: product.image_url || "",
     pieces_per_package: product.pieces_per_package,
@@ -212,7 +223,10 @@ function applyImportedOrderDraft(draft) {
     }
 
     const qty = Number(line.qty || 0);
-    const piecesPerPack = Math.max(1, parseInt(product.pieces_per_package, 10) || 1);
+    const piecesPerPack = Math.max(
+      1,
+      parseInt(product.pieces_per_package, 10) || 1,
+    );
     importedCatalogCodes.add(product.code);
     draftCatalogInputs.set(product.code, {
       pieces: String(qty),
@@ -240,9 +254,14 @@ function applyCustomerRankingDraft(draft) {
   draftCatalogInputs.clear();
   importedCatalogCodes.clear();
   rankedCatalogCodes = Array.isArray(draft.rankedCodes)
-    ? draft.rankedCodes.map((value) => String(value || "").trim()).filter(Boolean)
+    ? draft.rankedCodes
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
     : [];
-  productHistoryMap = typeof draft.productHistoryMap === "object" && draft.productHistoryMap ? draft.productHistoryMap : {};
+  productHistoryMap =
+    typeof draft.productHistoryMap === "object" && draft.productHistoryMap
+      ? draft.productHistoryMap
+      : {};
 
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
@@ -299,7 +318,7 @@ function escapeHtml(value) {
 
 function buildHistoryBadge(orderCount) {
   if (!Number.isFinite(orderCount) || orderCount < 0) return "";
-  
+
   if (orderCount === 0) {
     return '<span class="history-badge never-ordered" title="Ποτέ δεν παραγγέλθηκε">●</span>';
   } else if (orderCount === 1) {
@@ -319,7 +338,8 @@ function normalizeText(value) {
 
 function toNum(value, fallback = 0) {
   if (value === null || value === undefined) return fallback;
-  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : fallback;
 
   const normalized = String(value).trim().replace(/\s/g, "").replace(",", ".");
   const parsed = Number(normalized);
@@ -343,7 +363,11 @@ function fmtM3(value) {
 
 function getVolLitersFromProduct(product) {
   const value =
-    product?.volume_liters ?? product?.volume_l ?? product?.volumeLiters ?? product?.volume ?? 0;
+    product?.volume_liters ??
+    product?.volume_l ??
+    product?.volumeLiters ??
+    product?.volume ??
+    0;
   return toNum(value, 0);
 }
 
@@ -432,12 +456,16 @@ function updateCodesDatalist(items) {
 }
 
 function findProductByCode(code) {
-  const needle = String(code || "").trim().toLowerCase();
+  const needle = String(code || "")
+    .trim()
+    .toLowerCase();
   if (!needle) return null;
 
   return (
     allCatalog.find((item) => (item.code || "").toLowerCase() === needle) ||
-    allCatalog.find((item) => (item.code || "").toLowerCase().startsWith(needle)) ||
+    allCatalog.find((item) =>
+      (item.code || "").toLowerCase().startsWith(needle),
+    ) ||
     null
   );
 }
@@ -473,7 +501,9 @@ function applyCatalogView(page = 1, query = "") {
 
   let items = [...allCatalog];
   if (importedCatalogCodes.size) {
-    items = items.filter((item) => importedCatalogCodes.has(String(item.code || "").trim()));
+    items = items.filter((item) =>
+      importedCatalogCodes.has(String(item.code || "").trim()),
+    );
   }
   const normalizedQuery = normalizeText(query);
 
@@ -483,18 +513,27 @@ function applyCatalogView(page = 1, query = "") {
       .filter((entry) => entry.score < 9999)
       .sort((a, b) => {
         if (a.score !== b.score) return a.score - b.score;
-        return String(a.item.code || "").localeCompare(String(b.item.code || ""), "el");
+        return String(a.item.code || "").localeCompare(
+          String(b.item.code || ""),
+          "el",
+        );
       })
       .map((entry) => entry.item);
   }
 
   if (rankedCatalogCodes.length) {
-    const rankingMap = new Map(rankedCatalogCodes.map((code, index) => [code, index]));
+    const rankingMap = new Map(
+      rankedCatalogCodes.map((code, index) => [code, index]),
+    );
     items.sort((a, b) => {
       const aCode = String(a.code || "").trim();
       const bCode = String(b.code || "").trim();
-      const aRank = rankingMap.has(aCode) ? rankingMap.get(aCode) : Number.POSITIVE_INFINITY;
-      const bRank = rankingMap.has(bCode) ? rankingMap.get(bCode) : Number.POSITIVE_INFINITY;
+      const aRank = rankingMap.has(aCode)
+        ? rankingMap.get(aCode)
+        : Number.POSITIVE_INFINITY;
+      const bRank = rankingMap.has(bCode)
+        ? rankingMap.get(bCode)
+        : Number.POSITIVE_INFINITY;
       if (aRank !== bRank) return aRank - bRank;
       return aCode.localeCompare(bCode, "el");
     });
@@ -684,8 +723,10 @@ function getPreparedCatalogRows() {
       const qtyPieces = parseInt(piecesInput?.value || "", 10);
 
       let finalPieces = 0;
-      if (Number.isFinite(packs) && packs > 0) finalPieces = packs * piecesPerPack;
-      else if (Number.isFinite(qtyPieces) && qtyPieces > 0) finalPieces = qtyPieces;
+      if (Number.isFinite(packs) && packs > 0)
+        finalPieces = packs * piecesPerPack;
+      else if (Number.isFinite(qtyPieces) && qtyPieces > 0)
+        finalPieces = qtyPieces;
       else return null;
 
       return {
@@ -769,7 +810,9 @@ function closeImgModal() {
 function createCatalogRow(product) {
   const image = product.image_url || PLACEHOLDER_PACKSHOT;
   const orderCount = productHistoryMap[String(product.code || "").trim()] || 0;
-  const historyBadge = rankedCatalogCodes.length ? buildHistoryBadge(orderCount) : "";
+  const historyBadge = rankedCatalogCodes.length
+    ? buildHistoryBadge(orderCount)
+    : "";
 
   return `
     <tr data-id="${product.id}">
@@ -865,7 +908,8 @@ function renderCatalog(items) {
       }
 
       piecesInput.value = String(qty);
-      packsInput.value = qty % piecesPerPack === 0 ? String(qty / piecesPerPack) : "";
+      packsInput.value =
+        qty % piecesPerPack === 0 ? String(qty / piecesPerPack) : "";
       piecesInput.setCustomValidity("");
       rememberDraftCatalogInput(product.code, {
         packs: packsInput.value,
@@ -878,7 +922,12 @@ function renderCatalog(items) {
       // Clicking code/description is a shortcut to preload the top quick-add toolbar.
       const allowedCell = event.target.closest("td.td-code, td.td-desc");
       if (!allowedCell) return;
-      if (event.target.closest("button") || event.target.closest("input") || event.target.closest("img.packshot")) return;
+      if (
+        event.target.closest("button") ||
+        event.target.closest("input") ||
+        event.target.closest("img.packshot")
+      )
+        return;
 
       if (els.q) els.q.value = product.code;
       setToolbarMsg("");
@@ -916,7 +965,8 @@ function renderCatalog(items) {
         return;
       }
 
-      packsInput.value = qty % piecesPerPack === 0 ? String(qty / piecesPerPack) : "";
+      packsInput.value =
+        qty % piecesPerPack === 0 ? String(qty / piecesPerPack) : "";
       rememberDraftCatalogInput(product.code, {
         packs: packsInput.value,
         pieces: piecesInput.value,
@@ -940,8 +990,10 @@ function renderCatalog(items) {
       const qtyPieces = parseInt(piecesInput?.value || "", 10);
 
       let finalPieces = 0;
-      if (Number.isFinite(packs) && packs > 0) finalPieces = packs * piecesPerPack;
-      else if (Number.isFinite(qtyPieces) && qtyPieces > 0) finalPieces = qtyPieces;
+      if (Number.isFinite(packs) && packs > 0)
+        finalPieces = packs * piecesPerPack;
+      else if (Number.isFinite(qtyPieces) && qtyPieces > 0)
+        finalPieces = qtyPieces;
       else {
         piecesInput.setCustomValidity("Βάλε συσκευασίες ή τεμάχια.");
         piecesInput.reportValidity();
@@ -949,7 +1001,9 @@ function renderCatalog(items) {
       }
 
       if (finalPieces % piecesPerPack !== 0) {
-        piecesInput.setCustomValidity(`Πρέπει να είναι πολλαπλάσιο των ${piecesPerPack}.`);
+        piecesInput.setCustomValidity(
+          `Πρέπει να είναι πολλαπλάσιο των ${piecesPerPack}.`,
+        );
         piecesInput.reportValidity();
         return;
       }
@@ -985,7 +1039,11 @@ function renderCart() {
   const itemsHtml = Array.from(cart.values())
     .map((item) => {
       // Sidebar totals are derived here so the cart stays self-contained.
-      const totals = calcVolumes(item.qty, item.pieces_per_package, item.volume_liters);
+      const totals = calcVolumes(
+        item.qty,
+        item.pieces_per_package,
+        item.volume_liters,
+      );
       totalLiters += totals.totalLiters;
       totalPackages += totals.packages;
 
@@ -1040,7 +1098,10 @@ function renderCart() {
       const code = button.getAttribute("data-cart-minus");
       const item = cart.get(code);
       if (!item) return;
-      const piecesPerPack = Math.max(1, parseInt(item.pieces_per_package, 10) || 1);
+      const piecesPerPack = Math.max(
+        1,
+        parseInt(item.pieces_per_package, 10) || 1,
+      );
       const nextQty = item.qty - piecesPerPack;
       if (nextQty <= 0) {
         cart.delete(code);
@@ -1057,7 +1118,10 @@ function renderCart() {
       const code = button.getAttribute("data-cart-plus");
       const item = cart.get(code);
       if (!item) return;
-      const piecesPerPack = Math.max(1, parseInt(item.pieces_per_package, 10) || 1);
+      const piecesPerPack = Math.max(
+        1,
+        parseInt(item.pieces_per_package, 10) || 1,
+      );
       setCartItemQty(code, item.qty + piecesPerPack);
     });
   });
@@ -1067,7 +1131,10 @@ function renderCart() {
       const code = input.getAttribute("data-cart-qty");
       const item = cart.get(code);
       if (!item) return;
-      const piecesPerPack = Math.max(1, parseInt(input.getAttribute("data-ppp"), 10) || 1);
+      const piecesPerPack = Math.max(
+        1,
+        parseInt(input.getAttribute("data-ppp"), 10) || 1,
+      );
       const qty = parseInt(input.value || "", 10);
 
       if (!Number.isFinite(qty) || qty <= 0) {
@@ -1076,7 +1143,9 @@ function renderCart() {
       }
 
       if (qty % piecesPerPack !== 0) {
-        input.setCustomValidity(`Πρέπει να είναι πολλαπλάσιο των ${piecesPerPack}.`);
+        input.setCustomValidity(
+          `Πρέπει να είναι πολλαπλάσιο των ${piecesPerPack}.`,
+        );
         input.reportValidity();
         input.value = String(item.qty);
         input.setCustomValidity("");
@@ -1103,7 +1172,10 @@ function calcTotals(cartMap) {
   let totalPieces = 0;
 
   for (const item of cartMap.values()) {
-    const piecesPerPack = Math.max(1, parseInt(item.pieces_per_package, 10) || 1);
+    const piecesPerPack = Math.max(
+      1,
+      parseInt(item.pieces_per_package, 10) || 1,
+    );
     const qty = parseInt(item.qty, 10) || 0;
     const packages = qty / piecesPerPack;
     const volumePerPack = toNum(item.volume_liters, 0);
@@ -1142,7 +1214,8 @@ function todayYYYYMMDD() {
 }
 
 function downloadOrderExcelFromCart(cartMap) {
-  const customerName = document.getElementById("customerName")?.value?.trim() || "";
+  const customerName =
+    document.getElementById("customerName")?.value?.trim() || "";
   const comments = document.getElementById("notes")?.value?.trim() || "";
 
   const rows = [
@@ -1187,13 +1260,22 @@ function downloadExcelOnly() {
 
 function buildEmailBodyNice(payload, totals, filename = "") {
   const lines = payload.lines || [];
-  const codeWidth = Math.max(6, ...lines.map((line) => String(line.itemCode || "").length));
-  const qtyWidth = Math.max(6, ...lines.map((line) => String(line.qty || "").length));
+  const codeWidth = Math.max(
+    6,
+    ...lines.map((line) => String(line.itemCode || "").length),
+  );
+  const qtyWidth = Math.max(
+    6,
+    ...lines.map((line) => String(line.qty || "").length),
+  );
 
   const header = `${"ΚΩΔΙΚΟΣ".padEnd(codeWidth)}  ${"ΤΕΜΑΧΙΑ".padStart(qtyWidth)}`;
   const separator = `${"-".repeat(codeWidth)}  ${"-".repeat(qtyWidth)}`;
   const rows = lines
-    .map((line) => `${String(line.itemCode || "").padEnd(codeWidth)}  ${String(line.qty || "").padStart(qtyWidth)}`)
+    .map(
+      (line) =>
+        `${String(line.itemCode || "").padEnd(codeWidth)}  ${String(line.qty || "").padStart(qtyWidth)}`,
+    )
     .join("\n");
 
   return [
@@ -1249,8 +1331,10 @@ function prepareOrderMeta() {
     return null;
   }
 
-  const customerName = document.getElementById("customerName")?.value?.trim() || "";
-  const customerEmail = document.getElementById("customerEmail")?.value?.trim() || "";
+  const customerName =
+    document.getElementById("customerName")?.value?.trim() || "";
+  const customerEmail =
+    document.getElementById("customerEmail")?.value?.trim() || "";
   const notes = els.notes?.value?.trim() || "";
 
   // Reuse the same normalized payload for both Gmail and Outlook draft flows.
@@ -1261,7 +1345,10 @@ function prepareOrderMeta() {
       customer_email: customerEmail,
       notes,
       token,
-      lines: Array.from(cart.values()).map((item) => ({ itemCode: item.code, qty: item.qty })),
+      lines: Array.from(cart.values()).map((item) => ({
+        itemCode: item.code,
+        qty: item.qty,
+      })),
     },
     totals: calcTotals(cart),
   };
@@ -1295,7 +1382,11 @@ document.addEventListener("keydown", (event) => {
   }
 
   if (event.key !== "Enter") return;
-  if (imgModal?.classList.contains("open") || submitModal?.classList.contains("open")) return;
+  if (
+    imgModal?.classList.contains("open") ||
+    submitModal?.classList.contains("open")
+  )
+    return;
   if (event.isComposing) return;
   if (event.target instanceof HTMLTextAreaElement) return;
 
@@ -1310,7 +1401,11 @@ sendGmailBtn?.addEventListener("click", () => {
   try {
     els.submitStatus.textContent = "Δημιουργία Excel...";
     const filename = downloadOrderExcelFromCart(cart);
-    const body = buildEmailBodyNice(lastOrder.payload, lastOrder.totals, filename);
+    const body = buildEmailBodyNice(
+      lastOrder.payload,
+      lastOrder.totals,
+      filename,
+    );
 
     closeSubmitModal();
     els.submitStatus.textContent = `Κατέβηκε το ${filename}. Άνοιξε draft στο Gmail.`;
@@ -1327,7 +1422,11 @@ sendMailtoBtn?.addEventListener("click", () => {
   try {
     els.submitStatus.textContent = "Δημιουργία Excel...";
     const filename = downloadOrderExcelFromCart(cart);
-    const body = buildEmailBodyNice(lastOrder.payload, lastOrder.totals, filename);
+    const body = buildEmailBodyNice(
+      lastOrder.payload,
+      lastOrder.totals,
+      filename,
+    );
 
     closeSubmitModal();
     els.submitStatus.textContent = `Κατέβηκε το ${filename}. Άνοιξε draft στο Outlook.`;
@@ -1367,7 +1466,9 @@ els.toolbarQty?.addEventListener("keydown", (event) => {
   }
 });
 els.toolbarQty?.addEventListener("input", sanitizeToolbarQty);
-els.toolbarQty?.addEventListener("paste", () => setTimeout(sanitizeToolbarQty, 0));
+els.toolbarQty?.addEventListener("paste", () =>
+  setTimeout(sanitizeToolbarQty, 0),
+);
 els.customerName?.addEventListener("input", saveOrderFormState);
 els.customerEmail?.addEventListener("input", saveOrderFormState);
 els.notes?.addEventListener("input", saveOrderFormState);
@@ -1387,7 +1488,9 @@ els.submitBtn?.addEventListener("click", submitOrder);
 els.downloadExcelBtn?.addEventListener("click", downloadExcelOnly);
 els.reloadBtn?.addEventListener("click", clearTopFilters);
 els.reloadBtn?.addEventListener("pointerup", clearTopFilters);
-els.reloadBtn?.addEventListener("touchend", clearTopFilters, { passive: false });
+els.reloadBtn?.addEventListener("touchend", clearTopFilters, {
+  passive: false,
+});
 window.addEventListener("pagehide", saveOrderFormState);
 window.addEventListener("beforeunload", saveOrderFormState);
 
@@ -1397,7 +1500,9 @@ restoreRankedCatalogCodes(restoredOrderFormState);
 restoreCartFromState(restoredOrderFormState);
 restoreOrderFormFields(restoredOrderFormState);
 loadCatalog(
-  Number.isFinite(Number(restoredOrderFormState?.currentPage)) ? Number(restoredOrderFormState.currentPage) : 1,
+  Number.isFinite(Number(restoredOrderFormState?.currentPage))
+    ? Number(restoredOrderFormState.currentPage)
+    : 1,
   restoredOrderFormState?.lastQuery || restoredOrderFormState?.q || "",
 );
 renderCart();

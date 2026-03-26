@@ -1,28 +1,4 @@
 import {
-  API_BASE,
-  DEFAULT_SALES_TIME_RANGE,
-  IMPORT_DATASET_LABELS,
-  OPEN_ORDERS_PAGE_SIZE,
-  PRE_APPROVAL_ORDERS_PAGE_SIZE,
-  PRODUCT_SALES_PAGE_SIZE,
-  RECEIVABLES_PAGE_SIZE,
-  RECENT_ORDERS_PAGE_SIZE,
-  SEARCH_LOADING_MIN_VISIBLE_MS,
-  STATS_LOADING_MIN_VISIBLE_MS,
-} from "./admin-constants.js";
-import { createAdminElements, assertAdminDomContract } from "./admin-dom.js";
-import {
-  clearAdminState as clearAdminStateModule,
-  fillSearchFields as fillSearchFieldsModule,
-  loadAdminState as loadAdminStateModule,
-  saveAdminState as saveAdminStateModule,
-} from "./admin-state.js";
-import {
-  apiFetch as apiFetchModule,
-  loadLatestImportMessage as loadLatestImportMessageModule,
-  refreshSession as refreshSessionModule,
-} from "./admin-api.js";
-import {
   clearCustomerStats as clearCustomerStatsModule,
   expandSearchPanel as expandSearchPanelModule,
   fetchAllRangeStats as fetchAllRangeStatsModule,
@@ -36,17 +12,27 @@ import {
   searchCustomers as searchCustomersModule,
 } from "./admin-actions.js";
 import {
+  apiFetch as apiFetchModule,
+  loadLatestImportMessage as loadLatestImportMessageModule,
+  refreshSession as refreshSessionModule,
+} from "./admin-api.js";
+import {
+  API_BASE,
+  DEFAULT_SALES_TIME_RANGE,
+  IMPORT_DATASET_LABELS,
+  OPEN_ORDERS_PAGE_SIZE,
+  PRE_APPROVAL_ORDERS_PAGE_SIZE,
+  PRODUCT_SALES_PAGE_SIZE,
+  RECEIVABLES_PAGE_SIZE,
+  RECENT_ORDERS_PAGE_SIZE,
+  SEARCH_LOADING_MIN_VISIBLE_MS,
+  STATS_LOADING_MIN_VISIBLE_MS,
+} from "./admin-constants.js";
+import { assertAdminDomContract, createAdminElements } from "./admin-dom.js";
+import {
   openRankedOrderForm as openRankedOrderFormModule,
   openSelectedOrderInOrderForm as openSelectedOrderInOrderFormModule,
 } from "./admin-handoff.js";
-import {
-  filterProductItems as filterProductItemsModule,
-  getOpenOrdersForTable as getOpenOrdersForTableModule,
-  getPreApprovalOrdersForTable as getPreApprovalOrdersForTableModule,
-  getRecentOrdersForTable as getRecentOrdersForTableModule,
-  getSortedProductSales as getSortedProductSalesModule,
-  getSortedProductSalesForTable as getSortedProductSalesForTableModule,
-} from "./admin-tables.js";
 import {
   getBranchOptionLabel as getBranchOptionLabelModule,
   renderBranchSelector as renderBranchSelectorModule,
@@ -55,9 +41,9 @@ import {
   renderOpenOrdersTable as renderOpenOrdersTableModule,
   renderPreApprovalOrdersTable as renderPreApprovalOrdersTableModule,
   renderProductSales as renderProductSalesModule,
-  renderRecentOrdersTable as renderRecentOrdersTableModule,
   renderReceivables as renderReceivablesModule,
   renderReceivablesTable as renderReceivablesTableModule,
+  renderRecentOrdersTable as renderRecentOrdersTableModule,
   renderSearchResults as renderSearchResultsModule,
   renderSelectedOrderDetails as renderSelectedOrderDetailsModule,
   renderStats as renderStatsModule,
@@ -69,6 +55,20 @@ import {
   resetSearchSuggestions as resetSearchSuggestionsModule,
   resetStats as resetStatsModule,
 } from "./admin-render.js";
+import {
+  clearAdminState as clearAdminStateModule,
+  fillSearchFields as fillSearchFieldsModule,
+  loadAdminState as loadAdminStateModule,
+  saveAdminState as saveAdminStateModule,
+} from "./admin-state.js";
+import {
+  filterProductItems as filterProductItemsModule,
+  getOpenOrdersForTable as getOpenOrdersForTableModule,
+  getPreApprovalOrdersForTable as getPreApprovalOrdersForTableModule,
+  getRecentOrdersForTable as getRecentOrdersForTableModule,
+  getSortedProductSalesForTable as getSortedProductSalesForTableModule,
+  getSortedProductSales as getSortedProductSalesModule,
+} from "./admin-tables.js";
 import {
   escapeHtml,
   formatDate,
@@ -150,7 +150,11 @@ function getSalesTimeRangeControls() {
 }
 
 function getAllTimeRangeControls() {
-  return Array.from(document.querySelectorAll(".sales-time-range-control, .card-time-range-control"));
+  return Array.from(
+    document.querySelectorAll(
+      ".sales-time-range-control, .card-time-range-control",
+    ),
+  );
 }
 
 function buildRangeSummaryKey(statsKey, range) {
@@ -168,7 +172,9 @@ function cacheRangeSummary(statsKey, range, summary) {
 
 function getCachedRangeSummary(statsKey, range) {
   if (!statsKey || !range) return null;
-  return state.rangeSummaryCache.get(buildRangeSummaryKey(statsKey, range)) || null;
+  return (
+    state.rangeSummaryCache.get(buildRangeSummaryKey(statsKey, range)) || null
+  );
 }
 
 function syncSalesTimeRangeControls(value) {
@@ -180,7 +186,11 @@ function syncSalesTimeRangeControls(value) {
 
 function getSelectedSalesTimeRange() {
   const firstControl = getSalesTimeRangeControls()[0];
-  return normalizeSalesTimeRange(firstControl?.value || state.currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE);
+  return normalizeSalesTimeRange(
+    firstControl?.value ||
+      state.currentSalesTimeRange ||
+      DEFAULT_SALES_TIME_RANGE,
+  );
 }
 
 function normalizeSalesTimeRangeControlsText() {
@@ -199,8 +209,11 @@ function normalizeSalesTimeRangeControlsText() {
     if (labelText) labelText.textContent = "Περίοδος";
 
     Array.from(control.options).forEach((option) => {
-      const normalizedValue = String(option.value || "").trim().toLowerCase();
-      if (labelsByValue[normalizedValue]) option.textContent = labelsByValue[normalizedValue];
+      const normalizedValue = String(option.value || "")
+        .trim()
+        .toLowerCase();
+      if (labelsByValue[normalizedValue])
+        option.textContent = labelsByValue[normalizedValue];
     });
   });
 }
@@ -254,14 +267,20 @@ function applySearchLoadingState(isLoading, message = "Φόρτωση...") {
 
   if (elements.searchCustomersBtn) {
     elements.searchCustomersBtn.disabled = busy;
-    elements.searchCustomersBtn.textContent = busy ? "Αναζήτηση..." : "Αναζήτηση";
+    elements.searchCustomersBtn.textContent = busy
+      ? "Αναζήτηση..."
+      : "Αναζήτηση";
   }
   if (elements.clearStatsBtn) elements.clearStatsBtn.disabled = busy;
 
-  [elements.customerNameQuery, elements.customerCodeQuery, elements.branchCodeQuery, elements.branchDescriptionQuery]
-    .forEach((input) => {
-      if (input) input.disabled = busy;
-    });
+  [
+    elements.customerNameQuery,
+    elements.customerCodeQuery,
+    elements.branchCodeQuery,
+    elements.branchDescriptionQuery,
+  ].forEach((input) => {
+    if (input) input.disabled = busy;
+  });
 }
 
 async function setSearchLoading(isLoading, message = "Φόρτωση...") {
@@ -285,7 +304,10 @@ async function setSearchLoading(isLoading, message = "Φόρτωση...") {
   applySearchLoadingState(false, message);
 }
 
-function applyStatsLoadingState(isLoading, message = "Φόρτωση στοιχείων πελάτη...") {
+function applyStatsLoadingState(
+  isLoading,
+  message = "Φόρτωση στοιχείων πελάτη...",
+) {
   const busy = Boolean(isLoading);
   elements.statsPanel?.setAttribute("aria-busy", String(busy));
   elements.statsPanel?.classList.toggle("is-loading", busy);
@@ -297,18 +319,25 @@ function applyStatsLoadingState(isLoading, message = "Φόρτωση στοιχ�
   }
 
   if (elements.branchSelector) {
-    elements.branchSelector.disabled = busy || state.currentAvailableBranches.length <= 1;
+    elements.branchSelector.disabled =
+      busy || state.currentAvailableBranches.length <= 1;
   }
   if (elements.branchSelectorSearch) {
-    elements.branchSelectorSearch.disabled = busy || state.currentAvailableBranches.length <= 1;
+    elements.branchSelectorSearch.disabled =
+      busy || state.currentAvailableBranches.length <= 1;
   }
 
-  elements.searchResultsBody?.querySelectorAll("[data-customer-code]").forEach((button) => {
-    button.disabled = busy;
-  });
+  elements.searchResultsBody
+    ?.querySelectorAll("[data-customer-code]")
+    .forEach((button) => {
+      button.disabled = busy;
+    });
 }
 
-async function setStatsLoading(isLoading, message = "Φόρτωση στοιχείων πελάτη...") {
+async function setStatsLoading(
+  isLoading,
+  message = "Φόρτωση στοιχείων πελάτη...",
+) {
   const stateId = ++state.statsLoadingStateId;
   const busy = Boolean(isLoading);
 
@@ -330,7 +359,9 @@ async function setStatsLoading(isLoading, message = "Φόρτωση στοιχε
 }
 
 function getCardTimeRangeValue(target) {
-  const control = document.querySelector(`.card-time-range-control[data-range-target="${target}"]`);
+  const control = document.querySelector(
+    `.card-time-range-control[data-range-target="${target}"]`,
+  );
   return normalizeSalesTimeRange(control?.value || DEFAULT_SALES_TIME_RANGE);
 }
 
@@ -341,7 +372,8 @@ function filterOrdersByRange(orders, range, now = new Date()) {
   }
 
   if (normalized === "this_year" || normalized === "last_year") {
-    const year = normalized === "this_year" ? now.getFullYear() : now.getFullYear() - 1;
+    const year =
+      normalized === "this_year" ? now.getFullYear() : now.getFullYear() - 1;
     const start = new Date(year, 0, 1);
     const end = new Date(year, 11, 31, 23, 59, 59, 999);
     return (Array.isArray(orders) ? orders : []).filter((order) => {
@@ -362,9 +394,15 @@ function filterOrdersByRange(orders, range, now = new Date()) {
 function findDetailedOrder(orderId) {
   const normalizedId = String(orderId);
   return (
-    state.currentDetailedOrders.find((order) => String(order.order_id) === normalizedId) ||
-    state.currentDetailedOpenOrders.find((order) => String(order.order_id) === normalizedId) ||
-    state.currentDetailedPreApprovalOrders.find((order) => String(order.order_id) === normalizedId) ||
+    state.currentDetailedOrders.find(
+      (order) => String(order.order_id) === normalizedId,
+    ) ||
+    state.currentDetailedOpenOrders.find(
+      (order) => String(order.order_id) === normalizedId,
+    ) ||
+    state.currentDetailedPreApprovalOrders.find(
+      (order) => String(order.order_id) === normalizedId,
+    ) ||
     null
   );
 }
@@ -387,12 +425,17 @@ function setAuthenticatedUI(me) {
     return;
   }
 
-  setSessionInfo(`Συνδεδεμένος χρήστης: ${me.username}. Φόρτωση τελευταίας εισαγωγής δεδομένων...`);
+  setSessionInfo(
+    `Συνδεδεμένος χρήστης: ${me.username}. Φόρτωση τελευταίας εισαγωγής δεδομένων...`,
+  );
 }
 
 function setSearchPanelCollapsed(collapsed) {
   if (elements.customerSearchPanel) {
-    elements.customerSearchPanel.classList.toggle("is-collapsed", Boolean(collapsed));
+    elements.customerSearchPanel.classList.toggle(
+      "is-collapsed",
+      Boolean(collapsed),
+    );
   }
   if (elements.searchPanelContent) {
     elements.searchPanelContent.hidden = Boolean(collapsed);
@@ -407,16 +450,25 @@ function focusPrimarySearchField() {
 }
 
 function filterBranches(term, selectedBranchCode = state.currentBranchCode) {
-  const normalizedTerm = String(term || "").trim().toLocaleLowerCase("el-GR");
+  const normalizedTerm = String(term || "")
+    .trim()
+    .toLocaleLowerCase("el-GR");
   if (!normalizedTerm) {
-    renderFilteredBranchOptions(state.currentAvailableBranches, selectedBranchCode);
+    renderFilteredBranchOptions(
+      state.currentAvailableBranches,
+      selectedBranchCode,
+    );
     return state.currentAvailableBranches;
   }
 
   const filtered = state.currentAvailableBranches.filter((branch) => {
     const code = String(branch.branch_code || "").toLocaleLowerCase("el-GR");
-    const description = String(branch.branch_description || "").toLocaleLowerCase("el-GR");
-    return code.includes(normalizedTerm) || description.includes(normalizedTerm);
+    const description = String(
+      branch.branch_description || "",
+    ).toLocaleLowerCase("el-GR");
+    return (
+      code.includes(normalizedTerm) || description.includes(normalizedTerm)
+    );
   });
 
   renderFilteredBranchOptions(filtered, selectedBranchCode);
@@ -463,7 +515,10 @@ async function performCustomerSearch(filters, options = {}) {
 
   const params = buildCustomerSearchParams(filters);
   params.set("limit", String(limit));
-  const payload = await apiFetch(`/api/admin/customers/search?${params.toString()}`, { method: "GET" });
+  const payload = await apiFetch(
+    `/api/admin/customers/search?${params.toString()}`,
+    { method: "GET" },
+  );
 
   if (renderTable) renderSearchResults(payload.items, payload.filters);
   if (!silent) {
@@ -479,9 +534,12 @@ function formatAggregationLevelLabel(level) {
 }
 
 function syncProductTableFilterInputs() {
-  if (elements.productSalesCodeFilter) elements.productSalesCodeFilter.value = state.currentProductSalesFilters.code;
+  if (elements.productSalesCodeFilter)
+    elements.productSalesCodeFilter.value =
+      state.currentProductSalesFilters.code;
   if (elements.productSalesDescriptionFilter) {
-    elements.productSalesDescriptionFilter.value = state.currentProductSalesFilters.description;
+    elements.productSalesDescriptionFilter.value =
+      state.currentProductSalesFilters.description;
   }
 }
 
@@ -493,28 +551,56 @@ function resetProductTableFilters() {
 function restoreAdminStateView(snapshot) {
   if (!snapshot) return;
 
-  fillSearchFields(snapshot.searchFields || snapshot.currentCustomerSearchFilters || {});
-  setCurrentCustomerSearchFilters(snapshot.currentCustomerSearchFilters || snapshot.searchFields || {});
-  state.currentSalesTimeRange = normalizeSalesTimeRange(snapshot.currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE);
+  fillSearchFields(
+    snapshot.searchFields || snapshot.currentCustomerSearchFilters || {},
+  );
+  setCurrentCustomerSearchFilters(
+    snapshot.currentCustomerSearchFilters || snapshot.searchFields || {},
+  );
+  state.currentSalesTimeRange = normalizeSalesTimeRange(
+    snapshot.currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE,
+  );
   syncSalesTimeRangeControls(state.currentSalesTimeRange);
   setSearchPanelCollapsed(Boolean(snapshot.searchPanelCollapsed));
 
-  if (Array.isArray(snapshot.currentSearchResults) && snapshot.currentSearchResults.length) {
-    renderSearchResults(snapshot.currentSearchResults, snapshot.currentCustomerSearchFilters || snapshot.searchFields || {});
+  if (
+    Array.isArray(snapshot.currentSearchResults) &&
+    snapshot.currentSearchResults.length
+  ) {
+    renderSearchResults(
+      snapshot.currentSearchResults,
+      snapshot.currentCustomerSearchFilters || snapshot.searchFields || {},
+    );
   }
 
   if (!snapshot.lastRenderedStatsPayload) return;
 
   renderStats(snapshot.lastRenderedStatsPayload);
-  state.currentProductSalesPage = Math.max(1, Number(snapshot.currentProductSalesPage) || 1);
-  state.currentReceivablesPage = Math.max(1, Number(snapshot.currentReceivablesPage) || 1);
-  state.currentRecentOrdersPage = Math.max(1, Number(snapshot.currentRecentOrdersPage) || 1);
-  state.currentOpenOrdersPage = Math.max(1, Number(snapshot.currentOpenOrdersPage) || 1);
-  state.currentPreApprovalOrdersPage = Math.max(1, Number(snapshot.currentPreApprovalOrdersPage) || 1);
+  state.currentProductSalesPage = Math.max(
+    1,
+    Number(snapshot.currentProductSalesPage) || 1,
+  );
+  state.currentReceivablesPage = Math.max(
+    1,
+    Number(snapshot.currentReceivablesPage) || 1,
+  );
+  state.currentRecentOrdersPage = Math.max(
+    1,
+    Number(snapshot.currentRecentOrdersPage) || 1,
+  );
+  state.currentOpenOrdersPage = Math.max(
+    1,
+    Number(snapshot.currentOpenOrdersPage) || 1,
+  );
+  state.currentPreApprovalOrdersPage = Math.max(
+    1,
+    Number(snapshot.currentPreApprovalOrdersPage) || 1,
+  );
   state.selectedOrderId = snapshot.selectedOrderId || null;
 
   if (elements.productSalesMetric) {
-    elements.productSalesMetric.value = snapshot.productSalesMetric === "pieces" ? "pieces" : "revenue";
+    elements.productSalesMetric.value =
+      snapshot.productSalesMetric === "pieces" ? "pieces" : "revenue";
   }
   if (elements.branchSelectorSearch) {
     elements.branchSelectorSearch.value = snapshot.branchSelectorSearch || "";
@@ -576,11 +662,24 @@ function getBranchOptionLabel(branch) {
 }
 
 function renderFilteredBranchOptions(branches, selectedBranchCode = "") {
-  return renderFilteredBranchOptionsModule(moduleContext, branches, selectedBranchCode);
+  return renderFilteredBranchOptionsModule(
+    moduleContext,
+    branches,
+    selectedBranchCode,
+  );
 }
 
-function renderBranchSelector(customerCode, branches = [], selectedBranchCode = "") {
-  return renderBranchSelectorModule(moduleContext, customerCode, branches, selectedBranchCode);
+function renderBranchSelector(
+  customerCode,
+  branches = [],
+  selectedBranchCode = "",
+) {
+  return renderBranchSelectorModule(
+    moduleContext,
+    customerCode,
+    branches,
+    selectedBranchCode,
+  );
 }
 
 function renderSearchResults(items, filters = {}) {
@@ -667,12 +766,30 @@ async function handleLogout() {
   return handleLogoutModule(moduleContext);
 }
 
-async function fetchCustomerStats(customerCode, branchCode = "", scopeFilters = state.currentCustomerSearchFilters) {
-  return fetchCustomerStatsModule(moduleContext, customerCode, branchCode, scopeFilters);
+async function fetchCustomerStats(
+  customerCode,
+  branchCode = "",
+  scopeFilters = state.currentCustomerSearchFilters,
+) {
+  return fetchCustomerStatsModule(
+    moduleContext,
+    customerCode,
+    branchCode,
+    scopeFilters,
+  );
 }
 
-async function fetchAllRangeStats(customerCode, branchCode = "", scopeFilters = state.currentCustomerSearchFilters) {
-  return fetchAllRangeStatsModule(moduleContext, customerCode, branchCode, scopeFilters);
+async function fetchAllRangeStats(
+  customerCode,
+  branchCode = "",
+  scopeFilters = state.currentCustomerSearchFilters,
+) {
+  return fetchAllRangeStatsModule(
+    moduleContext,
+    customerCode,
+    branchCode,
+    scopeFilters,
+  );
 }
 
 async function fetchRangeSummary(
@@ -681,7 +798,13 @@ async function fetchRangeSummary(
   branchCode = state.currentBranchCode,
   scopeFilters = state.currentCustomerSearchFilters,
 ) {
-  return fetchRangeSummaryModule(moduleContext, range, customerCode, branchCode, scopeFilters);
+  return fetchRangeSummaryModule(
+    moduleContext,
+    range,
+    customerCode,
+    branchCode,
+    scopeFilters,
+  );
 }
 
 async function searchCustomers(event) {
@@ -773,14 +896,27 @@ elements.logoutBtn?.addEventListener("click", handleLogout);
 elements.customerSearchForm?.addEventListener("submit", searchCustomers);
 elements.clearStatsBtn?.addEventListener("click", clearCustomerStats);
 elements.expandSearchPanelBtn?.addEventListener("click", expandSearchPanel);
-elements.branchSelector?.addEventListener("change", handleBranchSelectionChange);
-elements.branchSelectorSearch?.addEventListener("input", handleBranchSearchInput);
-elements.branchSelectorSearch?.addEventListener("keydown", handleBranchSearchKeydown);
+elements.branchSelector?.addEventListener(
+  "change",
+  handleBranchSelectionChange,
+);
+elements.branchSelectorSearch?.addEventListener(
+  "input",
+  handleBranchSearchInput,
+);
+elements.branchSelectorSearch?.addEventListener(
+  "keydown",
+  handleBranchSearchKeydown,
+);
 
 elements.searchResultsBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-customer-code]");
   if (!button) return;
-  void fetchCustomerStats(button.getAttribute("data-customer-code"), "", state.currentCustomerSearchFilters);
+  void fetchCustomerStats(
+    button.getAttribute("data-customer-code"),
+    "",
+    state.currentCustomerSearchFilters,
+  );
 });
 
 elements.detailedOrdersList?.addEventListener("click", (event) => {
@@ -796,32 +932,47 @@ elements.productSalesMetric?.addEventListener("change", () => {
 });
 
 elements.productSalesCodeFilter?.addEventListener("input", () => {
-  state.currentProductSalesFilters.code = elements.productSalesCodeFilter.value || "";
+  state.currentProductSalesFilters.code =
+    elements.productSalesCodeFilter.value || "";
   state.currentProductSalesPage = 1;
   renderProductSales();
 });
 
 elements.productSalesDescriptionFilter?.addEventListener("input", () => {
-  state.currentProductSalesFilters.description = elements.productSalesDescriptionFilter.value || "";
+  state.currentProductSalesFilters.description =
+    elements.productSalesDescriptionFilter.value || "";
   state.currentProductSalesPage = 1;
   renderProductSales();
 });
 
 getSalesTimeRangeControls().forEach((control) => {
   control.addEventListener("change", () => {
-    state.currentSalesTimeRange = normalizeSalesTimeRange(control.value || DEFAULT_SALES_TIME_RANGE);
+    state.currentSalesTimeRange = normalizeSalesTimeRange(
+      control.value || DEFAULT_SALES_TIME_RANGE,
+    );
     syncSalesTimeRangeControls(state.currentSalesTimeRange);
     if (!state.currentCustomerCode) return;
-    void fetchCustomerStats(state.currentCustomerCode, state.currentBranchCode, state.currentCustomerSearchFilters);
+    void fetchCustomerStats(
+      state.currentCustomerCode,
+      state.currentBranchCode,
+      state.currentCustomerSearchFilters,
+    );
   });
 });
 
 document.querySelectorAll(".card-time-range-control").forEach((control) => {
   control.addEventListener("change", () => {
     if (!state.lastRenderedStatsPayload) return;
-    const selectedRange = normalizeSalesTimeRange(control.value || DEFAULT_SALES_TIME_RANGE);
+    const selectedRange = normalizeSalesTimeRange(
+      control.value || DEFAULT_SALES_TIME_RANGE,
+    );
     if (state.currentCustomerCode) {
-      void fetchRangeSummary(selectedRange, state.currentCustomerCode, state.currentBranchCode, state.currentCustomerSearchFilters);
+      void fetchRangeSummary(
+        selectedRange,
+        state.currentCustomerCode,
+        state.currentBranchCode,
+        state.currentCustomerSearchFilters,
+      );
     }
     renderStats(state.lastRenderedStatsPayload);
   });
@@ -834,7 +985,10 @@ elements.receivablesPrevBtn?.addEventListener("click", () => {
 });
 
 elements.receivablesNextBtn?.addEventListener("click", () => {
-  const totalPages = Math.max(1, Math.ceil(state.currentReceivables.length / RECEIVABLES_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(state.currentReceivables.length / RECEIVABLES_PAGE_SIZE),
+  );
   if (state.currentReceivablesPage >= totalPages) return;
   state.currentReceivablesPage += 1;
   renderReceivablesTable();
@@ -849,7 +1003,12 @@ elements.productSalesPrevBtn?.addEventListener("click", () => {
 elements.productSalesNextBtn?.addEventListener("click", () => {
   const totalPages = Math.max(
     1,
-    Math.ceil(filterProductItems(getSortedProductSalesForTable(), state.currentProductSalesFilters).length / PRODUCT_SALES_PAGE_SIZE),
+    Math.ceil(
+      filterProductItems(
+        getSortedProductSalesForTable(),
+        state.currentProductSalesFilters,
+      ).length / PRODUCT_SALES_PAGE_SIZE,
+    ),
   );
   if (state.currentProductSalesPage >= totalPages) return;
   state.currentProductSalesPage += 1;
@@ -863,7 +1022,10 @@ elements.recentOrdersPrevBtn?.addEventListener("click", () => {
 });
 
 elements.recentOrdersNextBtn?.addEventListener("click", () => {
-  const totalPages = Math.max(1, Math.ceil(getRecentOrdersForTable().length / RECENT_ORDERS_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(getRecentOrdersForTable().length / RECENT_ORDERS_PAGE_SIZE),
+  );
   if (state.currentRecentOrdersPage >= totalPages) return;
   state.currentRecentOrdersPage += 1;
   renderRecentOrdersTable();
@@ -876,7 +1038,10 @@ elements.openOrdersPrevBtn?.addEventListener("click", () => {
 });
 
 elements.openOrdersNextBtn?.addEventListener("click", () => {
-  const totalPages = Math.max(1, Math.ceil(getOpenOrdersForTable().length / OPEN_ORDERS_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(getOpenOrdersForTable().length / OPEN_ORDERS_PAGE_SIZE),
+  );
   if (state.currentOpenOrdersPage >= totalPages) return;
   state.currentOpenOrdersPage += 1;
   renderOpenOrdersTable();
@@ -889,7 +1054,12 @@ elements.preApprovalOrdersPrevBtn?.addEventListener("click", () => {
 });
 
 elements.preApprovalOrdersNextBtn?.addEventListener("click", () => {
-  const totalPages = Math.max(1, Math.ceil(getPreApprovalOrdersForTable().length / PRE_APPROVAL_ORDERS_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      getPreApprovalOrdersForTable().length / PRE_APPROVAL_ORDERS_PAGE_SIZE,
+    ),
+  );
   if (state.currentPreApprovalOrdersPage >= totalPages) return;
   state.currentPreApprovalOrdersPage += 1;
   renderPreApprovalOrdersTable();
@@ -929,7 +1099,8 @@ document.addEventListener("click", (event) => {
 
   if (tableId === "open") {
     if (state.openOrdersSort.key === key) {
-      state.openOrdersSort.direction = state.openOrdersSort.direction === "asc" ? "desc" : "asc";
+      state.openOrdersSort.direction =
+        state.openOrdersSort.direction === "asc" ? "desc" : "asc";
     } else {
       state.openOrdersSort = { key, direction: "desc" };
     }
@@ -940,7 +1111,8 @@ document.addEventListener("click", (event) => {
 
   if (tableId === "pre-approval") {
     if (state.preApprovalOrdersSort.key === key) {
-      state.preApprovalOrdersSort.direction = state.preApprovalOrdersSort.direction === "asc" ? "desc" : "asc";
+      state.preApprovalOrdersSort.direction =
+        state.preApprovalOrdersSort.direction === "asc" ? "desc" : "asc";
     } else {
       state.preApprovalOrdersSort = { key, direction: "desc" };
     }
@@ -951,7 +1123,8 @@ document.addEventListener("click", (event) => {
 
   if (tableId === "recent") {
     if (state.recentOrdersSort.key === key) {
-      state.recentOrdersSort.direction = state.recentOrdersSort.direction === "asc" ? "desc" : "asc";
+      state.recentOrdersSort.direction =
+        state.recentOrdersSort.direction === "asc" ? "desc" : "asc";
     } else {
       state.recentOrdersSort = { key, direction: "desc" };
     }
@@ -962,7 +1135,8 @@ document.addEventListener("click", (event) => {
 
   if (tableId === "product-sales") {
     if (state.productSalesSort.key === key) {
-      state.productSalesSort.direction = state.productSalesSort.direction === "asc" ? "desc" : "asc";
+      state.productSalesSort.direction =
+        state.productSalesSort.direction === "asc" ? "desc" : "asc";
     } else {
       state.productSalesSort = { key, direction: "desc" };
     }
@@ -991,20 +1165,16 @@ if (restoredAdminState?.authenticatedLikely) {
   if (elements.username && restoredAdminState.username) {
     elements.username.value = restoredAdminState.username;
   }
-  setAuthenticatedUI({ authenticated: true, username: restoredAdminState.username || "admin" });
+  setAuthenticatedUI({
+    authenticated: true,
+    username: restoredAdminState.username || "admin",
+  });
   restoreAdminStateView(restoredAdminState);
 }
 
 refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
     restoreAdminStateView(restoredAdminState);
-    if (restoredAdminState?.currentCustomerCode) {
-      void fetchCustomerStats(
-        restoredAdminState.currentCustomerCode,
-        restoredAdminState.currentBranchCode || "",
-        restoredAdminState.currentCustomerSearchFilters || restoredAdminState.searchFields || {},
-      );
-    }
     focusPrimarySearchField();
   } else {
     elements.username.focus();
