@@ -56,6 +56,19 @@ const PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
   ),
 );
 
+function buildImportedOpenOrderRefExpression(sqlDialect) {
+  if (sqlDialect === "mysql") {
+    return "NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(SUBSTRING_INDEX(note_1, ':', -1))), '|', ''), ' ', ''), '.', ''), ':', ''), '')";
+  }
+
+  return `NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(
+    CASE
+      WHEN INSTR(note_1, ':') > 0 THEN SUBSTR(note_1, INSTR(note_1, ':') + 1)
+      ELSE note_1
+    END
+  )), '|', ''), ' ', ''), '.', ''), ':', ''), '')`;
+}
+
 export async function loadImportedCustomerStats(context) {
   const {
     db,
@@ -400,6 +413,8 @@ export async function loadImportedCustomerStats(context) {
 
   const importedOrderRefExpression =
     buildImportedOrderRefExpression(sqlDialect);
+  const importedOpenOrderRefExpression =
+    buildImportedOpenOrderRefExpression(sqlDialect);
 
   const openOrdersRows = useImportedProjections
     ? await db.all(
@@ -469,7 +484,7 @@ export async function loadImportedCustomerStats(context) {
               COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
               COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
               MAX(document_type) AS document_type,
-              MAX(${importedOrderRefExpression}) AS order_ref
+              MAX(${importedOpenOrderRefExpression}) AS order_ref
             FROM imported_sales_lines
             WHERE customer_code = ?
               AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
@@ -485,7 +500,7 @@ export async function loadImportedCustomerStats(context) {
             FROM (
               SELECT
                 customer_code,
-                ${importedOrderRefExpression} AS order_ref,
+                ${importedOpenOrderRefExpression} AS order_ref,
                 document_no,
                 order_date,
                 COUNT(*) AS total_lines,
@@ -495,8 +510,8 @@ export async function loadImportedCustomerStats(context) {
               WHERE customer_code = ?
                 AND ${importedExpressions.countInOrderTotals} = 1
                 AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
-                AND ${importedOrderRefExpression} IS NOT NULL${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-              GROUP BY customer_code, ${importedOrderRefExpression}, document_no, order_date
+                AND ${importedOpenOrderRefExpression} IS NOT NULL${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+              GROUP BY customer_code, ${importedOpenOrderRefExpression}, document_no, order_date
             ) executed_docs
             GROUP BY customer_code, order_ref
           ) executed_by_ref
@@ -514,12 +529,12 @@ export async function loadImportedCustomerStats(context) {
               COUNT(*) AS total_lines,
               COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
               COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
-              COALESCE(MAX(${importedOrderRefExpression}), '') AS order_ref
+              COALESCE(MAX(${importedOpenOrderRefExpression}), '') AS order_ref
             FROM imported_sales_lines
             WHERE customer_code = ?
               AND ${importedExpressions.countInOrderTotals} = 1
               AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
-              AND (${importedOrderRefExpression} IS NULL OR ${importedOrderRefExpression} = '')${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+              AND (${importedOpenOrderRefExpression} IS NULL OR ${importedOpenOrderRefExpression} = '')${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
             GROUP BY customer_code, document_no, order_date
           ) executed_no_ref
             ON executed_no_ref.customer_code = pending.customer_code

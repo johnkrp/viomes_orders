@@ -263,7 +263,8 @@ export const REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL = `
     source_file = VALUES(source_file)
 `;
 
-const OPEN_ORDER_REF_EXPRESSION = "NULLIF(TRIM(SUBSTRING_INDEX(note_1, ':', -1)), '')";
+const OPEN_ORDER_REF_EXPRESSION =
+  "NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(SUBSTRING_INDEX(note_1, ':', -1))), '|', ''), ' ', ''), '.', ''), ':', ''), '')";
 
 const OPEN_EXECUTION_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
   FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
