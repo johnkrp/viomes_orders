@@ -6,7 +6,10 @@ import {
   buildEffectiveRevenueExpression,
   buildKnownDocumentTypesSqlList,
 } from "./document-type-rules.js";
-import { FACTUAL_LIFECYCLE_RULES, buildDocumentTypeSqlList } from "./factual-lifecycle.js";
+import {
+  FACTUAL_LIFECYCLE_RULES,
+  buildDocumentTypeSqlList,
+} from "./factual-lifecycle.js";
 
 export const IMPORTED_DISCOUNT_PERCENT_EXPRESSION = `
   CASE
@@ -33,7 +36,12 @@ export const IMPORTED_SALES_ARCHITECTURE = Object.freeze({
     "imported_product_sales",
     "customers[source='entersoft_import']",
   ],
-  legacyDormantTables: ["orders", "order_lines", "customer_receivables", "customers[source!='entersoft_import']"],
+  legacyDormantTables: [
+    "orders",
+    "order_lines",
+    "customer_receivables",
+    "customers[source!='entersoft_import']",
+  ],
   rawFactTable: "imported_sales_lines",
   projectionStrategy: "truncate_and_recompute",
 });
@@ -257,10 +265,10 @@ export const REBUILD_IMPORTED_CUSTOMER_BRANCHES_SQL = `
 
 const OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL = `
   executed.customer_code = pending.customer_code
-  AND COALESCE(executed.ordered_at, '') = COALESCE(pending.ordered_at, '')
-  AND COALESCE(executed.sent_at, '') = COALESCE(pending.sent_at, '')
+  AND COALESCE(executed.created_at, '') = COALESCE(pending.created_at, '')
   AND executed.total_lines = pending.total_lines
-  AND ROUND(executed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+  AND executed.total_pieces = pending.total_pieces
+  AND ROUND(executed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
 `;
 
 const OPEN_EXECUTION_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
@@ -328,10 +336,10 @@ export const REBUILD_IMPORTED_OPEN_ORDERS_SQL = `
   LEFT JOIN (
     SELECT
       customer_code,
-      MAX(ordered_at) AS ordered_at,
-      MAX(sent_at) AS sent_at,
+      order_date AS created_at,
       COUNT(*) AS total_lines,
-      COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+      COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+      COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
     FROM imported_sales_lines
     WHERE ${buildCountInOrderTotalsCase()} = 1
       AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
@@ -400,8 +408,12 @@ export async function ensureImportedCustomerBranchProjection(db) {
     db.get(IMPORTED_SALES_LINES_COUNT_SQL),
   ]);
 
-  const branchCount = Number(branchCountRow?.imported_customer_branches_count || 0);
-  const salesLineCount = Number(salesLineCountRow?.imported_sales_lines_count || 0);
+  const branchCount = Number(
+    branchCountRow?.imported_customer_branches_count || 0,
+  );
+  const salesLineCount = Number(
+    salesLineCountRow?.imported_sales_lines_count || 0,
+  );
 
   if (branchCount > 0 || salesLineCount === 0) {
     return {
@@ -418,7 +430,9 @@ export async function ensureImportedCustomerBranchProjection(db) {
 
   return {
     repaired: true,
-    branch_count: Number(repairedCountRow?.imported_customer_branches_count || 0),
+    branch_count: Number(
+      repairedCountRow?.imported_customer_branches_count || 0,
+    ),
     sales_line_count: salesLineCount,
   };
 }
@@ -580,12 +594,24 @@ export async function getImportedSalesProjectionHealth(db) {
   const importedOrderCollisionGroups = importedOrderCollisions.length;
   const missingMirrors = Number(missingMirrorsRow?.missing_mirrors || 0);
   const orphanMirrors = Number(orphanMirrorsRow?.orphan_mirrors || 0);
-  const importedOrdersCount = Number(orderCardinality?.imported_orders_count || 0);
-  const groupedOrdersCount = Number(orderCardinality?.grouped_orders_count || 0);
-  const importedProductSalesCount = Number(productCardinality?.imported_product_sales_count || 0);
-  const groupedProductsCount = Number(productCardinality?.grouped_products_count || 0);
-  const importedMonthlySalesCount = Number(monthlyCardinality?.imported_monthly_sales_count || 0);
-  const groupedMonthsCount = Number(monthlyCardinality?.grouped_months_count || 0);
+  const importedOrdersCount = Number(
+    orderCardinality?.imported_orders_count || 0,
+  );
+  const groupedOrdersCount = Number(
+    orderCardinality?.grouped_orders_count || 0,
+  );
+  const importedProductSalesCount = Number(
+    productCardinality?.imported_product_sales_count || 0,
+  );
+  const groupedProductsCount = Number(
+    productCardinality?.grouped_products_count || 0,
+  );
+  const importedMonthlySalesCount = Number(
+    monthlyCardinality?.imported_monthly_sales_count || 0,
+  );
+  const groupedMonthsCount = Number(
+    monthlyCardinality?.grouped_months_count || 0,
+  );
   const unmappedDocumentTypes = unknownDocumentTypes.map((row) => ({
     document_type: row.document_type,
     rows_count: Number(row.rows_count || 0),
@@ -609,9 +635,12 @@ export async function getImportedSalesProjectionHealth(db) {
       missing_mirrors: missingMirrors,
       orphan_mirrors: orphanMirrors,
       unmapped_document_types: unmappedDocumentTypes,
-      imported_orders_match_grouped_sales: importedOrdersCount === groupedOrdersCount,
-      imported_product_sales_match_grouped_sales: importedProductSalesCount === groupedProductsCount,
-      imported_monthly_sales_match_grouped_sales: importedMonthlySalesCount === groupedMonthsCount,
+      imported_orders_match_grouped_sales:
+        importedOrdersCount === groupedOrdersCount,
+      imported_product_sales_match_grouped_sales:
+        importedProductSalesCount === groupedProductsCount,
+      imported_monthly_sales_match_grouped_sales:
+        importedMonthlySalesCount === groupedMonthsCount,
       imported_orders_count: importedOrdersCount,
       grouped_orders_count: groupedOrdersCount,
       imported_product_sales_count: importedProductSalesCount,
@@ -631,7 +660,9 @@ export async function getImportedSalesProjectionHealth(db) {
           source_row_count: Number(latestImportRun.source_row_count || 0),
           rows_in: Number(latestImportRun.rows_in || 0),
           rows_upserted: Number(latestImportRun.rows_upserted || 0),
-          rows_skipped_duplicate: Number(latestImportRun.rows_skipped_duplicate || 0),
+          rows_skipped_duplicate: Number(
+            latestImportRun.rows_skipped_duplicate || 0,
+          ),
           rows_rejected: Number(latestImportRun.rows_rejected || 0),
           rebuild_started_at: latestImportRun.rebuild_started_at,
           rebuild_finished_at: latestImportRun.rebuild_finished_at,

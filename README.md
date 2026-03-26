@@ -1,8 +1,8 @@
 # VIOMES Order Form
 
-Latest session handoff:
+Architecture walkthrough:
 
-- `PROJECT_HANDOFF_2026-03-13.md`
+- `docs/architecture-walkthrough.md`
 
 Durable repo reference:
 

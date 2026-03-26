@@ -1,16 +1,29 @@
+import { spawnSync } from "node:child_process";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { openDatabase } from "../lib/db/client.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const importerPath = path.join(__dirname, "..", "..", "backend", "import_entersoft.py");
+const importerPath = path.join(
+  __dirname,
+  "..",
+  "..",
+  "backend",
+  "import_entersoft.py",
+);
 const backendDir = path.join(__dirname, "..", "..", "backend");
-const DEFAULT_SALES_FILES = [path.join(backendDir, "2025.CSV"), path.join(backendDir, "2026.CSV")];
-const VALID_IMPORT_MODES = new Set(["incremental", "full_refresh", "replace_sales_year"]);
+const DEFAULT_SALES_FILES = [
+  path.join(backendDir, "2025.CSV"),
+  path.join(backendDir, "2026.CSV"),
+];
+const VALID_IMPORT_MODES = new Set([
+  "incremental",
+  "full_refresh",
+  "replace_sales_year",
+]);
 
 function parseArgs(argv) {
   const args = {};
@@ -50,19 +63,25 @@ function buildEnv(cli) {
     MYSQL_DATABASE: cli["mysql-database"] || process.env.MYSQL_DATABASE,
     MYSQL_USER: cli["mysql-user"] || process.env.MYSQL_USER,
     MYSQL_PASSWORD: process.env.MYSQL_PASSWORD,
-    ENTERSOFT_IMPORT_MODE: cli.mode || process.env.ENTERSOFT_IMPORT_MODE || "incremental",
+    ENTERSOFT_IMPORT_MODE:
+      cli.mode || process.env.ENTERSOFT_IMPORT_MODE || "incremental",
     ENTERSOFT_REPLACE_SALES_YEAR:
       cli["replace-sales-year"] || process.env.ENTERSOFT_REPLACE_SALES_YEAR,
-    ENTERSOFT_SALES_FILES: cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
-    ENTERSOFT_DAILY_INFO_FILE: cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
-    ENTERSOFT_LEDGER_FILE: cli["ledger-file"] || process.env.ENTERSOFT_LEDGER_FILE,
+    ENTERSOFT_SALES_FILES:
+      cli["sales-files"] || process.env.ENTERSOFT_SALES_FILES,
+    ENTERSOFT_DAILY_INFO_FILE:
+      cli["daily-info-file"] || process.env.ENTERSOFT_DAILY_INFO_FILE,
+    ENTERSOFT_LEDGER_FILE:
+      cli["ledger-file"] || process.env.ENTERSOFT_LEDGER_FILE,
   };
 }
 
 function resolveSalesFiles(env, ledgerFile) {
   const explicitSalesFiles = splitCsvList(env.ENTERSOFT_SALES_FILES);
   const explicitDaily = String(env.ENTERSOFT_DAILY_INFO_FILE || "").trim();
-  const explicitSalesConfig = Boolean(explicitSalesFiles.length || explicitDaily);
+  const explicitSalesConfig = Boolean(
+    explicitSalesFiles.length || explicitDaily,
+  );
 
   if (!explicitSalesConfig && ledgerFile) {
     return [];
@@ -80,7 +99,10 @@ function resolveSalesFiles(env, ledgerFile) {
 }
 
 function checkPython(executable) {
-  const result = spawnSync(executable, ["--version"], { stdio: "pipe", encoding: "utf8" });
+  const result = spawnSync(executable, ["--version"], {
+    stdio: "pipe",
+    encoding: "utf8",
+  });
   if (result.error || result.status !== 0) {
     return null;
   }
@@ -98,10 +120,14 @@ function checkPymysql(executable) {
 }
 
 function validateImportMode(env) {
-  const mode = String(env.ENTERSOFT_IMPORT_MODE || "incremental").trim().toLowerCase();
+  const mode = String(env.ENTERSOFT_IMPORT_MODE || "incremental")
+    .trim()
+    .toLowerCase();
   if (!VALID_IMPORT_MODES.has(mode)) {
     throw new Error(
-      `Unsupported ENTERSOFT_IMPORT_MODE='${mode}'. Allowed values: ${Array.from(VALID_IMPORT_MODES)
+      `Unsupported ENTERSOFT_IMPORT_MODE='${mode}'. Allowed values: ${Array.from(
+        VALID_IMPORT_MODES,
+      )
         .sort()
         .join(", ")}`,
     );
@@ -135,7 +161,11 @@ async function summarizeCsv(filePath) {
   }
 
   const stats = statSync(filePath);
-  const delimiter = header.includes(";") ? ";" : header.includes(",") ? "," : "unknown";
+  const delimiter = header.includes(";")
+    ? ";"
+    : header.includes(",")
+      ? ","
+      : "unknown";
   return {
     sizeBytes: stats.size,
     modifiedAt: stats.mtime.toISOString(),
@@ -171,7 +201,9 @@ async function checkDb(env) {
       [env.MYSQL_DATABASE, ...requiredTables],
     );
 
-    const existing = new Set(rows.map((row) => String(row.table_name || "").trim()));
+    const existing = new Set(
+      rows.map((row) => String(row.table_name || "").trim()),
+    );
     const missing = requiredTables.filter((name) => !existing.has(name));
 
     return { missingTables: missing };
@@ -200,7 +232,9 @@ async function main() {
   }
 
   const required = ["MYSQL_DATABASE", "MYSQL_USER"];
-  const missingRequired = required.filter((key) => !String(env[key] || "").trim());
+  const missingRequired = required.filter(
+    (key) => !String(env[key] || "").trim(),
+  );
   if (missingRequired.length) {
     errors.push(
       `Missing required environment variables: ${missingRequired.join(", ")}. Provide --mysql-* args or env vars.`,
@@ -208,7 +242,9 @@ async function main() {
   }
 
   if (!String(env.MYSQL_PASSWORD || "").trim()) {
-    warnings.push("MYSQL_PASSWORD is empty. This is valid only if your MySQL user has no password.");
+    warnings.push(
+      "MYSQL_PASSWORD is empty. This is valid only if your MySQL user has no password.",
+    );
   }
 
   let mode = "incremental";

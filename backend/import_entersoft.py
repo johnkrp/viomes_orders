@@ -60,10 +60,10 @@ END
 
 OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL = """
   executed.customer_code = pending.customer_code
-  AND COALESCE(executed.ordered_at, '') = COALESCE(pending.ordered_at, '')
-  AND COALESCE(executed.sent_at, '') = COALESCE(pending.sent_at, '')
+    AND COALESCE(executed.created_at, '') = COALESCE(pending.created_at, '')
   AND executed.total_lines = pending.total_lines
-  AND ROUND(executed.average_discount_pct, 2) = ROUND(pending.average_discount_pct, 2)
+    AND executed.total_pieces = pending.total_pieces
+    AND ROUND(executed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
 """.strip()
 
 OPEN_EXECUTION_DOCUMENT_TYPES_SQL = build_document_type_sql_list(OPEN_EXECUTION_DOCUMENT_TYPES)
@@ -763,10 +763,10 @@ def rebuild_sales_aggregates(cur) -> None:
         LEFT JOIN (
           SELECT
             customer_code,
-            MAX(ordered_at) AS ordered_at,
-            MAX(sent_at) AS sent_at,
+                        order_date AS created_at,
             COUNT(*) AS total_lines,
-            COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+                        COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+                        COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
           FROM imported_sales_lines
           WHERE {build_count_in_order_totals_case()} = 1
             AND COALESCE(document_type, '') IN ({EXECUTED_ORDER_DOCUMENT_TYPES_SQL})

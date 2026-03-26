@@ -5,8 +5,7 @@ This document is the durable repo-level reference for future work.
 Use it together with:
 
 - `README.md` for current production architecture and operator commands
-- `PROJECT_HANDOFF_2026-03-13.md` for the latest major feature/ops handoff
-- `docs/hand-off-2026-03-18.md` for the recent admin range-summary fix
+- `docs/architecture-walkthrough.md` for the current end-to-end architecture walkthrough
 - `site/scripts/README.md` for import and scheduler operations
 
 ## What Is Active
@@ -186,7 +185,7 @@ These files hold the most repo-specific logic and should be checked before chang
 If future work touches deployment, imports, or production behavior, read these first:
 
 - `README.md`
-- `PROJECT_HANDOFF_2026-03-13.md`
+- `docs/architecture-walkthrough.md`
 - `site/scripts/README.md`
 - `CODEX_MCP_SETUP.md`
 
@@ -265,6 +264,5 @@ If starting fresh, read in this order:
 
 1. `docs/project-map.md`
 2. `README.md`
-3. `PROJECT_HANDOFF_2026-03-13.md`
-4. `docs/hand-off-2026-03-18.md`
-5. the specific files for the feature area being changed
+3. `docs/architecture-walkthrough.md`
+4. the specific files for the feature area being changed

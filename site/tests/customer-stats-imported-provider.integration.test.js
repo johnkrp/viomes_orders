@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import sqlite3 from "sqlite3";
+import test from "node:test";
 import { open } from "sqlite";
+import sqlite3 from "sqlite3";
 import { createSqliteCustomerStatsProvider } from "../lib/customer-stats/sqlite-provider.js";
 import { initDatabaseSchema } from "../lib/db/init-schema.js";
 import { FACTUAL_LIFECYCLE_RULES } from "../lib/factual-lifecycle.js";
@@ -331,7 +331,10 @@ test("SQLite-backed imported stats integration returns the expected contract", a
       ],
     );
 
-    const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
+    const provider = createSqliteCustomerStatsProvider({
+      db,
+      sqlDialect: "sqlite",
+    });
     const payload = await provider.getCustomerStats("C001");
 
     assert.equal(payload.customer.code, "C001");
@@ -364,14 +367,18 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.receivables.items[0].reason, "Ledger movement");
     assert.equal(payload.receivables.items[0].ledger_balance, 321.45);
 
-    const branchPayload = await provider.getCustomerStats("C001", { branchCode: "B1" });
+    const branchPayload = await provider.getCustomerStats("C001", {
+      branchCode: "B1",
+    });
     assert.equal(branchPayload.customer.aggregation_level, "branch");
     assert.equal(branchPayload.customer.branch_code, "B1");
     assert.equal(branchPayload.summary.total_orders, 1);
     assert.equal(branchPayload.summary.total_revenue, 175.6);
     assert.equal(branchPayload.recent_orders[0].average_discount_pct, 7);
 
-    const allTimePayload = await provider.getCustomerStats("C001", { salesTimeRange: "all" });
+    const allTimePayload = await provider.getCustomerStats("C001", {
+      salesTimeRange: "all",
+    });
     assert.equal(allTimePayload.product_sales.items.length, 2);
     assert.equal(allTimePayload.recent_orders.length, 2);
     assert.equal(allTimePayload.monthly_sales.previous_year[11].revenue, 70);
@@ -525,7 +532,10 @@ test("SQLite-backed imported stats excludes progressed pre-approvals and execute
       ],
     );
 
-    const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
+    const provider = createSqliteCustomerStatsProvider({
+      db,
+      sqlDialect: "sqlite",
+    });
     const payload = await provider.getCustomerStats("C777", {
       branchCode: "B1",
       salesTimeRange: "all",
@@ -538,7 +548,10 @@ test("SQLite-backed imported stats excludes progressed pre-approvals and execute
     assert.equal(payload.detailed_open_orders.length, 1);
     assert.equal(payload.detailed_pre_approval_orders.length, 0);
     assert.equal(payload.recent_orders.length, 1);
-    assert.equal(payload.open_orders[0].order_id, `C777::${currentYear}-03-03::PROG-1`);
+    assert.equal(
+      payload.open_orders[0].order_id,
+      `C777::${currentYear}-03-03::PROG-1`,
+    );
   } finally {
     await db.close();
   }
@@ -626,13 +639,19 @@ test("SQLite-backed imported stats keeps referenced pre-approvals when progresse
       ],
     );
 
-    const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
+    const provider = createSqliteCustomerStatsProvider({
+      db,
+      sqlDialect: "sqlite",
+    });
     const payload = await provider.getCustomerStats("C778", {
       salesTimeRange: "all",
     });
 
     assert.equal(payload.pre_approval_orders.length, 1);
-    assert.equal(payload.pre_approval_orders[0].order_id, `C778::${currentYear}-03-23::PRE-REF-1`);
+    assert.equal(
+      payload.pre_approval_orders[0].order_id,
+      `C778::${currentYear}-03-23::PRE-REF-1`,
+    );
   } finally {
     await db.close();
   }
@@ -772,13 +791,19 @@ test("SQLite-backed imported stats keeps partially progressed referenced pre-app
       ],
     );
 
-    const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
+    const provider = createSqliteCustomerStatsProvider({
+      db,
+      sqlDialect: "sqlite",
+    });
     const payload = await provider.getCustomerStats("C779", {
       salesTimeRange: "all",
     });
 
     assert.equal(payload.pre_approval_orders.length, 1);
-    assert.equal(payload.pre_approval_orders[0].order_id, `C779::${currentYear}-03-23::PRE-PARTIAL-1`);
+    assert.equal(
+      payload.pre_approval_orders[0].order_id,
+      `C779::${currentYear}-03-23::PRE-PARTIAL-1`,
+    );
   } finally {
     await db.close();
   }
@@ -918,7 +943,10 @@ test("SQLite-backed imported stats excludes referenced pre-approvals when progre
       ],
     );
 
-    const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
+    const provider = createSqliteCustomerStatsProvider({
+      db,
+      sqlDialect: "sqlite",
+    });
     const payload = await provider.getCustomerStats("C780", {
       salesTimeRange: "all",
     });
