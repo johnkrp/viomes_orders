@@ -58,13 +58,9 @@ CASE
 END
 """.strip()
 
-OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL = """
-  executed.customer_code = pending.customer_code
-    AND COALESCE(executed.created_at, '') = COALESCE(pending.created_at, '')
-  AND executed.total_lines = pending.total_lines
-    AND executed.total_pieces = pending.total_pieces
-    AND ROUND(executed.total_net_value, 2) = ROUND(pending.total_net_value, 2)
-""".strip()
+OPEN_ORDER_REF_EXPRESSION = (
+        "NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(SUBSTRING_INDEX(note_1, ':', -1))), '|', ''), ' ', ''), '.', ''), ':', ''), '')"
+)
 
 OPEN_EXECUTION_DOCUMENT_TYPES_SQL = build_document_type_sql_list(OPEN_EXECUTION_DOCUMENT_TYPES)
 EXECUTED_ORDER_DOCUMENT_TYPES_SQL = build_document_type_sql_list(EXECUTED_ORDER_DOCUMENT_TYPES)
@@ -753,6 +749,7 @@ def rebuild_sales_aggregates(cur) -> None:
             MAX(ordered_at) AS ordered_at,
             MAX(sent_at) AS sent_at,
             MAX(document_type) AS document_type,
+            MAX({OPEN_ORDER_REF_EXPRESSION}) AS order_ref,
             MAX(delivery_code) AS delivery_code,
             MAX(delivery_description) AS delivery_description,
             MAX(source_file) AS source_file
@@ -760,20 +757,60 @@ def rebuild_sales_aggregates(cur) -> None:
           WHERE COALESCE(document_type, '') IN ({OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
           GROUP BY document_no, customer_code, order_date
         ) pending
-        LEFT JOIN (
-          SELECT
-            customer_code,
+                LEFT JOIN (
+                    SELECT
+                        customer_code,
+                        order_ref,
+                        MAX(total_lines) AS total_lines,
+                        MAX(total_pieces) AS total_pieces,
+                        MAX(total_net_value) AS total_net_value
+                    FROM (
+                        SELECT
+                            customer_code,
+                            {OPEN_ORDER_REF_EXPRESSION} AS order_ref,
+                            document_no,
+                            order_date,
+                            COUNT(*) AS total_lines,
+                            COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+                            COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
+                        FROM imported_sales_lines
+                        WHERE {build_count_in_order_totals_case()} = 1
+                            AND COALESCE(document_type, '') IN ({EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
+                            AND {OPEN_ORDER_REF_EXPRESSION} IS NOT NULL
+                        GROUP BY customer_code, {OPEN_ORDER_REF_EXPRESSION}, document_no, order_date
+                    ) executed_docs
+                    GROUP BY customer_code, order_ref
+                ) executed_by_ref
+                    ON executed_by_ref.customer_code = pending.customer_code
+                 AND pending.order_ref IS NOT NULL
+                 AND pending.order_ref <> ''
+                 AND executed_by_ref.order_ref = pending.order_ref
+                 AND executed_by_ref.total_lines >= pending.total_lines
+                 AND executed_by_ref.total_pieces >= pending.total_pieces
+                 AND ROUND(executed_by_ref.total_net_value, 2) >= ROUND(pending.total_net_value, 2)
+                LEFT JOIN (
+                    SELECT
+                        customer_code,
                         order_date AS created_at,
-            COUNT(*) AS total_lines,
+                        COUNT(*) AS total_lines,
                         COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-                        COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
-          FROM imported_sales_lines
-          WHERE {build_count_in_order_totals_case()} = 1
-            AND COALESCE(document_type, '') IN ({EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
-          GROUP BY document_no, customer_code, order_date
-        ) executed
-          ON {OPEN_ORDER_MATCH_EXECUTED_JOIN_SQL}
-        WHERE executed.customer_code IS NULL
+                        COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+                        COALESCE(MAX({OPEN_ORDER_REF_EXPRESSION}), '') AS order_ref
+                    FROM imported_sales_lines
+                    WHERE {build_count_in_order_totals_case()} = 1
+                        AND COALESCE(document_type, '') IN ({EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
+                        AND ({OPEN_ORDER_REF_EXPRESSION} IS NULL OR {OPEN_ORDER_REF_EXPRESSION} = '')
+                    GROUP BY document_no, customer_code, order_date
+                ) executed_no_ref
+                    ON executed_no_ref.customer_code = pending.customer_code
+                 AND (pending.order_ref IS NULL OR pending.order_ref = '')
+                 AND (executed_no_ref.order_ref IS NULL OR executed_no_ref.order_ref = '')
+                 AND COALESCE(executed_no_ref.created_at, '') = COALESCE(pending.created_at, '')
+                 AND executed_no_ref.total_lines = pending.total_lines
+                 AND executed_no_ref.total_pieces = pending.total_pieces
+                 AND ROUND(executed_no_ref.total_net_value, 2) = ROUND(pending.total_net_value, 2)
+                WHERE executed_by_ref.customer_code IS NULL
+                    AND executed_no_ref.customer_code IS NULL
         """
     )
 
