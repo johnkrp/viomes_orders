@@ -33,6 +33,17 @@ Operational scripts used by Plesk/local maintenance.
   - Removes historical duplicate logical sales lines from `imported_sales_lines`.
   - Rebuilds imported aggregates and mirrored customers afterwards.
 
+- `generate-catalog-from-xlsx.py`
+  - Generates `site/public/catalog.json` from an Excel source (default: `backend/archive/legacy-inputs/products.xlsx`).
+  - Supports `--input`, `--output`, and `--dry-run`.
+
+Example (Windows, project root):
+
+```powershell
+backend\.venv\Scripts\python.exe site\scripts\generate-catalog-from-xlsx.py --dry-run
+backend\.venv\Scripts\python.exe site\scripts\generate-catalog-from-xlsx.py
+```
+
 ## Import mode
 
 - default: `incremental`
