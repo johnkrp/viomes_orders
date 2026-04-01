@@ -180,10 +180,10 @@ export function renderSelectedOrderDetails(context) {
             <tr>
               <td>${escapeHtml(line.code)}</td>
               <td>${escapeHtml(line.description)}</td>
-              <td>${escapeHtml(formatNumber(line.qty))}</td>
-              <td>${escapeHtml(formatMoney(line.unit_price))}</td>
-              <td>${escapeHtml(formatPercentRoundedUp(line.discount_pct))}</td>
-              <td>${escapeHtml(formatMoney(line.line_net_value))}</td>
+              <td class="admin-table-number">${escapeHtml(formatNumber(line.qty))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(line.unit_price))}</td>
+              <td class="admin-table-number">${escapeHtml(formatPercentRoundedUp(line.discount_pct))}</td>
+              <td class="admin-table-number">${escapeHtml(formatMoney(line.line_net_value))}</td>
             </tr>
           `;
         })
