@@ -5,13 +5,16 @@ import {
 
 export function buildOrderFormDraftFromSelectedOrder(
   order,
-  customerNameHeading,
+  customer,
 ) {
   const customerName = String(
-    order?.customer_name || customerNameHeading?.textContent || "",
+    order?.customer_name || customer?.name || "",
   ).trim();
   return {
     customerName,
+    customerSubstore: String(
+      order?.branch_description || customer?.branch_description || "",
+    ).trim(),
     customerEmail: String(order?.customer_email || "").trim(),
     notes: String(order?.notes || "").trim(),
     sourceOrderId: String(order?.order_id || "").trim(),
@@ -36,7 +39,7 @@ export function openSelectedOrderInOrderForm(context, orderId) {
 
   const draft = buildOrderFormDraftFromSelectedOrder(
     order,
-    context.elements.customerNameHeading,
+    context.state.lastRenderedStatsPayload?.customer,
   );
   if (!draft.lines.length) {
     context.setStatus(
@@ -83,6 +86,7 @@ export function openRankedOrderForm(context) {
 
   const draft = {
     customerName: customer.name || "",
+    customerSubstore: customer.branch_description || "",
     customerEmail: customer.email || "",
     customerCode: context.state.currentCustomerCode,
     branchCode: context.state.currentBranchCode || "",

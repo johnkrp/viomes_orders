@@ -139,7 +139,8 @@ function restoreOrderFormFields(state) {
   if (els.q) els.q.value = state?.q || "";
   if (els.toolbarQty) els.toolbarQty.value = state?.toolbarQty || "";
   if (els.customerName) els.customerName.value = state?.customerName || "";
-  if (els.customerSubstore) els.customerSubstore.value = state?.customerSubstore || "";
+  if (els.customerSubstore)
+    els.customerSubstore.value = state?.customerSubstore || "";
   if (els.customerEmail) els.customerEmail.value = state?.customerEmail || "";
   if (els.notes) els.notes.value = state?.notes || "";
 }
@@ -210,6 +211,8 @@ function applyImportedOrderDraft(draft) {
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
+  if (els.customerSubstore)
+    els.customerSubstore.value = draft.customerSubstore || "";
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = draft.notes || "";
   currentPage = 1;
@@ -269,6 +272,8 @@ function applyCustomerRankingDraft(draft) {
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
+  if (els.customerSubstore)
+    els.customerSubstore.value = draft.customerSubstore || "";
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = "";
   currentPage = 1;
@@ -1286,7 +1291,9 @@ function buildEmailBodyNice(payload, totals, filename = "") {
 
   return [
     `Πελάτης: ${payload.customer_name || ""}`,
-    payload.customer_substore ? `Υποκατάστημα: ${payload.customer_substore}` : "",
+    payload.customer_substore
+      ? `Υποκατάστημα: ${payload.customer_substore}`
+      : "",
     payload.customer_email ? `Email: ${payload.customer_email}` : "",
     "",
     "Παραγγελία:",

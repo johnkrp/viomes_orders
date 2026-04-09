@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="screen-orientation" content="landscape" />
     <title>Φόρμα Παραγγελίας</title>
-	<link rel="icon" href="/images/favicon.ico" />
+    <link rel="icon" href="/images/favicon.ico" />
     <link rel="stylesheet" href="styles.css" />
   </head>
 
@@ -14,7 +14,10 @@
       <div class="rotate-card">
         <div class="rotate-icon" aria-hidden="true">&#8635;</div>
         <h2>Περιστρέψτε το tablet</h2>
-        <p>Παρακαλώ περιστρέψτε το tablet σε landscape λειτουργία για να συνεχίσετε.</p>
+        <p>
+          Παρακαλώ περιστρέψτε το tablet σε landscape λειτουργία για να
+          συνεχίσετε.
+        </p>
       </div>
     </div>
     <header>
@@ -42,7 +45,12 @@
         <div class="page-head hero-inner">
           <h1 class="hero-title">Φόρμα Παραγγελίας</h1>
           <p class="hero-sub">
-            Αναζητήστε προϊόντα με κωδικό/περιγραφή/χρώμα και προσθέστε τα στο καλάθι με τεμάχια ή συσκευασίες. Με <strong>Enter</strong> γίνεται άμεσα η προσθήκη από όπου κι αν βρίσκεστε, με <strong>click</strong> σε προϊόν συμπληρώνεται ο κωδικός στην αναζήτηση, και με <strong>Esc</strong> καθαρίζει το πεδίο αναζήτησης.
+            Αναζητήστε προϊόντα με κωδικό/περιγραφή/χρώμα και προσθέστε τα στο
+            καλάθι με τεμάχια ή συσκευασίες. Με <strong>Enter</strong> γίνεται
+            άμεσα η προσθήκη από όπου κι αν βρίσκεστε, με
+            <strong>click</strong> σε προϊόν συμπληρώνεται ο κωδικός στην
+            αναζήτηση, και με <strong>Esc</strong> καθαρίζει το πεδίο
+            αναζήτησης.
           </p>
         </div>
 
@@ -84,7 +92,12 @@
                 Enter για προσθήκη
               </button>
 
-              <button id="preparedAddBtn" type="button" class="btn ghost" disabled>
+              <button
+                id="preparedAddBtn"
+                type="button"
+                class="btn ghost"
+                disabled
+              >
                 Προσθήκη έτοιμων γραμμών
               </button>
 
@@ -92,7 +105,12 @@
                 id="reloadBtn"
                 type="button"
                 class="btn ghost"
-                onclick="return window.__hardClearCatalog && window.__hardClearCatalog(event)"
+                onclick="
+                  return (
+                    window.__hardClearCatalog &&
+                    window.__hardClearCatalog(event)
+                  );
+                "
                 onpointerup="return window.__hardClearCatalog && window.__hardClearCatalog(event)"
                 ontouchend="return window.__hardClearCatalog && window.__hardClearCatalog(event)"
               >
@@ -135,10 +153,6 @@
                   id="customerSubstore"
                   type="text"
                   placeholder="π.χ. Υποκατάστημα Θήβα"
-                />
-              </div>
-
-                  placeholder="π.χ. buyer@example.com"
                 />
               </div>
 
@@ -244,7 +258,9 @@
           tabletPortraitQuery.addListener(syncOrientationLock);
         }
 
-        window.addEventListener("resize", syncOrientationLock, { passive: true });
+        window.addEventListener("resize", syncOrientationLock, {
+          passive: true,
+        });
         window.addEventListener("orientationchange", syncOrientationLock, {
           passive: true,
         });
