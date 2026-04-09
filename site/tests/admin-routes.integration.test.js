@@ -86,7 +86,7 @@ function createDbFixture() {
           rows_rejected: 48,
           rebuild_started_at: "2026-03-12T12:14:20.000000+00:00",
           rebuild_finished_at: "2026-03-12T12:14:25.000000+00:00",
-          schema_version: "import-ledger-v2",
+          schema_version: "import-ledger-v3",
           trigger_source: "manual_or_cli",
           source_checksum: "abc123",
         };

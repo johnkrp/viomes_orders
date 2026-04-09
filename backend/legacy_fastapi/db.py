@@ -228,7 +228,7 @@ def init_schema() -> None:
       rows_rejected INTEGER NOT NULL DEFAULT 0,
       rebuild_started_at TEXT,
       rebuild_finished_at TEXT,
-      schema_version TEXT NOT NULL DEFAULT 'import-ledger-v2',
+      schema_version TEXT NOT NULL DEFAULT 'import-ledger-v3',
       trigger_source TEXT,
       metadata_json TEXT,
       error_text TEXT
@@ -265,6 +265,8 @@ def init_schema() -> None:
     _ensure_column(cur, "imported_orders", "document_no", "document_no TEXT NOT NULL DEFAULT ''")
     _ensure_column(cur, "imported_sales_lines", "ordered_at", "ordered_at TEXT")
     _ensure_column(cur, "imported_sales_lines", "sent_at", "sent_at TEXT")
+    _ensure_column(cur, "imported_sales_lines", "progress_step", "progress_step TEXT NOT NULL DEFAULT ''")
+    _ensure_column(cur, "imported_sales_lines", "progress_step_description", "progress_step_description TEXT NOT NULL DEFAULT ''")
     _ensure_column(cur, "imported_orders", "ordered_at", "ordered_at TEXT")
     _ensure_column(cur, "imported_orders", "sent_at", "sent_at TEXT")
     _ensure_column(cur, "imported_customers", "branch_code", "branch_code TEXT")
@@ -277,7 +279,7 @@ def init_schema() -> None:
     _ensure_column(cur, "import_runs", "rows_rejected", "rows_rejected INTEGER NOT NULL DEFAULT 0")
     _ensure_column(cur, "import_runs", "rebuild_started_at", "rebuild_started_at TEXT")
     _ensure_column(cur, "import_runs", "rebuild_finished_at", "rebuild_finished_at TEXT")
-    _ensure_column(cur, "import_runs", "schema_version", "schema_version TEXT NOT NULL DEFAULT 'import-ledger-v2'")
+    _ensure_column(cur, "import_runs", "schema_version", "schema_version TEXT NOT NULL DEFAULT 'import-ledger-v3'")
     _ensure_column(cur, "import_runs", "trigger_source", "trigger_source TEXT")
     _ensure_column(cur, "import_runs", "metadata_json", "metadata_json TEXT")
     _ensure_index(

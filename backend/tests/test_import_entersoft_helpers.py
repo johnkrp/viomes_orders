@@ -239,6 +239,8 @@ class FakeCursor:
                 params[24],
                 params[25],
                 params[26],
+                params[27],
+                params[28],
             )
             unique_key = (
                 params[0],
@@ -589,7 +591,7 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(stats.trigger_source, "manual_or_cli")
 
         self.assertIn("incremental", cursor.import_run_insert_params)
-        self.assertIn("import-ledger-v2", cursor.import_run_insert_params)
+        self.assertIn("import-ledger-v3", cursor.import_run_insert_params)
         self.assertIn("manual_or_cli", cursor.import_run_insert_params)
         self.assertIn(2, cursor.import_run_update_params)
         self.assertIn(1, cursor.import_run_update_params)

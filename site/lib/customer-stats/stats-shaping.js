@@ -60,6 +60,8 @@ export function buildDetailedOrder(order, lines, overrides = {}) {
       unit_price: asMoney(line.unit_price),
       discount_pct: asRoundedUpPercent(line.discount_pct),
       line_net_value: asMoney(line.line_net_value),
+      progress_step: line.progress_step || "",
+      progress_step_description: line.progress_step_description || "",
     })),
   };
 }

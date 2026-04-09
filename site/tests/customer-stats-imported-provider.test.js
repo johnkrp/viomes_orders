@@ -270,6 +270,8 @@ function createImportedDbFixture() {
             unit_price: 17.56,
             discount_pct: 0,
             line_net_value: 175.6,
+            progress_step: "6. ΕΞΥΠΗΡΕΤΗΣΗ",
+            progress_step_description: "ΕΞΥΠΗΡΕΤΗΣΗ",
           },
         ];
       }
@@ -319,6 +321,8 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.recent_orders.length, 1);
   assert.equal(payload.detailed_orders.length, 1);
   assert.equal(payload.detailed_orders[0].lines.length, 1);
+  assert.equal(payload.detailed_orders[0].lines[0].progress_step, "6. ΕΞΥΠΗΡΕΤΗΣΗ");
+  assert.equal(payload.detailed_orders[0].lines[0].progress_step_description, "ΕΞΥΠΗΡΕΤΗΣΗ");
   assert.equal(payload.available_branches.length, 2);
   assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
   assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);

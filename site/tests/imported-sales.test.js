@@ -160,7 +160,7 @@ test("getImportedSalesProjectionHealth summarizes invariant and ledger status", 
           rows_rejected: 1,
           rebuild_started_at: "2026-03-09T00:00:04+00:00",
           rebuild_finished_at: "2026-03-09T00:00:05+00:00",
-          schema_version: "import-ledger-v2",
+          schema_version: "import-ledger-v3",
           trigger_source: "scheduled_task_nightly",
           source_checksum: "abc123",
         };

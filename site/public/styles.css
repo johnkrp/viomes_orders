@@ -1770,6 +1770,50 @@ button.secondary:hover,
   font-variant-numeric: tabular-nums;
 }
 
+#detailedOrdersList .admin-table {
+  table-layout: fixed;
+}
+
+#detailedOrdersList .admin-table th:nth-child(1),
+#detailedOrdersList .admin-table td:nth-child(1) {
+  width: 110px;
+}
+
+#detailedOrdersList .admin-table th:nth-child(2),
+#detailedOrdersList .admin-table td:nth-child(2) {
+  width: 220px;
+}
+
+#detailedOrdersList .admin-table th:nth-child(3),
+#detailedOrdersList .admin-table td:nth-child(3) {
+  width: 130px;
+}
+
+#detailedOrdersList .admin-table th:nth-child(4),
+#detailedOrdersList .admin-table td:nth-child(4) {
+  width: 190px;
+}
+
+#detailedOrdersList .admin-table th:nth-child(5),
+#detailedOrdersList .admin-table td:nth-child(5),
+#detailedOrdersList .admin-table th:nth-child(6),
+#detailedOrdersList .admin-table td:nth-child(6),
+#detailedOrdersList .admin-table th:nth-child(7),
+#detailedOrdersList .admin-table td:nth-child(7),
+#detailedOrdersList .admin-table th:nth-child(8),
+#detailedOrdersList .admin-table td:nth-child(8) {
+  width: auto;
+}
+
+#detailedOrdersList .admin-table th:nth-child(3),
+#detailedOrdersList .admin-table td:nth-child(3),
+#detailedOrdersList .admin-table th:nth-child(4),
+#detailedOrdersList .admin-table td:nth-child(4) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .admin-table-action {
   text-align: center;
 }

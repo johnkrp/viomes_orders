@@ -710,7 +710,9 @@ export async function loadImportedCustomerStats(context) {
           ${importedExpressions.effectivePieces} AS qty,
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
-          ${importedExpressions.effectiveRevenue} AS line_net_value
+          ${importedExpressions.effectiveRevenue} AS line_net_value,
+          COALESCE(progress_step, '') AS progress_step,
+          COALESCE(progress_step_description, '') AS progress_step_description
         FROM imported_sales_lines
         WHERE customer_code = ?
           AND ${importedExpressions.countInOrderTotals} = 1
@@ -743,7 +745,9 @@ export async function loadImportedCustomerStats(context) {
           COALESCE(qty_base, 0) AS qty,
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
-          COALESCE(net_value, 0) AS line_net_value
+          COALESCE(net_value, 0) AS line_net_value,
+          COALESCE(progress_step, '') AS progress_step,
+          COALESCE(progress_step_description, '') AS progress_step_description
         FROM imported_sales_lines
         WHERE customer_code = ?
           AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
@@ -780,7 +784,9 @@ export async function loadImportedCustomerStats(context) {
           COALESCE(qty_base, 0) AS qty,
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
-          COALESCE(net_value, 0) AS line_net_value
+          COALESCE(net_value, 0) AS line_net_value,
+          COALESCE(progress_step, '') AS progress_step,
+          COALESCE(progress_step_description, '') AS progress_step_description
         FROM imported_sales_lines
         WHERE customer_code = ?
           AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})

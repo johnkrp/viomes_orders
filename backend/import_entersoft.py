@@ -29,7 +29,7 @@ DEFAULT_SALES_FILES = [
 PROGRESS_EVERY_ROWS = 5000
 LOCK_WAIT_TIMEOUT_SECONDS = 5
 VALID_IMPORT_MODES = {"incremental", "full_refresh", "replace_sales_year"}
-IMPORT_SCHEMA_VERSION = "import-ledger-v2"
+IMPORT_SCHEMA_VERSION = "import-ledger-v3"
 RAW_FACT_TABLE = "imported_sales_lines"
 PROJECTION_TABLES = [
     "imported_customers",
@@ -460,6 +460,8 @@ def replace_sales_line_by_id(
     ordered_at,
     sent_at,
     note_1,
+    progress_step,
+    progress_step_description,
 ):
     execute_step(
         cur,
@@ -480,7 +482,9 @@ def replace_sales_line_by_id(
             branch_description = %s,
             ordered_at = %s,
             sent_at = %s,
-            note_1 = %s
+            note_1 = %s,
+            progress_step = %s,
+            progress_step_description = %s
         WHERE id = %s
         """,
         (
@@ -499,6 +503,8 @@ def replace_sales_line_by_id(
             ordered_at,
             sent_at,
             note_1,
+            progress_step,
+            progress_step_description,
             row_id,
         ),
     )
@@ -943,6 +949,8 @@ def import_sales_lines(cur, sales_files, import_mode: str, replace_sales_year: O
                         )
                     )
                     note_1 = str(get_row_value(row, "Σχόλιο 1", "Ξ£Ο‡ΟΞ»ΞΉΞΏ 1")).strip()
+                    progress_step = str(get_row_value(row, "Βήμα εξέλιξης παρ.")).strip()
+                    progress_step_description = str(get_row_value(row, "Βήμα εξελ.παρ.περιγρ.")).strip()
 
                     discount_pct_1 = parse_decimal(get_row_value(row, "% Ξ­ΞΊΟ€Ο„.1"))
                     discount_pct_2 = parse_decimal(get_row_value(row, "% Ξ­ΞΊΟ€Ο„.2"))
@@ -1000,6 +1008,8 @@ def import_sales_lines(cur, sales_files, import_mode: str, replace_sales_year: O
                             ordered_at=ordered_at,
                             sent_at=sent_at,
                             note_1=note_1,
+                            progress_step=progress_step,
+                            progress_step_description=progress_step_description,
                         )
                         if cur.rowcount:
                             stats.rows_upserted += 1
@@ -1035,9 +1045,10 @@ def import_sales_lines(cur, sales_files, import_mode: str, replace_sales_year: O
                               item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
                               discount_pct_1, discount_pct_2, discount_pct_total,
                               customer_code, customer_name, delivery_code, delivery_description, account_code,
-                              account_description, branch_code, branch_description, ordered_at, sent_at, note_1
+                                                            account_description, branch_code, branch_description, ordered_at, sent_at, note_1,
+                                                            progress_step, progress_step_description
                             )
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """,
                             (
                                 sales_file.name,
@@ -1067,6 +1078,8 @@ def import_sales_lines(cur, sales_files, import_mode: str, replace_sales_year: O
                                 ordered_at,
                                 sent_at,
                                 note_1,
+                                progress_step,
+                                progress_step_description,
                             ),
                         )
                         stats.rows_upserted += cur.rowcount

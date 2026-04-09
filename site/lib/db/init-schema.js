@@ -241,6 +241,8 @@ async function initSqliteSchema(db) {
         ordered_at TEXT,
         sent_at TEXT,
         note_1 TEXT,
+        progress_step TEXT NOT NULL DEFAULT '',
+        progress_step_description TEXT NOT NULL DEFAULT '',
         UNIQUE(source_file, document_no, item_code, customer_code, delivery_code, net_value, qty)
       )
     `,
@@ -324,7 +326,7 @@ async function initSqliteSchema(db) {
         rows_rejected INTEGER NOT NULL DEFAULT 0,
         rebuild_started_at TEXT,
         rebuild_finished_at TEXT,
-        schema_version TEXT NOT NULL DEFAULT 'import-ledger-v2',
+        schema_version TEXT NOT NULL DEFAULT 'import-ledger-v3',
         trigger_source TEXT,
         metadata_json TEXT,
         error_text TEXT
@@ -804,7 +806,7 @@ export async function initDatabaseSchema({ db, kind }) {
     kind,
     "import_runs",
     "schema_version",
-    `schema_version ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"} NOT NULL DEFAULT 'import-ledger-v2'`,
+    `schema_version ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"} NOT NULL DEFAULT 'import-ledger-v3'`,
   );
   await ensureColumn(
     db,

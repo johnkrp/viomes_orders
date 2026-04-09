@@ -95,6 +95,8 @@ CREATE TABLE IF NOT EXISTS imported_sales_lines (
   ordered_at VARCHAR(64),
   sent_at VARCHAR(64),
   note_1 VARCHAR(255),
+  progress_step VARCHAR(128) NOT NULL DEFAULT '',
+  progress_step_description VARCHAR(255) NOT NULL DEFAULT '',
   UNIQUE KEY uq_imported_sales_line(
     source_file, document_no, item_code, customer_code, delivery_code, net_value, qty
   ),
@@ -178,7 +180,7 @@ CREATE TABLE IF NOT EXISTS import_runs (
   rows_rejected INT NOT NULL DEFAULT 0,
   rebuild_started_at VARCHAR(64),
   rebuild_finished_at VARCHAR(64),
-  schema_version VARCHAR(32) NOT NULL DEFAULT 'import-ledger-v2',
+  schema_version VARCHAR(32) NOT NULL DEFAULT 'import-ledger-v3',
   trigger_source VARCHAR(64),
   metadata_json LONGTEXT,
   error_text TEXT
