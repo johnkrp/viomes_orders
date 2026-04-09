@@ -1450,7 +1450,7 @@ button.secondary:hover,
 }
 
 .admin-search-results .admin-table {
-  width: 820px;
+  width: 920px;
   max-width: 100%;
   margin: 0 auto;
   table-layout: fixed;
@@ -1459,19 +1459,19 @@ button.secondary:hover,
 
 .admin-search-results .admin-table th:nth-child(1),
 .admin-search-results .admin-table td:nth-child(1) {
-  width: 120px;
+  width: 140px;
 }
 
 .admin-search-results .admin-table th:nth-child(2),
 .admin-search-results .admin-table td:nth-child(2) {
-  width: 260px;
-  padding-right: 22px;
+  width: 300px;
+  padding-right: 26px;
 }
 
 .admin-search-results .admin-table th:nth-child(3),
 .admin-search-results .admin-table td:nth-child(3) {
-  width: auto;
-  padding-left: 22px;
+  width: 320px;
+  padding-left: 26px;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -1479,7 +1479,7 @@ button.secondary:hover,
 
 .admin-search-results .admin-table th:nth-child(4),
 .admin-search-results .admin-table td:nth-child(4) {
-  width: 100px;
+  width: 130px;
   text-align: center;
 }
 
