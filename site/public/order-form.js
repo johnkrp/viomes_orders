@@ -212,7 +212,8 @@ function applyImportedOrderDraft(draft) {
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
   if (els.customerSubstore)
-    els.customerSubstore.value = draft.customerSubstore || "";
+    els.customerSubstore.value =
+      draft.customerSubstore || draft.branchDescription || draft.branchCode || "";
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = draft.notes || "";
   currentPage = 1;
@@ -273,7 +274,8 @@ function applyCustomerRankingDraft(draft) {
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
   if (els.customerSubstore)
-    els.customerSubstore.value = draft.customerSubstore || "";
+    els.customerSubstore.value =
+      draft.customerSubstore || draft.branchDescription || draft.branchCode || "";
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = "";
   currentPage = 1;

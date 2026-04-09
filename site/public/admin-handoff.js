@@ -10,11 +10,17 @@ export function buildOrderFormDraftFromSelectedOrder(
   const customerName = String(
     order?.customer_name || customer?.name || "",
   ).trim();
+  const branchCode = String(
+    order?.branch_code || customer?.branch_code || "",
+  ).trim();
+  const branchDescription = String(
+    order?.branch_description || customer?.branch_description || "",
+  ).trim();
   return {
     customerName,
-    customerSubstore: String(
-      order?.branch_description || customer?.branch_description || "",
-    ).trim(),
+    customerSubstore: branchDescription || branchCode,
+    branchCode,
+    branchDescription,
     customerEmail: String(order?.customer_email || "").trim(),
     notes: String(order?.notes || "").trim(),
     sourceOrderId: String(order?.order_id || "").trim(),
@@ -86,7 +92,9 @@ export function openRankedOrderForm(context) {
 
   const draft = {
     customerName: customer.name || "",
-    customerSubstore: customer.branch_description || "",
+    customerSubstore: customer.branch_description || customer.branch_code || "",
+    branchCode: customer.branch_code || "",
+    branchDescription: customer.branch_description || "",
     customerEmail: customer.email || "",
     customerCode: context.state.currentCustomerCode,
     branchCode: context.state.currentBranchCode || "",
