@@ -38,6 +38,7 @@ const els = {
   catalogStatus: document.getElementById("catalogStatus"),
   notes: document.getElementById("notes"),
   customerName: document.getElementById("customerName"),
+  customerSubstore: document.getElementById("customerSubstore"),
   customerEmail: document.getElementById("customerEmail"),
   clearBtn: document.getElementById("clearBtn"),
   downloadExcelBtn: document.getElementById("downloadExcelBtn"),
@@ -109,6 +110,7 @@ function saveOrderFormState() {
       q: els.q?.value || "",
       toolbarQty: els.toolbarQty?.value || "",
       customerName: els.customerName?.value || "",
+      customerSubstore: els.customerSubstore?.value || "",
       customerEmail: els.customerEmail?.value || "",
       notes: els.notes?.value || "",
       currentPage,
@@ -137,6 +139,7 @@ function restoreOrderFormFields(state) {
   if (els.q) els.q.value = state?.q || "";
   if (els.toolbarQty) els.toolbarQty.value = state?.toolbarQty || "";
   if (els.customerName) els.customerName.value = state?.customerName || "";
+  if (els.customerSubstore) els.customerSubstore.value = state?.customerSubstore || "";
   if (els.customerEmail) els.customerEmail.value = state?.customerEmail || "";
   if (els.notes) els.notes.value = state?.notes || "";
 }
@@ -1216,11 +1219,14 @@ function todayYYYYMMDD() {
 function downloadOrderExcelFromCart(cartMap) {
   const customerName =
     document.getElementById("customerName")?.value?.trim() || "";
+  const customerSubstore =
+    document.getElementById("customerSubstore")?.value?.trim() || "";
   const comments = document.getElementById("notes")?.value?.trim() || "";
 
   const rows = [
     ["ΣΤΟΙΧΕΙΑ ΠΑΡΑΓΓΕΛΙΑΣ", ""],
     ["Ονοματεπώνυμο / Επωνυμία Πελάτη", customerName],
+    ["Υποκατάστημα", customerSubstore],
     ["Σχόλια", comments],
     ["", ""],
     ["ΚΩΔΙΚΟΣ", "ΤΕΜΑΧΙΑ", "ΠΕΡΙΓΡΑΦΗ"],
@@ -1280,6 +1286,7 @@ function buildEmailBodyNice(payload, totals, filename = "") {
 
   return [
     `Πελάτης: ${payload.customer_name || ""}`,
+    payload.customer_substore ? `Υποκατάστημα: ${payload.customer_substore}` : "",
     payload.customer_email ? `Email: ${payload.customer_email}` : "",
     "",
     "Παραγγελία:",
@@ -1333,6 +1340,8 @@ function prepareOrderMeta() {
 
   const customerName =
     document.getElementById("customerName")?.value?.trim() || "";
+  const customerSubstore =
+    document.getElementById("customerSubstore")?.value?.trim() || "";
   const customerEmail =
     document.getElementById("customerEmail")?.value?.trim() || "";
   const notes = els.notes?.value?.trim() || "";
@@ -1342,6 +1351,7 @@ function prepareOrderMeta() {
     subject: `Παραγγελία B2B (${customerName || "Πελάτης"})`,
     payload: {
       customer_name: customerName,
+      customer_substore: customerSubstore,
       customer_email: customerEmail,
       notes,
       token,
@@ -1470,6 +1480,7 @@ els.toolbarQty?.addEventListener("paste", () =>
   setTimeout(sanitizeToolbarQty, 0),
 );
 els.customerName?.addEventListener("input", saveOrderFormState);
+els.customerSubstore?.addEventListener("input", saveOrderFormState);
 els.customerEmail?.addEventListener("input", saveOrderFormState);
 els.notes?.addEventListener("input", saveOrderFormState);
 
@@ -1480,6 +1491,9 @@ els.preparedAddBtn?.addEventListener("click", () => {
 els.clearBtn?.addEventListener("click", () => {
   cart.clear();
   renderCart();
+  if (els.customerName) els.customerName.value = "";
+  if (els.customerSubstore) els.customerSubstore.value = "";
+  if (els.customerEmail) els.customerEmail.value = "";
   if (els.notes) els.notes.value = "";
   setToolbarMsg("");
   saveOrderFormState();
