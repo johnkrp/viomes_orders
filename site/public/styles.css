@@ -444,6 +444,7 @@ button.secondary:hover,
   white-space: normal;
   word-break: break-word;
   display: -webkit-box;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   overflow: hidden;
@@ -1442,8 +1443,16 @@ button.secondary:hover,
   padding: 0 18px 18px;
 }
 
+.admin-search-results .admin-table-wrap {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
 .admin-search-results .admin-table {
-  width: min(100%, 820px);
+  width: 820px;
+  max-width: 100%;
+  margin: 0 auto;
   table-layout: fixed;
   white-space: nowrap;
 }
@@ -1456,11 +1465,13 @@ button.secondary:hover,
 .admin-search-results .admin-table th:nth-child(2),
 .admin-search-results .admin-table td:nth-child(2) {
   width: 260px;
+  padding-right: 22px;
 }
 
 .admin-search-results .admin-table th:nth-child(3),
 .admin-search-results .admin-table td:nth-child(3) {
   width: auto;
+  padding-left: 22px;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
