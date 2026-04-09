@@ -13,9 +13,15 @@ export function buildOrderFormDraftFromSelectedOrder(order, customer) {
   const branchDescription = String(
     order?.branch_description || customer?.branch_description || "",
   ).trim();
+  const branchLabel =
+    customer?.branch_code || customer?.branch_description
+      ? [customer.branch_code, customer.branch_description]
+          .filter(Boolean)
+          .join(" | ")
+      : "";
   return {
     customerName,
-    customerSubstore: branchDescription || branchCode,
+    customerSubstore: branchLabel || branchDescription || branchCode,
     branchCode,
     branchDescription,
     customerEmail: String(order?.customer_email || "").trim(),
@@ -65,6 +71,12 @@ export function openSelectedOrderInOrderForm(context, orderId) {
 
 export function openRankedOrderForm(context) {
   const customer = context.state.lastRenderedStatsPayload?.customer || {};
+  const branchLabel =
+    customer.branch_code || customer.branch_description
+      ? [customer.branch_code, customer.branch_description]
+          .filter(Boolean)
+          .join(" | ")
+      : "";
   const productSales = context.getSortedProductSales();
   const rankedCodes = productSales
     .map((item) => String(item?.code || "").trim())
@@ -89,7 +101,8 @@ export function openRankedOrderForm(context) {
 
   const draft = {
     customerName: customer.name || "",
-    customerSubstore: customer.branch_description || customer.branch_code || "",
+    customerSubstore:
+      branchLabel || customer.branch_description || customer.branch_code || "",
     branchCode: customer.branch_code || "",
     branchDescription: customer.branch_description || "",
     customerEmail: customer.email || "",

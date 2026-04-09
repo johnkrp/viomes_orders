@@ -14,7 +14,9 @@
       <div class="rotate-card">
         <div class="rotate-icon" aria-hidden="true">&#8635;</div>
         <h2>Περιστρέψτε το tablet</h2>
-        <p>Ο πίνακας διαχείρισης λειτουργεί καλύτερα σε οριζόντιο προσανατολισμό.</p>
+        <p>
+          Ο πίνακας διαχείρισης λειτουργεί καλύτερα σε οριζόντιο προσανατολισμό.
+        </p>
       </div>
     </div>
 
@@ -32,8 +34,12 @@
           </div>
 
           <div class="admin-topbar-actions header-actions">
-            <a class="btn ghost admin-link-btn" href="index.html">Άνοιγμα φόρμας παραγγελίας</a>
-            <button id="logoutBtn" type="button" class="btn ghost" hidden>Αποσύνδεση</button>
+            <a class="btn ghost admin-link-btn" href="index.html"
+              >Άνοιγμα φόρμας παραγγελίας</a
+            >
+            <button id="logoutBtn" type="button" class="btn ghost" hidden>
+              Αποσύνδεση
+            </button>
           </div>
         </div>
       </div>
@@ -46,13 +52,21 @@
           <h1 class="hero-title">Ανάλυση πελατών</h1>
         </section>
 
-        <div id="adminStatus" class="toast admin-toast" role="status" aria-live="polite"></div>
+        <div
+          id="adminStatus"
+          class="toast admin-toast"
+          role="status"
+          aria-live="polite"
+        ></div>
 
         <section id="loginPanel" class="panel admin-panel admin-login-panel">
           <div class="panel-head">
             <div>
               <h2>Σύνδεση</h2>
-              <p>Απαιτείται πρόσβαση διαχειριστή για την προβολή της ανάλυσης πελατών.</p>
+              <p>
+                Απαιτείται πρόσβαση διαχειριστή για την προβολή της ανάλυσης
+                πελατών.
+              </p>
             </div>
           </div>
 
@@ -96,7 +110,12 @@
                 <p id="sessionInfo">Η συνεδρία διαχειριστή είναι ενεργή.</p>
               </div>
               <div class="admin-inline-controls">
-                <button id="expandSearchPanelBtn" type="button" class="btn ghost" hidden>
+                <button
+                  id="expandSearchPanelBtn"
+                  type="button"
+                  class="btn ghost"
+                  hidden
+                >
                   Νέα αναζήτηση
                 </button>
               </div>
@@ -157,8 +176,12 @@
                 </label>
 
                 <div class="admin-search-actions">
-                  <button id="searchCustomersBtn" type="submit">Αναζήτηση</button>
-                  <button id="clearStatsBtn" type="button" class="btn ghost">Καθαρισμός</button>
+                  <button id="searchCustomersBtn" type="submit">
+                    Αναζήτηση
+                  </button>
+                  <button id="clearStatsBtn" type="button" class="btn ghost">
+                    Καθαρισμός
+                  </button>
                 </div>
               </form>
 
@@ -177,14 +200,15 @@
                       <tr>
                         <th>Κωδικός</th>
                         <th>Επωνυμία</th>
-                        <th>Κωδικός υποκαταστήματος</th>
                         <th>Περιγραφή υποκαταστήματος</th>
                         <th>Ενέργεια</th>
                       </tr>
                     </thead>
                     <tbody id="searchResultsBody">
                       <tr>
-                        <td colspan="5" class="admin-table-empty">Δεν υπάρχουν ακόμη αποτελέσματα.</td>
+                        <td colspan="4" class="admin-table-empty">
+                          Δεν υπάρχουν ακόμη αποτελέσματα.
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -195,7 +219,10 @@
 
           <section id="emptyState" class="panel admin-panel admin-empty-state">
             <h2>Δεν έχει επιλεγεί πελάτης</h2>
-            <p>Αναζητήστε πελάτη και επιλέξτε αποτέλεσμα για να φορτωθούν τα στοιχεία.</p>
+            <p>
+              Αναζητήστε πελάτη και επιλέξτε αποτέλεσμα για να φορτωθούν τα
+              στοιχεία.
+            </p>
           </section>
 
           <section id="statsPanel" class="admin-stats-stack" hidden>
@@ -213,7 +240,11 @@
                   <h2 id="customerNameHeading">Πελάτης</h2>
                   <p id="customerMeta" class="admin-customer-meta">-</p>
                 </div>
-                <div id="branchSelectorPanel" class="admin-inline-controls" hidden>
+                <div
+                  id="branchSelectorPanel"
+                  class="admin-inline-controls"
+                  hidden
+                >
                   <label class="field admin-compact-field">
                     <span>Φιλτράρισμα υποκαταστημάτων</span>
                     <input
@@ -223,7 +254,7 @@
                       autocapitalize="off"
                       autocorrect="off"
                       spellcheck="false"
-                      placeholder="Πληκτρολογήστε κωδικό ή περιγραφή"
+                      placeholder="Κωδικός ή περιοχή"
                     />
                   </label>
                   <label class="field admin-compact-field">
@@ -237,7 +268,9 @@
 
               <div class="admin-stat-grid">
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Σύνολο ενεργών παραστατικών</span>
+                  <span class="admin-stat-label"
+                    >Σύνολο ενεργών παραστατικών</span
+                  >
                   <strong id="activeDocumentsValue">0</strong>
                 </article>
                 <article class="admin-stat-card">
@@ -245,7 +278,9 @@
                   <strong id="acceptedOrdersValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
-                  <span class="admin-stat-label">Παραγγελίες προς εκτέλεση</span>
+                  <span class="admin-stat-label"
+                    >Παραγγελίες προς εκτέλεση</span
+                  >
                   <strong id="inProgressOrdersValue">-</strong>
                 </article>
                 <article class="admin-stat-card">
@@ -253,7 +288,10 @@
                     <span class="admin-stat-label">Πρόσφατες εκτελεσμένες</span>
                     <label class="admin-stat-range">
                       <span class="sr-only">Περίοδος</span>
-                      <select class="card-time-range-control" data-range-target="recent_executed">
+                      <select
+                        class="card-time-range-control"
+                        data-range-target="recent_executed"
+                      >
                         <option value="1m">Τελευταίος 1 μήνας</option>
                         <option value="3m" selected>Τελευταίοι 3 μήνες</option>
                         <option value="6m">Τελευταίοι 6 μήνες</option>
@@ -271,7 +309,10 @@
                     <span class="admin-stat-label">Σύνολο τεμαχίων</span>
                     <label class="admin-stat-range">
                       <span class="sr-only">Περίοδος</span>
-                      <select class="card-time-range-control" data-range-target="total_pieces">
+                      <select
+                        class="card-time-range-control"
+                        data-range-target="total_pieces"
+                      >
                         <option value="1m">Τελευταίος 1 μήνας</option>
                         <option value="3m" selected>Τελευταίοι 3 μήνες</option>
                         <option value="6m">Τελευταίοι 6 μήνες</option>
@@ -289,7 +330,10 @@
                     <span class="admin-stat-label">Σύνολο τζίρου</span>
                     <label class="admin-stat-range">
                       <span class="sr-only">Περίοδος</span>
-                      <select class="card-time-range-control" data-range-target="total_revenue">
+                      <select
+                        class="card-time-range-control"
+                        data-range-target="total_revenue"
+                      >
                         <option value="1m">Τελευταίος 1 μήνας</option>
                         <option value="3m" selected>Τελευταίοι 3 μήνες</option>
                         <option value="6m">Τελευταίοι 6 μήνες</option>
@@ -318,7 +362,9 @@
                 <div class="panel-head panel-head-inline">
                   <div>
                     <h2>Πωλήσεις ανά μήνα</h2>
-                    <p class="admin-panel-note">Τζίρος ανά μήνα για τα πιο πρόσφατα έτη.</p>
+                    <p class="admin-panel-note">
+                      Τζίρος ανά μήνα για τα πιο πρόσφατα έτη.
+                    </p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
@@ -326,15 +372,36 @@
                     <thead>
                       <tr>
                         <th>Μήνας</th>
-                        <th id="monthlyYearOneHeading" class="admin-table-number">2024</th>
-                        <th id="monthlyYearTwoHeading" class="admin-table-number">2025</th>
-                        <th id="monthlyYearThreeHeading" class="admin-table-number">2026</th>
-                        <th class="admin-table-number admin-monthly-total-heading">Σύνολο</th>
+                        <th
+                          id="monthlyYearOneHeading"
+                          class="admin-table-number"
+                        >
+                          2024
+                        </th>
+                        <th
+                          id="monthlyYearTwoHeading"
+                          class="admin-table-number"
+                        >
+                          2025
+                        </th>
+                        <th
+                          id="monthlyYearThreeHeading"
+                          class="admin-table-number"
+                        >
+                          2026
+                        </th>
+                        <th
+                          class="admin-table-number admin-monthly-total-heading"
+                        >
+                          Σύνολο
+                        </th>
                       </tr>
                     </thead>
                     <tbody id="monthlySalesBody">
                       <tr>
-                        <td colspan="5" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη οι μηνιαίες πωλήσεις.</td>
+                        <td colspan="5" class="admin-table-empty">
+                          Δεν έχουν φορτωθεί ακόμη οι μηνιαίες πωλήσεις.
+                        </td>
                       </tr>
                     </tbody>
                     <tfoot id="monthlySalesFoot">
@@ -343,18 +410,26 @@
                         <td class="admin-table-number">-</td>
                         <td class="admin-table-number">-</td>
                         <td class="admin-table-number">-</td>
-                        <td class="admin-table-number admin-monthly-total-cell">-</td>
+                        <td class="admin-table-number admin-monthly-total-cell">
+                          -
+                        </td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
               </section>
 
-              <section id="receivablesPanel" class="panel admin-panel admin-panel-subtle">
+              <section
+                id="receivablesPanel"
+                class="panel admin-panel admin-panel-subtle"
+              >
                 <div class="panel-head panel-head-inline">
                   <div>
                     <h2>Καρτέλα Πελάτη</h2>
-                    <p class="admin-panel-note">Τρέχον υπόλοιπο και ημερήσιες κινήσεις καρτέλας ανά πελάτη.</p>
+                    <p class="admin-panel-note">
+                      Τρέχον υπόλοιπο και ημερήσιες κινήσεις καρτέλας ανά
+                      πελάτη.
+                    </p>
                   </div>
                 </div>
                 <div class="admin-stat-grid admin-mini-stat-grid">
@@ -377,15 +452,31 @@
                     </thead>
                     <tbody id="receivablesBody">
                       <tr>
-                        <td colspan="6" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη οι κινήσεις καρτέλας.</td>
+                        <td colspan="6" class="admin-table-empty">
+                          Δεν έχουν φορτωθεί ακόμη οι κινήσεις καρτέλας.
+                        </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
                 <div class="admin-pagination" id="receivablesPagination" hidden>
-                  <button type="button" class="btn ghost" id="receivablesPrevBtn">Προηγούμενη</button>
-                  <span id="receivablesPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
-                  <button type="button" class="btn ghost" id="receivablesNextBtn">Επόμενη</button>
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    id="receivablesPrevBtn"
+                  >
+                    Προηγούμενη
+                  </button>
+                  <span id="receivablesPageInfo" class="admin-pagination-meta"
+                    >Σελίδα 1 από 1</span
+                  >
+                  <button
+                    type="button"
+                    class="btn ghost"
+                    id="receivablesNextBtn"
+                  >
+                    Επόμενη
+                  </button>
                 </div>
               </section>
             </div>
@@ -395,13 +486,17 @@
                 <div>
                   <h2>Πωλήσεις ανά είδος</h2>
                   <p class="admin-panel-note">
-                    Πλήρης λίστα ειδών για τον επιλεγμένο πελάτη ή υποκατάστημα, με ταξινόμηση ανά τζίρο ή τεμάχια.
+                    Πλήρης λίστα ειδών για τον επιλεγμένο πελάτη ή υποκατάστημα,
+                    με ταξινόμηση ανά τζίρο ή τεμάχια.
                   </p>
                 </div>
                 <div class="admin-inline-controls">
                   <label class="field admin-compact-field">
                     <span>Περίοδος</span>
-                    <select id="salesTimeRange" class="sales-time-range-control">
+                    <select
+                      id="salesTimeRange"
+                      class="sales-time-range-control"
+                    >
                       <option value="1m">Τελευταίος 1 μήνας</option>
                       <option value="3m" selected>Τελευταίοι 3 μήνες</option>
                       <option value="6m">Τελευταίοι 6 μήνες</option>
@@ -424,19 +519,89 @@
                 <table class="admin-table admin-product-sales-table">
                   <thead>
                     <tr>
-                      <th><button type="button" class="admin-sort-btn" data-table-sort="product-sales" data-sort-key="code">Κωδικός <span class="admin-sort-indicator">↕</span></button></th>
-                      <th><button type="button" class="admin-sort-btn" data-table-sort="product-sales" data-sort-key="description">Περιγραφή <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="primary_metric"><span id="productSalesMetricHeading">Τζίρος</span> <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="secondary_metric"><span id="productSalesSecondaryMetricHeading">Τεμάχια</span> <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="orders">Παραγγελίες <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="product-sales" data-sort-key="avg_unit_price">Μέση τιμή μονάδας <span class="admin-sort-indicator">↕</span></button></th>
+                      <th>
+                        <button
+                          type="button"
+                          class="admin-sort-btn"
+                          data-table-sort="product-sales"
+                          data-sort-key="code"
+                        >
+                          Κωδικός <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th>
+                        <button
+                          type="button"
+                          class="admin-sort-btn"
+                          data-table-sort="product-sales"
+                          data-sort-key="description"
+                        >
+                          Περιγραφή <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="product-sales"
+                          data-sort-key="primary_metric"
+                        >
+                          <span id="productSalesMetricHeading">Τζίρος</span>
+                          <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="product-sales"
+                          data-sort-key="secondary_metric"
+                        >
+                          <span id="productSalesSecondaryMetricHeading"
+                            >Τεμάχια</span
+                          >
+                          <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="product-sales"
+                          data-sort-key="orders"
+                        >
+                          Παραγγελίες
+                          <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="product-sales"
+                          data-sort-key="avg_unit_price"
+                        >
+                          Μέση τιμή μονάδας
+                          <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
                     </tr>
                     <tr class="admin-table-filter-row">
                       <th>
-                        <input id="productSalesCodeFilter" type="search" class="admin-table-filter-input" placeholder="Αναζήτηση κωδικού" />
+                        <input
+                          id="productSalesCodeFilter"
+                          type="search"
+                          class="admin-table-filter-input"
+                          placeholder="Αναζήτηση κωδικού"
+                        />
                       </th>
                       <th>
-                        <input id="productSalesDescriptionFilter" type="search" class="admin-table-filter-input" placeholder="Αναζήτηση περιγραφής" />
+                        <input
+                          id="productSalesDescriptionFilter"
+                          type="search"
+                          class="admin-table-filter-input"
+                          placeholder="Αναζήτηση περιγραφής"
+                        />
                       </th>
                       <th></th>
                       <th></th>
@@ -446,15 +611,31 @@
                   </thead>
                   <tbody id="productSalesBody">
                     <tr>
-                      <td colspan="6" class="admin-table-empty">Δεν έχουν φορτωθεί ακόμη οι πωλήσεις ειδών.</td>
+                      <td colspan="6" class="admin-table-empty">
+                        Δεν έχουν φορτωθεί ακόμη οι πωλήσεις ειδών.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <div class="admin-pagination" id="productSalesPagination" hidden>
-                <button id="productSalesPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
-                <span id="productSalesPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
-                <button id="productSalesNextBtn" type="button" class="btn ghost">Επόμενη</button>
+                <button
+                  id="productSalesPrevBtn"
+                  type="button"
+                  class="btn ghost"
+                >
+                  Προηγούμενη
+                </button>
+                <span id="productSalesPageInfo" class="admin-pagination-meta"
+                  >Σελίδα 1 από 1</span
+                >
+                <button
+                  id="productSalesNextBtn"
+                  type="button"
+                  class="btn ghost"
+                >
+                  Επόμενη
+                </button>
               </div>
             </section>
 
@@ -463,33 +644,113 @@
                 <div class="panel-head panel-head-inline">
                   <div>
                     <h2>Παραγγελίες προς έγκριση</h2>
-                    <p class="admin-panel-note">Έγγραφα ΠΑΡ που δεν έχουν εγκριθεί ακόμη.</p>
+                    <p class="admin-panel-note">
+                      Έγγραφα ΠΑΡ που δεν έχουν εγκριθεί ακόμη.
+                    </p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
                   <table class="admin-table admin-pre-approval-orders-table">
                     <thead>
                       <tr>
-                        <th><button type="button" class="admin-sort-btn" data-table-sort="pre-approval" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
-                        <th><button type="button" class="admin-sort-btn" data-table-sort="pre-approval" data-sort-key="created_at">Ημερομηνία καταχώρησης <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="pre-approval" data-sort-key="average_discount_pct">Μέση έκπτωση <span class="admin-sort-indicator">↕</span></button></th>
+                        <th>
+                          <button
+                            type="button"
+                            class="admin-sort-btn"
+                            data-table-sort="pre-approval"
+                            data-sort-key="order_id"
+                          >
+                            ID <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th>
+                          <button
+                            type="button"
+                            class="admin-sort-btn"
+                            data-table-sort="pre-approval"
+                            data-sort-key="created_at"
+                          >
+                            Ημερομηνία καταχώρησης
+                            <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="pre-approval"
+                            data-sort-key="total_lines"
+                          >
+                            Γραμμές <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="pre-approval"
+                            data-sort-key="total_pieces"
+                          >
+                            Τεμάχια <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="pre-approval"
+                            data-sort-key="total_net_value"
+                          >
+                            Αξία <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="pre-approval"
+                            data-sort-key="average_discount_pct"
+                          >
+                            Μέση έκπτωση
+                            <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
                         <th>Ενέργεια</th>
                       </tr>
                     </thead>
-                  <tbody id="preApprovalOrdersBody">
-                    <tr>
-                      <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-                    </tr>
-                  </tbody>
-                </table>
+                    <tbody id="preApprovalOrdersBody">
+                      <tr>
+                        <td colspan="7" class="admin-table-empty">
+                          Δεν υπάρχουν ακόμη δεδομένα.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                <div class="admin-pagination" id="preApprovalOrdersPagination" hidden>
-                  <button id="preApprovalOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
-                  <span id="preApprovalOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
-                  <button id="preApprovalOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
+                <div
+                  class="admin-pagination"
+                  id="preApprovalOrdersPagination"
+                  hidden
+                >
+                  <button
+                    id="preApprovalOrdersPrevBtn"
+                    type="button"
+                    class="btn ghost"
+                  >
+                    Προηγούμενη
+                  </button>
+                  <span
+                    id="preApprovalOrdersPageInfo"
+                    class="admin-pagination-meta"
+                    >Σελίδα 1 από 1</span
+                  >
+                  <button
+                    id="preApprovalOrdersNextBtn"
+                    type="button"
+                    class="btn ghost"
+                  >
+                    Επόμενη
+                  </button>
                 </div>
               </section>
 
@@ -497,33 +758,108 @@
                 <div class="panel-head panel-head-inline">
                   <div>
                     <h2>Παραγγελίες προς εκτέλεση</h2>
-                    <p class="admin-panel-note">Έγγραφα ΠΔΣ που βρίσκονται σε στάδιο εκτέλεσης και δεν έχουν τιμολογηθεί ακόμη.</p>
+                    <p class="admin-panel-note">
+                      Έγγραφα ΠΔΣ που βρίσκονται σε στάδιο εκτέλεσης και δεν
+                      έχουν τιμολογηθεί ακόμη.
+                    </p>
                   </div>
                 </div>
                 <div class="admin-table-wrap">
                   <table class="admin-table admin-open-orders-table">
                     <thead>
                       <tr>
-                        <th><button type="button" class="admin-sort-btn" data-table-sort="open" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
-                        <th><button type="button" class="admin-sort-btn" data-table-sort="open" data-sort-key="created_at">Ημερομηνία καταχώρησης <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
-                        <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="open" data-sort-key="average_discount_pct">Μέση έκπτωση <span class="admin-sort-indicator">↕</span></button></th>
+                        <th>
+                          <button
+                            type="button"
+                            class="admin-sort-btn"
+                            data-table-sort="open"
+                            data-sort-key="order_id"
+                          >
+                            ID <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th>
+                          <button
+                            type="button"
+                            class="admin-sort-btn"
+                            data-table-sort="open"
+                            data-sort-key="created_at"
+                          >
+                            Ημερομηνία καταχώρησης
+                            <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="open"
+                            data-sort-key="total_lines"
+                          >
+                            Γραμμές <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="open"
+                            data-sort-key="total_pieces"
+                          >
+                            Τεμάχια <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="open"
+                            data-sort-key="total_net_value"
+                          >
+                            Αξία <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
+                        <th class="admin-table-number">
+                          <button
+                            type="button"
+                            class="admin-sort-btn admin-sort-btn-number"
+                            data-table-sort="open"
+                            data-sort-key="average_discount_pct"
+                          >
+                            Μέση έκπτωση
+                            <span class="admin-sort-indicator">↕</span>
+                          </button>
+                        </th>
                         <th>Ενέργεια</th>
                       </tr>
                     </thead>
-                  <tbody id="openOrdersBody">
-                    <tr>
-                      <td colspan="7" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
-                    </tr>
-                  </tbody>
-                </table>
+                    <tbody id="openOrdersBody">
+                      <tr>
+                        <td colspan="7" class="admin-table-empty">
+                          Δεν υπάρχουν ακόμη δεδομένα.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
                 <div class="admin-pagination" id="openOrdersPagination" hidden>
-                  <button id="openOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
-                  <span id="openOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
-                  <button id="openOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
+                  <button
+                    id="openOrdersPrevBtn"
+                    type="button"
+                    class="btn ghost"
+                  >
+                    Προηγούμενη
+                  </button>
+                  <span id="openOrdersPageInfo" class="admin-pagination-meta"
+                    >Σελίδα 1 από 1</span
+                  >
+                  <button
+                    id="openOrdersNextBtn"
+                    type="button"
+                    class="btn ghost"
+                  >
+                    Επόμενη
+                  </button>
                 </div>
               </section>
             </div>
@@ -532,21 +868,38 @@
               <div class="panel-head panel-head-inline">
                 <div>
                   <h2>Πρόσφατες εκτελεσμένες παραγγελίες</h2>
-                  <p class="admin-panel-note">Πρόσφατες εκτελεσμένες παραγγελίες με αξία, τεμάχια και έκπτωση.</p>
+                  <p class="admin-panel-note">
+                    Πρόσφατες εκτελεσμένες παραγγελίες με αξία, τεμάχια και
+                    έκπτωση.
+                  </p>
                 </div>
                 <div class="admin-inline-controls">
-                  <button id="openRankedOrderFormBtn" type="button" class="btn ghost">
+                  <button
+                    id="openRankedOrderFormBtn"
+                    type="button"
+                    class="btn ghost"
+                  >
                     Άνοιγμα φόρμας με κατάταξη
                   </button>
                   <label class="field admin-compact-field">
                     <span>Ξ ΞµΟΞ―ΞΏΞ΄ΞΏΟ‚</span>
                     <select class="sales-time-range-control">
-                      <option value="1m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΟ‚ 1 ΞΌΞ®Ξ½Ξ±Ο‚</option>
-                      <option value="3m" selected>Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 3 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                      <option value="6m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 6 ΞΌΞ®Ξ½ΞµΟ‚</option>
-                      <option value="12m">Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 12 ΞΌΞ®Ξ½ΞµΟ‚</option>
+                      <option value="1m">
+                        Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΟ‚ 1 ΞΌΞ®Ξ½Ξ±Ο‚
+                      </option>
+                      <option value="3m" selected>
+                        Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 3 ΞΌΞ®Ξ½ΞµΟ‚
+                      </option>
+                      <option value="6m">
+                        Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 6 ΞΌΞ®Ξ½ΞµΟ‚
+                      </option>
+                      <option value="12m">
+                        Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―ΞΏΞΉ 12 ΞΌΞ®Ξ½ΞµΟ‚
+                      </option>
                       <option value="this_year">Ξ¤ΟΞ­Ο‡ΞΏΞ½ Ξ­Ο„ΞΏΟ‚</option>
-                      <option value="last_year">Ξ ΟΞΏΞ·Ξ³ΞΏΟΞΌΞµΞ½ΞΏ Ξ­Ο„ΞΏΟ‚</option>
+                      <option value="last_year">
+                        Ξ ΟΞΏΞ·Ξ³ΞΏΟΞΌΞµΞ½ΞΏ Ξ­Ο„ΞΏΟ‚
+                      </option>
                       <option value="all">Ξ‘Ο€Ο Ο„Ξ·Ξ½ Ξ±ΟΟ‡Ξ®</option>
                     </select>
                   </label>
@@ -556,27 +909,109 @@
                 <table class="admin-table admin-recent-orders-table">
                   <thead>
                     <tr>
-                      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
-                      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="ordered_at">Ημερομηνία παραγγελίας <span class="admin-sort-indicator">↕</span></button></th>
-                      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="created_at">Ημερομηνία τιμολογίου <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
-                      <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="average_discount_pct">Μέση έκπτωση <span class="admin-sort-indicator">↕</span></button></th>
+                      <th>
+                        <button
+                          type="button"
+                          class="admin-sort-btn"
+                          data-table-sort="recent"
+                          data-sort-key="order_id"
+                        >
+                          ID <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th>
+                        <button
+                          type="button"
+                          class="admin-sort-btn"
+                          data-table-sort="recent"
+                          data-sort-key="ordered_at"
+                        >
+                          Ημερομηνία παραγγελίας
+                          <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th>
+                        <button
+                          type="button"
+                          class="admin-sort-btn"
+                          data-table-sort="recent"
+                          data-sort-key="created_at"
+                        >
+                          Ημερομηνία τιμολογίου
+                          <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="recent"
+                          data-sort-key="total_lines"
+                        >
+                          Γραμμές <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="recent"
+                          data-sort-key="total_pieces"
+                        >
+                          Τεμάχια <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="recent"
+                          data-sort-key="total_net_value"
+                        >
+                          Αξία <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
+                      <th class="admin-table-number">
+                        <button
+                          type="button"
+                          class="admin-sort-btn admin-sort-btn-number"
+                          data-table-sort="recent"
+                          data-sort-key="average_discount_pct"
+                        >
+                          Μέση έκπτωση
+                          <span class="admin-sort-indicator">↕</span>
+                        </button>
+                      </th>
                       <th>Ενέργεια</th>
                     </tr>
                   </thead>
                   <tbody id="recentOrdersBody">
                     <tr>
-                      <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν πρόσφατες εκτελεσμένες παραγγελίες.</td>
+                      <td colspan="8" class="admin-table-empty">
+                        Δεν βρέθηκαν πρόσφατες εκτελεσμένες παραγγελίες.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <div class="admin-pagination" id="recentOrdersPagination" hidden>
-                <button id="recentOrdersPrevBtn" type="button" class="btn ghost">Προηγούμενη</button>
-                <span id="recentOrdersPageInfo" class="admin-pagination-meta">Σελίδα 1 από 1</span>
-                <button id="recentOrdersNextBtn" type="button" class="btn ghost">Επόμενη</button>
+                <button
+                  id="recentOrdersPrevBtn"
+                  type="button"
+                  class="btn ghost"
+                >
+                  Προηγούμενη
+                </button>
+                <span id="recentOrdersPageInfo" class="admin-pagination-meta"
+                  >Σελίδα 1 από 1</span
+                >
+                <button
+                  id="recentOrdersNextBtn"
+                  type="button"
+                  class="btn ghost"
+                >
+                  Επόμενη
+                </button>
               </div>
             </section>
 
@@ -585,11 +1020,16 @@
                 <div>
                   <h2>Ανάλυση παραγγελίας</h2>
                   <p class="admin-panel-note">
-                    Επιλέξτε παραγγελία για να δείτε γραμμές, τιμές, εκπτώσεις και καθαρή αξία.
+                    Επιλέξτε παραγγελία για να δείτε γραμμές, τιμές, εκπτώσεις
+                    και καθαρή αξία.
                   </p>
                 </div>
               </div>
-              <div id="detailedOrdersList" class="admin-order-stack" aria-live="polite">
+              <div
+                id="detailedOrdersList"
+                class="admin-order-stack"
+                aria-live="polite"
+              >
                 <article class="admin-order-card admin-order-empty">
                   Επιλέξτε παραγγελία για να δείτε την αναλυτική ανάλυση.
                 </article>
@@ -627,7 +1067,9 @@
           tabletPortraitQuery.addListener(syncOrientationLock);
         }
 
-        window.addEventListener("resize", syncOrientationLock, { passive: true });
+        window.addEventListener("resize", syncOrientationLock, {
+          passive: true,
+        });
         window.addEventListener("orientationchange", syncOrientationLock, {
           passive: true,
         });
@@ -636,4 +1078,3 @@
     <script type="module" src="admin.js"></script>
   </body>
 </html>
-

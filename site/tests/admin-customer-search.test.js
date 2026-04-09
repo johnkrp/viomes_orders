@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { searchImportedCustomers } from "../lib/admin-customer-search.js";
 
 test("searchImportedCustomers returns empty results without filters", async () => {
@@ -53,7 +53,15 @@ test("searchImportedCustomers queries imported_customer_branches and formats gro
   );
 
   assert.match(calls[0].sql, /FROM imported_customer_branches/);
-  assert.deepEqual(calls[0].params, ["%Alpha%", "%Athens%", "Alpha", "Athens", "Alpha%", "Athens%", 10]);
+  assert.deepEqual(calls[0].params, [
+    "%Alpha%",
+    "%Athens%",
+    "Alpha",
+    "Athens",
+    "Alpha%",
+    "Athens%",
+    10,
+  ]);
   assert.deepEqual(payload, {
     filters: {
       customer_name: "Alpha",
@@ -66,7 +74,6 @@ test("searchImportedCustomers queries imported_customer_branches and formats gro
       {
         code: "C001",
         name: "Alpha Store",
-        branch_code: "",
         branch_description: "2 υποκαταστήματα",
       },
     ],

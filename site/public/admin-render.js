@@ -168,7 +168,6 @@ export function renderSearchResults(context, items, filters = {}) {
             <tr>
               <td>${escapeHtml(item.code)}</td>
               <td>${escapeHtml(item.name)}</td>
-              <td>${escapeHtml(item.branch_code || "-")}</td>
               <td>${escapeHtml(item.branch_description || "-")}</td>
               <td>
                 <button
@@ -186,7 +185,7 @@ export function renderSearchResults(context, items, filters = {}) {
         .join("")
     : `
         <tr>
-          <td colspan="5" class="admin-table-empty">Δεν βρέθηκαν πελάτες${activeFilters ? ` για "${escapeHtml(activeFilters)}"` : ""}.</td>
+          <td colspan="4" class="admin-table-empty">Δεν βρέθηκαν πελάτες${activeFilters ? ` για "${escapeHtml(activeFilters)}"` : ""}.</td>
         </tr>
       `;
 }

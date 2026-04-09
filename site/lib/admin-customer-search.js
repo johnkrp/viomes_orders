@@ -31,7 +31,9 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
     whereParams.push(`%${normalizedFilters.customer_name}%`);
     exactScoreParts.push("MAX(CASE WHEN customer_name = ? THEN 1 ELSE 0 END)");
     exactScoreParams.push(normalizedFilters.customer_name);
-    prefixScoreParts.push("MAX(CASE WHEN customer_name LIKE ? THEN 1 ELSE 0 END)");
+    prefixScoreParts.push(
+      "MAX(CASE WHEN customer_name LIKE ? THEN 1 ELSE 0 END)",
+    );
     prefixScoreParams.push(`${normalizedFilters.customer_name}%`);
   }
 
@@ -40,7 +42,9 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
     whereParams.push(`%${normalizedFilters.customer_code}%`);
     exactScoreParts.push("MAX(CASE WHEN customer_code = ? THEN 1 ELSE 0 END)");
     exactScoreParams.push(normalizedFilters.customer_code);
-    prefixScoreParts.push("MAX(CASE WHEN customer_code LIKE ? THEN 1 ELSE 0 END)");
+    prefixScoreParts.push(
+      "MAX(CASE WHEN customer_code LIKE ? THEN 1 ELSE 0 END)",
+    );
     prefixScoreParams.push(`${normalizedFilters.customer_code}%`);
   }
 
@@ -49,16 +53,22 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
     whereParams.push(`%${normalizedFilters.branch_code}%`);
     exactScoreParts.push("MAX(CASE WHEN branch_code = ? THEN 1 ELSE 0 END)");
     exactScoreParams.push(normalizedFilters.branch_code);
-    prefixScoreParts.push("MAX(CASE WHEN branch_code LIKE ? THEN 1 ELSE 0 END)");
+    prefixScoreParts.push(
+      "MAX(CASE WHEN branch_code LIKE ? THEN 1 ELSE 0 END)",
+    );
     prefixScoreParams.push(`${normalizedFilters.branch_code}%`);
   }
 
   if (normalizedFilters.branch_description) {
     whereParts.push("branch_description LIKE ?");
     whereParams.push(`%${normalizedFilters.branch_description}%`);
-    exactScoreParts.push("MAX(CASE WHEN branch_description = ? THEN 1 ELSE 0 END)");
+    exactScoreParts.push(
+      "MAX(CASE WHEN branch_description = ? THEN 1 ELSE 0 END)",
+    );
     exactScoreParams.push(normalizedFilters.branch_description);
-    prefixScoreParts.push("MAX(CASE WHEN branch_description LIKE ? THEN 1 ELSE 0 END)");
+    prefixScoreParts.push(
+      "MAX(CASE WHEN branch_description LIKE ? THEN 1 ELSE 0 END)",
+    );
     prefixScoreParams.push(`${normalizedFilters.branch_description}%`);
   }
 
@@ -95,7 +105,6 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
     items: rows.map((row) => ({
       code: row.code,
       name: row.name,
-      branch_code: row.branch_code || "",
       branch_description:
         Number(row.branch_count || 0) === 1
           ? row.branch_description || ""
