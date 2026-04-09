@@ -1442,6 +1442,36 @@ button.secondary:hover,
   padding: 0 18px 18px;
 }
 
+.admin-search-results .admin-table {
+  width: min(100%, 820px);
+  table-layout: fixed;
+  white-space: nowrap;
+}
+
+.admin-search-results .admin-table th:nth-child(1),
+.admin-search-results .admin-table td:nth-child(1) {
+  width: 120px;
+}
+
+.admin-search-results .admin-table th:nth-child(2),
+.admin-search-results .admin-table td:nth-child(2) {
+  width: 260px;
+}
+
+.admin-search-results .admin-table th:nth-child(3),
+.admin-search-results .admin-table td:nth-child(3) {
+  width: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-search-results .admin-table th:nth-child(4),
+.admin-search-results .admin-table td:nth-child(4) {
+  width: 100px;
+  text-align: center;
+}
+
 .admin-loading-indicator {
   margin: 0 18px 18px;
   display: flex;

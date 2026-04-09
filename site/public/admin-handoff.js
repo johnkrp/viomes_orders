@@ -5,7 +5,7 @@ import {
 
 export function buildOrderFormDraftFromSelectedOrder(order, customer) {
   const customerName = String(
-    order?.customer_name || customer?.name || "",
+    order?.customer_name || customer?.name || customer?.textContent || "",
   ).trim();
   const branchCode = String(
     order?.branch_code || customer?.branch_code || "",
