@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import {
   DELETE_DUPLICATES_SQL,
   DUPLICATE_GROUP_BY,
@@ -8,11 +8,11 @@ import {
   getImportedSalesProjectionHealth,
   IMPORTED_CUSTOMER_BRANCHES_COUNT_SQL,
   IMPORTED_MONTHLY_CARDINALITY_SQL,
-  IMPORTED_ORDER_COLLISIONS_SQL,
   IMPORTED_ORDER_CARDINALITY_SQL,
+  IMPORTED_ORDER_COLLISIONS_SQL,
   IMPORTED_PRODUCT_CARDINALITY_SQL,
-  IMPORTED_SALES_LINES_COUNT_SQL,
   IMPORTED_SALES_ARCHITECTURE,
+  IMPORTED_SALES_LINES_COUNT_SQL,
   LATEST_IMPORT_RUN_SQL,
   MISSING_MIRRORED_CUSTOMERS_SQL,
   ORPHAN_MIRRORED_CUSTOMERS_SQL,
@@ -29,7 +29,10 @@ test("shared imported-sales SQL covers logical duplicate identity and collision 
   assert.match(DUPLICATE_SUMMARY_SQL, /duplicate_groups/);
   assert.match(PREVIEW_DUPLICATES_SQL, /duplicate_rows_to_delete/);
   assert.match(DELETE_DUPLICATES_SQL, /keeper\.id < duplicate_row\.id/);
-  assert.match(IMPORTED_ORDER_COLLISIONS_SQL, /GROUP BY document_no, customer_code, created_at/);
+  assert.match(
+    IMPORTED_ORDER_COLLISIONS_SQL,
+    /GROUP BY document_no, customer_code, created_at/,
+  );
   assert.match(MISSING_MIRRORED_CUSTOMERS_SQL, /missing_mirrors/);
   assert.match(ORPHAN_MIRRORED_CUSTOMERS_SQL, /orphan_mirrors/);
   assert.match(IMPORTED_ORDER_CARDINALITY_SQL, /grouped_orders_count/);
@@ -37,7 +40,10 @@ test("shared imported-sales SQL covers logical duplicate identity and collision 
   assert.match(IMPORTED_MONTHLY_CARDINALITY_SQL, /grouped_months_count/);
   assert.match(LATEST_IMPORT_RUN_SQL, /rows_skipped_duplicate/);
   assert.match(UNKNOWN_DOCUMENT_TYPES_SQL, /document_type NOT IN/);
-  assert.equal(IMPORTED_SALES_ARCHITECTURE.rawFactTable, "imported_sales_lines");
+  assert.equal(
+    IMPORTED_SALES_ARCHITECTURE.rawFactTable,
+    "imported_sales_lines",
+  );
 });
 
 test("rebuildImportedSalesData runs the expected rebuild sequence", async () => {
@@ -58,10 +64,16 @@ test("rebuildImportedSalesData runs the expected rebuild sequence", async () => 
   assert.equal(executed[3], "DELETE FROM imported_product_sales");
   assert.equal(executed[4], "DELETE FROM imported_customer_branches");
   assert.equal(executed[5], "DELETE FROM imported_customers");
-  assert.equal(executed[6], "DELETE FROM customers WHERE source = 'entersoft_import'");
+  assert.equal(
+    executed[6],
+    "DELETE FROM customers WHERE source = 'entersoft_import'",
+  );
   assert.match(executed[7], /^INSERT INTO imported_customer_branches\(/);
   assert.match(executed[8], /^INSERT INTO imported_customers\(/);
-  assert.match(executed[9], /^INSERT INTO customers\(code, name, email, source\)/);
+  assert.match(
+    executed[9],
+    /^INSERT INTO customers\(code, name, email, source\)/,
+  );
   assert.match(executed[10], /^INSERT INTO imported_orders\(/);
   assert.match(executed[11], /^INSERT INTO imported_open_orders\(/);
   assert.match(executed[12], /^INSERT INTO imported_monthly_sales/);
@@ -132,7 +144,8 @@ test("ensureImportedCustomerBranchProjection skips rebuild when branch projectio
 test("getImportedSalesProjectionHealth summarizes invariant and ledger status", async () => {
   const db = {
     async get(sql) {
-      if (sql === DUPLICATE_SUMMARY_SQL) return { duplicate_groups: 0, duplicate_rows: 0 };
+      if (sql === DUPLICATE_SUMMARY_SQL)
+        return { duplicate_groups: 0, duplicate_rows: 0 };
       if (sql === MISSING_MIRRORED_CUSTOMERS_SQL) return { missing_mirrors: 0 };
       if (sql === ORPHAN_MIRRORED_CUSTOMERS_SQL) return { orphan_mirrors: 0 };
       if (sql === IMPORTED_ORDER_CARDINALITY_SQL) {
@@ -181,13 +194,17 @@ test("getImportedSalesProjectionHealth summarizes invariant and ledger status", 
   assert.equal(health.latest_import_run.rows_rejected, 1);
   assert.equal(health.invariants.imported_orders_match_grouped_sales, true);
   assert.deepEqual(health.invariants.unmapped_document_types, []);
-  assert.equal(health.architecture.projectionStrategy, "truncate_and_recompute");
+  assert.equal(
+    health.architecture.projectionStrategy,
+    "truncate_and_recompute",
+  );
 });
 
 test("getImportedSalesProjectionHealth reports unmapped document types as unhealthy", async () => {
   const db = {
     async get(sql) {
-      if (sql === DUPLICATE_SUMMARY_SQL) return { duplicate_groups: 0, duplicate_rows: 0 };
+      if (sql === DUPLICATE_SUMMARY_SQL)
+        return { duplicate_groups: 0, duplicate_rows: 0 };
       if (sql === MISSING_MIRRORED_CUSTOMERS_SQL) return { missing_mirrors: 0 };
       if (sql === ORPHAN_MIRRORED_CUSTOMERS_SQL) return { orphan_mirrors: 0 };
       if (sql === IMPORTED_ORDER_CARDINALITY_SQL) {
@@ -204,7 +221,8 @@ test("getImportedSalesProjectionHealth reports unmapped document types as unheal
     },
     async all(sql) {
       if (sql === IMPORTED_ORDER_COLLISIONS_SQL) return [];
-      if (sql === UNKNOWN_DOCUMENT_TYPES_SQL) return [{ document_type: "XYZ", rows_count: 12 }];
+      if (sql === UNKNOWN_DOCUMENT_TYPES_SQL)
+        return [{ document_type: "XYZ", rows_count: 12 }];
       throw new Error(`Unexpected all SQL: ${sql}`);
     },
   };
@@ -212,5 +230,7 @@ test("getImportedSalesProjectionHealth reports unmapped document types as unheal
   const health = await getImportedSalesProjectionHealth(db);
 
   assert.equal(health.ok, false);
-  assert.deepEqual(health.invariants.unmapped_document_types, [{ document_type: "XYZ", rows_count: 12 }]);
+  assert.deepEqual(health.invariants.unmapped_document_types, [
+    { document_type: "XYZ", rows_count: 12 },
+  ]);
 });

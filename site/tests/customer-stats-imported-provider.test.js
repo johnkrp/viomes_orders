@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { createSqliteCustomerStatsProvider } from "../lib/customer-stats/sqlite-provider.js";
 
 function createImportedDbFixture() {
@@ -9,7 +9,11 @@ function createImportedDbFixture() {
 
   return {
     async get(sql, params = []) {
-      if (sql.includes("SELECT COUNT(*) AS n FROM imported_sales_lines")) return { n: 3 };
+      if (sql.includes("information_schema.columns")) {
+        return { n: 1 };
+      }
+      if (sql.includes("SELECT COUNT(*) AS n FROM imported_sales_lines"))
+        return { n: 3 };
       if (sql.includes("FROM imported_customers")) {
         if (params[1] === "MISS") return undefined;
         return {
@@ -22,7 +26,10 @@ function createImportedDbFixture() {
           branch_description: null,
         };
       }
-      if (sql.includes("MAX(delivery_code) AS delivery_code") && sql.includes("FROM imported_sales_lines")) {
+      if (
+        sql.includes("MAX(delivery_code) AS delivery_code") &&
+        sql.includes("FROM imported_sales_lines")
+      ) {
         if (params[1] === "MISS") return undefined;
         return {
           code: "C001",
@@ -50,14 +57,20 @@ function createImportedDbFixture() {
           last_order_date: `${currentYear}-02-15`,
         };
       }
-      if (sql.includes("AS revenue_3m") && sql.includes("FROM imported_orders")) {
+      if (
+        sql.includes("AS revenue_3m") &&
+        sql.includes("FROM imported_orders")
+      ) {
         return {
           revenue_3m: 200,
           revenue_6m: 245.6,
           revenue_12m: 245.6,
         };
       }
-      if (sql.includes("AS revenue_3m") && sql.includes("FROM imported_sales_lines")) {
+      if (
+        sql.includes("AS revenue_3m") &&
+        sql.includes("FROM imported_sales_lines")
+      ) {
         return {
           revenue_3m: 200,
           revenue_6m: 245.6,
@@ -213,7 +226,10 @@ function createImportedDbFixture() {
       if (sql.includes("FROM imported_open_orders")) {
         return [];
       }
-      if (sql.includes("GROUP BY customer_code, document_no, order_date") && sql.includes("LIMIT 10")) {
+      if (
+        sql.includes("GROUP BY customer_code, document_no, order_date") &&
+        sql.includes("LIMIT 10")
+      ) {
         if (sql.includes("SUBSTR(order_date, 1, 10) >= ?")) {
           return [
             {
@@ -248,7 +264,10 @@ function createImportedDbFixture() {
           },
         ];
       }
-      if (sql.includes("GROUP BY customer_code, document_no, order_date") && sql.includes("LIMIT 6")) {
+      if (
+        sql.includes("GROUP BY customer_code, document_no, order_date") &&
+        sql.includes("LIMIT 6")
+      ) {
         return [
           {
             order_id: "C001::2026-02-15::INV-2",
@@ -261,7 +280,10 @@ function createImportedDbFixture() {
           },
         ];
       }
-      if (sql.includes("FROM imported_sales_lines") && sql.includes("AND document_no = ?")) {
+      if (
+        sql.includes("FROM imported_sales_lines") &&
+        sql.includes("AND document_no = ?")
+      ) {
         return [
           {
             code: "P1",
@@ -276,19 +298,26 @@ function createImportedDbFixture() {
         ];
       }
       if (sql.includes("FROM imported_monthly_sales")) {
-        if (params[1] === olderYear) return [{ month: 1, revenue: 25, pieces: 2 }];
-        if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
-        if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
+        if (params[1] === olderYear)
+          return [{ month: 1, revenue: 25, pieces: 2 }];
+        if (params[1] === currentYear)
+          return [{ month: 2, revenue: 175.6, pieces: 10 }];
+        if (params[1] === previousYear)
+          return [{ month: 12, revenue: 70, pieces: 5 }];
       }
       if (sql.includes("GROUP BY order_month")) {
         if (sql.includes("SUBSTR(order_date, 1, 10) >= ?")) {
           if (params[1] === olderYear) return [];
-          if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
+          if (params[1] === currentYear)
+            return [{ month: 2, revenue: 175.6, pieces: 10 }];
           if (params[1] === previousYear) return [];
         }
-        if (params[1] === olderYear) return [{ month: 1, revenue: 25, pieces: 2 }];
-        if (params[1] === currentYear) return [{ month: 2, revenue: 175.6, pieces: 10 }];
-        if (params[1] === previousYear) return [{ month: 12, revenue: 70, pieces: 5 }];
+        if (params[1] === olderYear)
+          return [{ month: 1, revenue: 25, pieces: 2 }];
+        if (params[1] === currentYear)
+          return [{ month: 2, revenue: 175.6, pieces: 10 }];
+        if (params[1] === previousYear)
+          return [{ month: 12, revenue: 70, pieces: 5 }];
       }
       throw new Error(`Unexpected db.all SQL: ${sql}`);
     },
@@ -321,8 +350,14 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.recent_orders.length, 1);
   assert.equal(payload.detailed_orders.length, 1);
   assert.equal(payload.detailed_orders[0].lines.length, 1);
-  assert.equal(payload.detailed_orders[0].lines[0].progress_step, "6. ΕΞΥΠΗΡΕΤΗΣΗ");
-  assert.equal(payload.detailed_orders[0].lines[0].progress_step_description, "ΕΞΥΠΗΡΕΤΗΣΗ");
+  assert.equal(
+    payload.detailed_orders[0].lines[0].progress_step,
+    "6. ΕΞΥΠΗΡΕΤΗΣΗ",
+  );
+  assert.equal(
+    payload.detailed_orders[0].lines[0].progress_step_description,
+    "ΕΞΥΠΗΡΕΤΗΣΗ",
+  );
   assert.equal(payload.available_branches.length, 2);
   assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
   assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
@@ -374,4 +409,64 @@ test("imported-data provider falls back to zero receivables when no ledger snaps
   assert.equal(payload.receivables.overdue_balance, 0);
   assert.equal(payload.receivables.progressive_credit, 0);
   assert.deepEqual(payload.receivables.items, []);
+});
+
+test("imported-data provider tolerates sales tables without progression columns", async () => {
+  const db = createImportedDbFixture();
+  const originalAll = db.all.bind(db);
+  db.all = async (sql, params = []) => {
+    if (sql.includes("PRAGMA table_info(imported_sales_lines)")) {
+      return [
+        { name: "source_file" },
+        { name: "order_date" },
+        { name: "order_year" },
+        { name: "order_month" },
+        { name: "document_no" },
+        { name: "document_type" },
+        { name: "item_code" },
+        { name: "item_description" },
+        { name: "unit_code" },
+        { name: "qty" },
+        { name: "qty_base" },
+        { name: "unit_price" },
+        { name: "net_value" },
+        { name: "discount_pct_1" },
+        { name: "discount_pct_2" },
+        { name: "discount_pct_total" },
+        { name: "customer_code" },
+        { name: "customer_name" },
+        { name: "delivery_code" },
+        { name: "delivery_description" },
+        { name: "account_code" },
+        { name: "account_description" },
+        { name: "branch_code" },
+        { name: "branch_description" },
+        { name: "note_1" },
+      ];
+    }
+    if (
+      sql.includes("COALESCE(progress_step") ||
+      sql.includes("COALESCE(progress_step_description")
+    ) {
+      throw new Error(`Unexpected progression column select: ${sql}`);
+    }
+    if (
+      sql.includes("FROM imported_sales_lines") &&
+      sql.includes("AND document_no = ?")
+    ) {
+      const rows = await originalAll(sql, params);
+      return rows.map(({ progress_step, progress_step_description, ...row }) => row);
+    }
+    return originalAll(sql, params);
+  };
+
+  const provider = createSqliteCustomerStatsProvider({
+    db,
+    sqlDialect: "sqlite",
+  });
+
+  const payload = await provider.getCustomerStats("C001");
+  assert.equal(payload.detailed_orders.length, 1);
+  assert.equal(payload.detailed_orders[0].lines[0].progress_step, "");
+  assert.equal(payload.detailed_orders[0].lines[0].progress_step_description, "");
 });

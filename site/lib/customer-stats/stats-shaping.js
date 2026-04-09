@@ -1,4 +1,10 @@
-import { asInteger, asMoney, availableBranchRow, productSalesRow, productStatRow } from "./shared.js";
+import {
+  asInteger,
+  asMoney,
+  availableBranchRow,
+  productSalesRow,
+  productStatRow,
+} from "./shared.js";
 
 export function createMonthlyBuckets() {
   return Array.from({ length: 12 }, (_, index) => ({
@@ -69,7 +75,9 @@ export function buildDetailedOrder(order, lines, overrides = {}) {
 export function buildSummaryOrder(order) {
   return {
     order_id: order.order_id,
-    ...(order.document_type !== undefined ? { document_type: order.document_type || "" } : {}),
+    ...(order.document_type !== undefined
+      ? { document_type: order.document_type || "" }
+      : {}),
     created_at: order.created_at,
     ordered_at: order.ordered_at || order.created_at,
     sent_at: order.sent_at || null,

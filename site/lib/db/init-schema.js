@@ -59,7 +59,9 @@ async function mysqlColumnType(db, table, column) {
     `,
     [table, column],
   );
-  return String(row?.column_type || "").trim().toLowerCase();
+  return String(row?.column_type || "")
+    .trim()
+    .toLowerCase();
 }
 
 async function ensureMysqlColumnType(db, table, column, ddl) {
@@ -469,7 +471,13 @@ export async function initDatabaseSchema({ db, kind }) {
   const typeInt = kind === "mysql" ? "INT" : "INTEGER";
   const typeReal = kind === "mysql" ? "DOUBLE" : "REAL";
 
-  await ensureColumn(db, kind, "orders", "customer_code", `customer_code ${typeText}`);
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "customer_code",
+    `customer_code ${typeText}`,
+  );
   await ensureColumn(
     db,
     kind,
@@ -879,7 +887,12 @@ export async function initDatabaseSchema({ db, kind }) {
     `document_no ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"} NOT NULL DEFAULT ''`,
   );
   if (kind === "mysql") {
-    await ensureMysqlColumnType(db, "imported_orders", "order_id", "VARCHAR(300) NOT NULL");
+    await ensureMysqlColumnType(
+      db,
+      "imported_orders",
+      "order_id",
+      "VARCHAR(300) NOT NULL",
+    );
   }
   await ensureIndex(
     db,

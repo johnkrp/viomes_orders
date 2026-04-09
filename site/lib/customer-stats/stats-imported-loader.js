@@ -69,6 +69,43 @@ function buildImportedOpenOrderRefExpression(sqlDialect) {
   )), '|', ''), ' ', ''), '.', ''), ':', ''), '')`;
 }
 
+async function loadImportedSalesLineProgressColumnAvailability(db, sqlDialect) {
+  if (sqlDialect === "mysql") {
+    const [progressStepRow, progressStepDescriptionRow] = await Promise.all([
+      db.get(
+        `
+          SELECT COUNT(*) AS n
+          FROM information_schema.columns
+          WHERE table_schema = DATABASE()
+            AND table_name = 'imported_sales_lines'
+            AND column_name = 'progress_step'
+        `,
+      ),
+      db.get(
+        `
+          SELECT COUNT(*) AS n
+          FROM information_schema.columns
+          WHERE table_schema = DATABASE()
+            AND table_name = 'imported_sales_lines'
+            AND column_name = 'progress_step_description'
+        `,
+      ),
+    ]);
+
+    return {
+      progressStep: Number(progressStepRow?.n || 0) > 0,
+      progressStepDescription: Number(progressStepDescriptionRow?.n || 0) > 0,
+    };
+  }
+
+  const rows = await db.all("PRAGMA table_info(imported_sales_lines)");
+  const columnNames = new Set((Array.isArray(rows) ? rows : []).map((row) => row.name));
+  return {
+    progressStep: columnNames.has("progress_step"),
+    progressStepDescription: columnNames.has("progress_step_description"),
+  };
+}
+
 export async function loadImportedCustomerStats(context) {
   const {
     db,
@@ -102,6 +139,15 @@ export async function loadImportedCustomerStats(context) {
     : branchScope;
   const importedExpressions = buildImportedAnalyticsExpressions();
   const importedOrderIdExpression = buildImportedOrderIdExpression(sqlDialect);
+  const importedSalesLineProgressColumns =
+    await loadImportedSalesLineProgressColumnAvailability(db, sqlDialect);
+  const progressStepSelect = importedSalesLineProgressColumns.progressStep
+    ? "COALESCE(progress_step, '') AS progress_step"
+    : "'' AS progress_step";
+  const progressStepDescriptionSelect =
+    importedSalesLineProgressColumns.progressStepDescription
+      ? "COALESCE(progress_step_description, '') AS progress_step_description"
+      : "'' AS progress_step_description";
   const importedLinesDateWindowFilter = buildDateWindowFilter(
     now,
     salesTimeRange,
@@ -711,8 +757,8 @@ export async function loadImportedCustomerStats(context) {
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
           ${importedExpressions.effectiveRevenue} AS line_net_value,
-          COALESCE(progress_step, '') AS progress_step,
-          COALESCE(progress_step_description, '') AS progress_step_description
+          ${progressStepSelect},
+          ${progressStepDescriptionSelect}
         FROM imported_sales_lines
         WHERE customer_code = ?
           AND ${importedExpressions.countInOrderTotals} = 1
@@ -746,8 +792,8 @@ export async function loadImportedCustomerStats(context) {
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
           COALESCE(net_value, 0) AS line_net_value,
-          COALESCE(progress_step, '') AS progress_step,
-          COALESCE(progress_step_description, '') AS progress_step_description
+          ${progressStepSelect},
+          ${progressStepDescriptionSelect}
         FROM imported_sales_lines
         WHERE customer_code = ?
           AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
@@ -785,8 +831,8 @@ export async function loadImportedCustomerStats(context) {
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
           COALESCE(net_value, 0) AS line_net_value,
-          COALESCE(progress_step, '') AS progress_step,
-          COALESCE(progress_step_description, '') AS progress_step_description
+          ${progressStepSelect},
+          ${progressStepDescriptionSelect}
         FROM imported_sales_lines
         WHERE customer_code = ?
           AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})

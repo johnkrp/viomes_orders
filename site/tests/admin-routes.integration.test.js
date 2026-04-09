@@ -1,11 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp, readFile } from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { mkdtemp, readFile } from "node:fs/promises";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { createApp, buildRuntimeSettings } from "../app.js";
+import { buildRuntimeSettings, createApp } from "../app.js";
 import { hashPassword } from "../lib/admin-auth.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,27 +29,47 @@ function createDbFixture() {
   return {
     sessions,
     async get(sql, params = []) {
-      if (sql.includes("FROM admin_users") && sql.includes("WHERE username = ?")) {
+      if (
+        sql.includes("FROM admin_users") &&
+        sql.includes("WHERE username = ?")
+      ) {
         return adminUsers.get(params[0]);
       }
-      if (sql.includes("FROM admin_sessions s") && sql.includes("SELECT u.id, u.username")) {
+      if (
+        sql.includes("FROM admin_sessions s") &&
+        sql.includes("SELECT u.id, u.username")
+      ) {
         const [token] = params;
         const session = sessions.get(token);
-        if (!session || session.expires_at <= new Date().toISOString()) return undefined;
-        const user = [...adminUsers.values()].find((candidate) => candidate.id === session.admin_user_id);
-        return user && user.is_active ? { id: user.id, username: user.username } : undefined;
+        if (!session || session.expires_at <= new Date().toISOString())
+          return undefined;
+        const user = [...adminUsers.values()].find(
+          (candidate) => candidate.id === session.admin_user_id,
+        );
+        return user && user.is_active
+          ? { id: user.id, username: user.username }
+          : undefined;
       }
-      if (sql.includes("FROM admin_sessions s") && sql.includes("SELECT u.username")) {
+      if (
+        sql.includes("FROM admin_sessions s") &&
+        sql.includes("SELECT u.username")
+      ) {
         const [token] = params;
         const session = sessions.get(token);
-        if (!session || session.expires_at <= new Date().toISOString()) return undefined;
-        const user = [...adminUsers.values()].find((candidate) => candidate.id === session.admin_user_id);
+        if (!session || session.expires_at <= new Date().toISOString())
+          return undefined;
+        const user = [...adminUsers.values()].find(
+          (candidate) => candidate.id === session.admin_user_id,
+        );
         return user && user.is_active ? { username: user.username } : undefined;
       }
       if (sql.includes("SELECT COUNT(*) AS n FROM products")) {
         return { n: 0 };
       }
-      if (sql.includes("SELECT COUNT(*) AS n") && sql.includes("FROM imported_sales_lines")) {
+      if (
+        sql.includes("SELECT COUNT(*) AS n") &&
+        sql.includes("FROM imported_sales_lines")
+      ) {
         return { n: 0 };
       }
       if (sql.includes("COUNT(*) AS duplicate_groups")) {
@@ -70,7 +90,10 @@ function createDbFixture() {
       if (sql.includes("imported_monthly_sales_count")) {
         return { imported_monthly_sales_count: 1, grouped_months_count: 1 };
       }
-      if (sql.includes("ORDER BY id DESC") && sql.includes("FROM import_runs")) {
+      if (
+        sql.includes("ORDER BY id DESC") &&
+        sql.includes("FROM import_runs")
+      ) {
         return {
           id: 5,
           dataset: "sales_lines",
@@ -111,10 +134,15 @@ function createDbFixture() {
       if (sql.includes("FROM imported_orders")) {
         return [];
       }
-      if (sql.includes("unmapped_document_types") || sql.includes("document_type NOT IN")) {
+      if (
+        sql.includes("unmapped_document_types") ||
+        sql.includes("document_type NOT IN")
+      ) {
         return [];
       }
-      throw new Error(`Unexpected db.all SQL: ${sql} :: ${JSON.stringify(params)}`);
+      throw new Error(
+        `Unexpected db.all SQL: ${sql} :: ${JSON.stringify(params)}`,
+      );
     },
     async run(sql, params = []) {
       if (sql.includes("INSERT INTO admin_sessions")) {
@@ -137,7 +165,9 @@ function createDbFixture() {
 
 async function startTestApp() {
   const db = createDbFixture();
-  const backendDir = await mkdtemp(path.join(os.tmpdir(), "viomes-admin-upload-"));
+  const backendDir = await mkdtemp(
+    path.join(os.tmpdir(), "viomes-admin-upload-"),
+  );
   const settings = buildRuntimeSettings({
     env: {
       NODE_ENV: "test",
@@ -170,12 +200,29 @@ async function startTestApp() {
           branch_description: options.branchCode ? "Branch 1" : null,
         },
         summary: { total_orders: 1, total_pieces: 10, total_revenue: 175.6 },
-        monthly_sales: { current_year: [], previous_year: [], yearly_series: [] },
+        monthly_sales: {
+          current_year: [],
+          previous_year: [],
+          yearly_series: [],
+        },
         product_sales: { metric: "revenue", items: [] },
-        receivables: { currency: "EUR", open_balance: 0, overdue_balance: 0, items: [] },
+        receivables: {
+          currency: "EUR",
+          open_balance: 0,
+          overdue_balance: 0,
+          items: [],
+        },
         top_products_by_qty: [],
         top_products_by_value: [],
-        available_branches: [{ branch_code: "B1", branch_description: "Branch 1", orders: 1, revenue: 175.6, raw_rows: 2 }],
+        available_branches: [
+          {
+            branch_code: "B1",
+            branch_description: "Branch 1",
+            orders: 1,
+            revenue: 175.6,
+            raw_rows: 2,
+          },
+        ],
         recent_orders: [],
         detailed_orders: [],
       };
@@ -211,7 +258,9 @@ async function startTestApp() {
     backendDir,
     importRuns,
     async close() {
-      await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+      await new Promise((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
     },
   };
 }
@@ -220,7 +269,9 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
   const app = await startTestApp();
 
   try {
-    let response = await fetch(`${app.baseUrl}/api/admin/customers/search?customer_name=Alpha`);
+    let response = await fetch(
+      `${app.baseUrl}/api/admin/customers/search?customer_name=Alpha`,
+    );
     assert.equal(response.status, 401);
 
     response = await fetch(`${app.baseUrl}/api/admin/login`, {
@@ -241,19 +292,29 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
     });
     assert.equal(response.status, 200);
     const mePayload = await response.json();
-    assert.deepEqual(mePayload, { ok: true, username: "admin", authenticated: true });
-
-    response = await fetch(`${app.baseUrl}/api/admin/customers/search?customer_name=Alpha`, {
-      headers: { Cookie: cookie },
+    assert.deepEqual(mePayload, {
+      ok: true,
+      username: "admin",
+      authenticated: true,
     });
+
+    response = await fetch(
+      `${app.baseUrl}/api/admin/customers/search?customer_name=Alpha`,
+      {
+        headers: { Cookie: cookie },
+      },
+    );
     assert.equal(response.status, 200);
     const searchPayload = await response.json();
     assert.equal(searchPayload.total, 1);
     assert.equal(searchPayload.items[0].code, "C001");
 
-    response = await fetch(`${app.baseUrl}/api/admin/customers/C001/stats?branch_code=B1&sales_time_range=6m`, {
-      headers: { Cookie: cookie },
-    });
+    response = await fetch(
+      `${app.baseUrl}/api/admin/customers/C001/stats?branch_code=B1&sales_time_range=6m`,
+      {
+        headers: { Cookie: cookie },
+      },
+    );
     assert.equal(response.status, 200);
     const statsPayload = await response.json();
     assert.equal(statsPayload.customer.aggregation_level, "branch");
@@ -285,7 +346,11 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
     });
     assert.equal(response.status, 200);
     const loggedOutPayload = await response.json();
-    assert.deepEqual(loggedOutPayload, { ok: true, username: null, authenticated: false });
+    assert.deepEqual(loggedOutPayload, {
+      ok: true,
+      username: null,
+      authenticated: false,
+    });
   } finally {
     await app.close();
   }
@@ -302,7 +367,14 @@ test("order export endpoint validates payloads and returns an xlsx file for vali
         customerName: "Alpha Store",
         customerEmail: "not-an-email",
         comment: "Test",
-        items: [{ code: "P001", description: "First Product", qty: 12, volume_liters: 5 }],
+        items: [
+          {
+            code: "P001",
+            description: "First Product",
+            qty: 12,
+            volume_liters: 5,
+          },
+        ],
       }),
     });
 
@@ -335,7 +407,10 @@ test("order export endpoint validates payloads and returns an xlsx file for vali
       response.headers.get("content-type"),
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
-    assert.match(response.headers.get("content-disposition") || "", /attachment; filename="order_/i);
+    assert.match(
+      response.headers.get("content-disposition") || "",
+      /attachment; filename="order_/i,
+    );
     const buffer = Buffer.from(await response.arrayBuffer());
     assert.ok(buffer.length > 0);
   } finally {
@@ -347,15 +422,18 @@ test("admin import upload endpoint stores files and runs the existing importer p
   const app = await startTestApp();
 
   try {
-    let response = await fetch(`${app.baseUrl}/api/admin/import-upload/factuals`, {
-      method: "PUT",
-      headers: {
-        Authorization: "Bearer upload-key",
-        "Content-Type": "text/csv",
-        "X-Upload-Filename": "yearly-factuals.csv",
+    let response = await fetch(
+      `${app.baseUrl}/api/admin/import-upload/factuals`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer upload-key",
+          "Content-Type": "text/csv",
+          "X-Upload-Filename": "yearly-factuals.csv",
+        },
+        body: "date,document\n2026-01-01,A-1\n",
       },
-      body: "date,document\n2026-01-01,A-1\n",
-    });
+    );
 
     assert.equal(response.status, 200);
     const uploadPayload = await response.json();
@@ -363,21 +441,27 @@ test("admin import upload endpoint stores files and runs the existing importer p
     assert.equal(uploadPayload.dataset, "sales");
     assert.equal(uploadPayload.file_name, "yearly-factuals.csv");
 
-    const storedFactuals = await readFile(path.join(app.backendDir, "yearly-factuals.csv"), "utf8");
+    const storedFactuals = await readFile(
+      path.join(app.backendDir, "yearly-factuals.csv"),
+      "utf8",
+    );
     assert.match(storedFactuals, /A-1/);
     assert.equal(app.importRuns.length, 1);
     assert.match(app.importRuns[0].args.join(" "), /--sales-files=/);
     assert.doesNotMatch(app.importRuns[0].args.join(" "), /--mysql-password=/);
 
-    response = await fetch(`${app.baseUrl}/api/admin/import-upload/receivables`, {
-      method: "PUT",
-      headers: {
-        Authorization: "Bearer upload-key",
-        "Content-Type": "application/octet-stream",
-        "X-Upload-Filename": "yearly-receivables.csv",
+    response = await fetch(
+      `${app.baseUrl}/api/admin/import-upload/receivables`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer upload-key",
+          "Content-Type": "application/octet-stream",
+          "X-Upload-Filename": "yearly-receivables.csv",
+        },
+        body: "customer,balance\nC001,120.55\n",
       },
-      body: "customer,balance\nC001,120.55\n",
-    });
+    );
 
     assert.equal(response.status, 200);
     const ledgerPayload = await response.json();
@@ -386,7 +470,10 @@ test("admin import upload endpoint stores files and runs the existing importer p
     assert.equal(app.importRuns.length, 2);
     assert.match(app.importRuns[1].args.join(" "), /--ledger-file=/);
     assert.doesNotMatch(app.importRuns[1].args.join(" "), /--mysql-password=/);
-    assert.match(app.importRuns[1].args.join(" "), /--trigger-source=admin_upload:upload-api:yearly-receivables\.csv/);
+    assert.match(
+      app.importRuns[1].args.join(" "),
+      /--trigger-source=admin_upload:upload-api:yearly-receivables\.csv/,
+    );
   } finally {
     await app.close();
   }
@@ -396,15 +483,18 @@ test("admin import upload endpoint rejects non-csv and mismatched dataset filena
   const app = await startTestApp();
 
   try {
-    let response = await fetch(`${app.baseUrl}/api/admin/import-upload/factuals`, {
-      method: "PUT",
-      headers: {
-        Authorization: "Bearer upload-key",
-        "Content-Type": "text/plain",
-        "X-Upload-Filename": "yearly-factuals.txt",
+    let response = await fetch(
+      `${app.baseUrl}/api/admin/import-upload/factuals`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer upload-key",
+          "Content-Type": "text/plain",
+          "X-Upload-Filename": "yearly-factuals.txt",
+        },
+        body: "date,document\n2026-01-01,A-1\n",
       },
-      body: "date,document\n2026-01-01,A-1\n",
-    });
+    );
 
     assert.equal(response.status, 400);
     let payload = await response.json();
