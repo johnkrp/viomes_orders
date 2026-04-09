@@ -574,16 +574,48 @@ button.secondary:hover,
 }
 
 .actions .customerName,
+.actions .customerSubstore,
 .actions .customerEmail {
   display: grid;
-  grid-template-columns: 140px 1fr;
-  align-items: center;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 6px;
   padding-bottom: 14px;
 }
 .actions .customerName input,
+.actions .customerSubstore input,
 .actions .customerEmail input {
   width: 100%;
+}
+
+.actions .customerName label,
+.actions .customerSubstore label,
+.actions .customerEmail label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.actions .cartLabel,
+.actions .notesField,
+.actions .buttons,
+.actions .submitStatus {
+  margin-top: 12px;
+}
+
+.actions .cartLabel {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.actions .notesField {
+  display: grid;
+  gap: 6px;
+}
+
+.actions .buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .cart {

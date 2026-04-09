@@ -3,10 +3,7 @@ import {
   ORDER_FORM_RANKING_KEY,
 } from "./admin-constants.js";
 
-export function buildOrderFormDraftFromSelectedOrder(
-  order,
-  customer,
-) {
+export function buildOrderFormDraftFromSelectedOrder(order, customer) {
   const customerName = String(
     order?.customer_name || customer?.name || "",
   ).trim();
