@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from import_entersoft import (
     build_branch_description,
+    build_count_in_order_totals_case,
     derive_progress_step,
     import_customer_ledgers,
     import_sales_lines,
@@ -17,6 +18,7 @@ from import_entersoft import (
     parse_decimal,
     resolve_import_mode,
     resolve_replace_sales_year,
+    rebuild_sales_aggregates,
 )
 
 TEST_TMP_DIR = Path(__file__).resolve().parents[2] / ".tmp"
@@ -139,9 +141,11 @@ class FakeCursor:
         self.imported_ledger_lines = []
         self.import_run_insert_params = None
         self.import_run_update_params = None
+        self.executed_sql = []
         self._fetchall_result = []
 
     def execute(self, sql, params=None):
+        self.executed_sql.append(sql)
         normalized = " ".join(sql.split())
         if normalized.startswith("INSERT INTO import_runs"):
             self.import_run_insert_params = params
@@ -614,6 +618,23 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertIn("manual_or_cli", cursor.import_run_insert_params)
         self.assertIn(2, cursor.import_run_update_params)
         self.assertIn(1, cursor.import_run_update_params)
+
+    def test_rebuild_sales_aggregates_joins_progress_from_any_row_in_order_group(self):
+        cursor = FakeCursor()
+
+        rebuild_sales_aggregates(cursor)
+
+        imported_orders_sql = next(
+            sql for sql in cursor.executed_sql if "INSERT INTO imported_orders(" in sql
+        )
+        self.assertIn(f"WHERE {build_count_in_order_totals_case()} = 1", imported_orders_sql)
+        self.assertIn("LEFT JOIN (", imported_orders_sql)
+        self.assertIn("order_progress", imported_orders_sql)
+        self.assertIn("COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step", imported_orders_sql)
+        self.assertIn(
+            "GROUP BY customer_code, document_no, order_date",
+            imported_orders_sql,
+        )
 
     def test_import_customer_ledgers_replaces_snapshot_and_records_run(self):
         cursor = FakeCursor()

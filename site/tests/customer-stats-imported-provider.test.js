@@ -270,7 +270,7 @@ function createImportedDbFixture() {
             order_id: "C001::2026-02-15::INV-2",
             document_no: "INV-2",
             created_at: `${currentYear}-02-15`,
-              progress_step: "2",
+            progress_step: "2",
             total_lines: 1,
             total_pieces: 10,
             total_net_value: 175.6,

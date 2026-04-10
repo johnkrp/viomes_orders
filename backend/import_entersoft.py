@@ -704,25 +704,56 @@ def rebuild_sales_aggregates(cur) -> None:
           delivery_description, source_file
         )
         SELECT
-          CONCAT(customer_code, '::', order_date, '::', document_no) AS order_id,
-          document_no,
-          customer_code,
-          MAX(customer_name),
-          order_date,
-          COUNT(*) AS total_lines,
-          COALESCE(SUM({build_effective_pieces_expression()}), 0) AS total_pieces,
-          COALESCE(SUM({build_effective_revenue_expression()}), 0) AS total_net_value,
-          COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
-          COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
-          MAX(ordered_at),
-          MAX(sent_at),
-          MAX(document_type),
-          MAX(delivery_code),
-          MAX(delivery_description),
-          MAX(source_file)
-        FROM imported_sales_lines
-        WHERE {build_count_in_order_totals_case()} = 1
-        GROUP BY document_no, customer_code, order_date
+                    order_totals.order_id,
+                    order_totals.document_no,
+                    order_totals.customer_code,
+                    order_totals.customer_name,
+                    order_totals.created_at,
+                    order_totals.total_lines,
+                    order_totals.total_pieces,
+                    order_totals.total_net_value,
+                    order_totals.average_discount_pct,
+                    COALESCE(order_progress.progress_step, '') AS progress_step,
+                    order_totals.ordered_at,
+                    order_totals.sent_at,
+                    order_totals.document_type,
+                    order_totals.delivery_code,
+                    order_totals.delivery_description,
+                    order_totals.source_file
+                FROM (
+                    SELECT
+                        CONCAT(customer_code, '::', order_date, '::', document_no) AS order_id,
+                        document_no,
+                        customer_code,
+                        MAX(customer_name) AS customer_name,
+                        order_date AS created_at,
+                        COUNT(*) AS total_lines,
+                        COALESCE(SUM({build_effective_pieces_expression()}), 0) AS total_pieces,
+                        COALESCE(SUM({build_effective_revenue_expression()}), 0) AS total_net_value,
+                        COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+                        MAX(ordered_at) AS ordered_at,
+                        MAX(sent_at) AS sent_at,
+                        MAX(document_type) AS document_type,
+                        MAX(delivery_code) AS delivery_code,
+                        MAX(delivery_description) AS delivery_description,
+                        MAX(source_file) AS source_file,
+                        order_date
+                    FROM imported_sales_lines
+                    WHERE {build_count_in_order_totals_case()} = 1
+                    GROUP BY document_no, customer_code, order_date
+                ) order_totals
+                LEFT JOIN (
+                    SELECT
+                        customer_code,
+                        document_no,
+                        order_date,
+                        COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step
+                    FROM imported_sales_lines
+                    GROUP BY customer_code, document_no, order_date
+                ) order_progress
+                    ON order_progress.customer_code = order_totals.customer_code
+                 AND order_progress.document_no = order_totals.document_no
+                 AND order_progress.order_date = order_totals.order_date
         """
     )
 
