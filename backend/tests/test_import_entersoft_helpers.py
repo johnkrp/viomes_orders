@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from import_entersoft import (
     build_branch_description,
+    derive_progress_step,
     import_customer_ledgers,
     import_sales_lines,
     parse_date,
@@ -325,6 +326,11 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertEqual(parse_optional_datetime_date("08/03/2026 10:15:00 πμ"), "2026-03-08")
         self.assertEqual(parse_optional_datetime_date(""), "")
 
+    def test_derive_progress_step_uses_sent_at_when_source_step_is_missing(self):
+        self.assertEqual(derive_progress_step("", "2026-03-09"), "5. ΑΠΕΣΤΑΛΗ")
+        self.assertEqual(derive_progress_step("4. ΠΡΟΣ ΣΥΛΛΟΓΗ", "2026-03-09"), "4. ΠΡΟΣ ΣΥΛΛΟΓΗ")
+        self.assertEqual(derive_progress_step("", ""), "")
+
     def test_resolve_import_mode_defaults_to_incremental(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("ENTERSOFT_IMPORT_MODE", None)
@@ -374,6 +380,19 @@ class ImportEntersoftHelpersTest(unittest.TestCase):
         self.assertIsNotNone(cursor.import_run_update_params)
         rebuild_customers.assert_called_once()
         rebuild_aggregates.assert_called_once()
+
+    def test_import_sales_lines_backfills_progress_step_from_sent_at(self):
+        cursor = FakeCursor()
+        sales_file = create_temp_sales_file()
+        try:
+            with patch("import_entersoft.csv.DictReader", return_value=[sample_sales_row()]), \
+                    patch("import_entersoft.rebuild_customers_from_sales", MagicMock()), \
+                    patch("import_entersoft.rebuild_sales_aggregates", MagicMock()):
+                import_sales_lines(cursor, [sales_file], "incremental")
+        finally:
+            sales_file.unlink(missing_ok=True)
+
+        self.assertEqual(cursor.imported_rows[0]["mutable_values"][-2], "5. ΑΠΕΣΤΑΛΗ")
 
     def test_import_sales_lines_replaces_single_business_key_match(self):
         cursor = FakeCursor()

@@ -103,6 +103,15 @@ def parse_optional_datetime_date(value):
     return parse_date(text.split(" ")[0])
 
 
+def derive_progress_step(progress_step, sent_at):
+    normalized_progress_step = str(progress_step or "").strip()
+    if normalized_progress_step:
+        return normalized_progress_step
+    if str(sent_at or "").strip():
+        return "5. ΑΠΕΣΤΑΛΗ"
+    return ""
+
+
 def build_branch_description(branch_description, postal_code):
     description = str(branch_description or "").strip()
     postcode = str(postal_code or "").strip()
@@ -952,7 +961,10 @@ def import_sales_lines(cur, sales_files, import_mode: str, replace_sales_year: O
                         )
                     )
                     note_1 = str(get_row_value(row, "Σχόλιο 1", "Ξ£Ο‡ΟΞ»ΞΉΞΏ 1")).strip()
-                    progress_step = str(get_row_value(row, "Βήμα εξέλιξης παρ.")).strip()
+                    progress_step = derive_progress_step(
+                        get_row_value(row, "Βήμα εξέλιξης παρ."),
+                        sent_at,
+                    )
                     progress_step_description = str(get_row_value(row, "Βήμα εξελ.παρ.περιγρ.")).strip()
 
                     discount_pct_1 = parse_decimal(get_row_value(row, "% Ξ­ΞΊΟ€Ο„.1"))
