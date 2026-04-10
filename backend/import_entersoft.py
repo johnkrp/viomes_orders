@@ -691,7 +691,7 @@ def rebuild_sales_aggregates(cur) -> None:
         f"""
         INSERT INTO imported_orders(
           order_id, document_no, customer_code, customer_name, created_at, total_lines, total_pieces,
-          total_net_value, average_discount_pct, ordered_at, sent_at, document_type, delivery_code,
+                    total_net_value, average_discount_pct, progress_step, ordered_at, sent_at, document_type, delivery_code,
           delivery_description, source_file
         )
         SELECT
@@ -704,6 +704,7 @@ def rebuild_sales_aggregates(cur) -> None:
           COALESCE(SUM({build_effective_pieces_expression()}), 0) AS total_pieces,
           COALESCE(SUM({build_effective_revenue_expression()}), 0) AS total_net_value,
           COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+          COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
           MAX(ordered_at),
           MAX(sent_at),
           MAX(document_type),
@@ -722,7 +723,7 @@ def rebuild_sales_aggregates(cur) -> None:
         f"""
         INSERT INTO imported_open_orders(
           order_id, document_no, customer_code, customer_name, created_at, total_lines, total_pieces,
-          total_net_value, average_discount_pct, ordered_at, sent_at, document_type, delivery_code,
+                    total_net_value, average_discount_pct, progress_step, ordered_at, sent_at, document_type, delivery_code,
           delivery_description, source_file
         )
         SELECT
@@ -735,6 +736,7 @@ def rebuild_sales_aggregates(cur) -> None:
           pending.total_pieces,
           pending.total_net_value,
           pending.average_discount_pct,
+          pending.progress_step,
           pending.ordered_at,
           pending.sent_at,
           pending.document_type,
@@ -752,6 +754,7 @@ def rebuild_sales_aggregates(cur) -> None:
             COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
             COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
             COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+            COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
             MAX(ordered_at) AS ordered_at,
             MAX(sent_at) AS sent_at,
             MAX(document_type) AS document_type,

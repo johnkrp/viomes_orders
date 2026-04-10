@@ -83,6 +83,7 @@ export function buildSummaryOrder(order) {
     total_pieces: asInteger(order.total_pieces),
     total_net_value: asMoney(order.total_net_value),
     average_discount_pct: asRoundedUpPercent(order.average_discount_pct),
+    progress_step: order.progress_step || "",
   };
 }
 

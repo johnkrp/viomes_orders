@@ -168,8 +168,8 @@ export async function loadImportedCustomerStats(context) {
         `
           SELECT
             COUNT(*) AS total_orders,
-            COALESCE(SUM(order_totals.total_pieces), 0) AS total_pieces,
-            COALESCE(SUM(order_totals.total_net_value), 0) AS total_revenue,
+            COALESCE(SUM(total_pieces), 0) AS total_pieces,
+            COALESCE(SUM(total_net_value), 0) AS total_revenue,
             MAX(created_at) AS last_order_date
           FROM (
             SELECT
@@ -195,10 +195,8 @@ export async function loadImportedCustomerStats(context) {
             COALESCE(SUM(total_net_value), 0) AS total_revenue
           FROM imported_orders
           WHERE customer_code = ?
-            AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
-            ${importedOrdersDateWindowFilter.clause}
         `,
-        [code, ...importedOrdersDateWindowFilter.params],
+        [code],
       )
     : await db.get(
         `
@@ -330,12 +328,12 @@ export async function loadImportedCustomerStats(context) {
             total_lines,
             total_pieces,
             total_net_value,
-            average_discount_pct
+            average_discount_pct,
+            progress_step
           FROM imported_orders
           WHERE customer_code = ?
             AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
           ORDER BY created_at DESC, document_no DESC
-          LIMIT 10
         `,
         [code],
       )
@@ -349,8 +347,8 @@ export async function loadImportedCustomerStats(context) {
             MAX(sent_at) AS sent_at,
             COUNT(*) AS total_lines,
             COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
-            COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value,
-            COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+            COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+            COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step
           FROM imported_sales_lines
           WHERE customer_code = ?
             AND ${importedExpressions.countInOrderTotals} = 1
@@ -374,7 +372,8 @@ export async function loadImportedCustomerStats(context) {
             total_lines,
             total_pieces,
             total_net_value,
-            average_discount_pct
+            average_discount_pct,
+            progress_step
           FROM imported_orders
           WHERE customer_code = ?
             AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
@@ -395,7 +394,8 @@ export async function loadImportedCustomerStats(context) {
             COUNT(*) AS total_lines,
             COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
             COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value,
-            COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+            COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+            COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step
           FROM imported_sales_lines
           WHERE customer_code = ?
             AND ${importedExpressions.countInOrderTotals} = 1
@@ -429,6 +429,7 @@ export async function loadImportedCustomerStats(context) {
             COALESCE(SUM(COALESCE(open_lines.qty_base, 0)), 0) AS total_pieces,
             COALESCE(SUM(COALESCE(open_lines.net_value, 0)), 0) AS total_net_value,
             open_orders.average_discount_pct,
+            open_orders.progress_step,
             open_orders.document_type
           FROM imported_open_orders open_orders
           LEFT JOIN imported_sales_lines open_lines
@@ -446,6 +447,7 @@ export async function loadImportedCustomerStats(context) {
             open_orders.sent_at,
             open_orders.total_lines,
             open_orders.average_discount_pct,
+            open_orders.progress_step,
             open_orders.document_type
           ORDER BY
             COALESCE(NULLIF(open_orders.sent_at, ''), NULLIF(open_orders.ordered_at, ''), open_orders.created_at) DESC,
@@ -470,6 +472,7 @@ export async function loadImportedCustomerStats(context) {
             pending.total_pieces,
             pending.total_net_value,
             pending.average_discount_pct,
+            pending.progress_step,
             pending.document_type
           FROM (
             SELECT
@@ -483,6 +486,7 @@ export async function loadImportedCustomerStats(context) {
               COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
               COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
               COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+              COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
               MAX(document_type) AS document_type,
               MAX(${importedOpenOrderRefExpression}) AS order_ref
             FROM imported_sales_lines
@@ -574,6 +578,7 @@ export async function loadImportedCustomerStats(context) {
         pending.total_pieces,
         pending.total_net_value,
         pending.average_discount_pct,
+        pending.progress_step,
         pending.document_type
       FROM (
         SELECT
@@ -587,6 +592,7 @@ export async function loadImportedCustomerStats(context) {
           COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
           COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
           COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+          COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
           MAX(document_type) AS document_type,
           MAX(${importedOrderRefExpression}) AS order_ref
         FROM imported_sales_lines

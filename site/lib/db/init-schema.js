@@ -886,6 +886,13 @@ export async function initDatabaseSchema({ db, kind }) {
     "document_no",
     `document_no ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"} NOT NULL DEFAULT ''`,
   );
+  await ensureColumn(
+    db,
+    kind,
+    "imported_orders",
+    "progress_step",
+    `progress_step ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"} NOT NULL DEFAULT ''`,
+  );
   if (kind === "mysql") {
     await ensureMysqlColumnType(
       db,
@@ -894,6 +901,13 @@ export async function initDatabaseSchema({ db, kind }) {
       "VARCHAR(300) NOT NULL",
     );
   }
+  await ensureColumn(
+    db,
+    kind,
+    "imported_open_orders",
+    "progress_step",
+    `progress_step ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"} NOT NULL DEFAULT ''`,
+  );
   await ensureIndex(
     db,
     kind,

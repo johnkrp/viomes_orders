@@ -1991,17 +1991,83 @@ button.secondary:hover,
 
 .admin-recent-orders-table th:nth-child(5),
 .admin-recent-orders-table td:nth-child(5) {
-  width: 14%;
+  width: 8%;
 }
 
 .admin-recent-orders-table th:nth-child(6),
 .admin-recent-orders-table td:nth-child(6) {
-  width: 10%;
+  width: 8%;
 }
 
 .admin-recent-orders-table th:nth-child(7),
 .admin-recent-orders-table td:nth-child(7) {
-  width: 14%;
+  width: 10%;
+}
+
+.admin-recent-orders-table th:nth-child(8),
+.admin-recent-orders-table td:nth-child(8) {
+  width: 10%;
+}
+
+.admin-recent-orders-table th:nth-child(9),
+.admin-recent-orders-table td:nth-child(9) {
+  width: 12%;
+}
+
+.admin-open-orders-table th:nth-child(1),
+.admin-open-orders-table td:nth-child(1),
+.admin-pre-approval-orders-table th:nth-child(1),
+.admin-pre-approval-orders-table td:nth-child(1) {
+  width: 24%;
+}
+
+.admin-open-orders-table th:nth-child(2),
+.admin-open-orders-table td:nth-child(2),
+.admin-pre-approval-orders-table th:nth-child(2),
+.admin-pre-approval-orders-table td:nth-child(2) {
+  width: 16%;
+}
+
+.admin-open-orders-table th:nth-child(3),
+.admin-open-orders-table td:nth-child(3),
+.admin-pre-approval-orders-table th:nth-child(3),
+.admin-pre-approval-orders-table td:nth-child(3) {
+  width: 10%;
+}
+
+.admin-open-orders-table th:nth-child(4),
+.admin-open-orders-table td:nth-child(4),
+.admin-pre-approval-orders-table th:nth-child(4),
+.admin-pre-approval-orders-table td:nth-child(4) {
+  width: 10%;
+}
+
+.admin-open-orders-table th:nth-child(5),
+.admin-open-orders-table td:nth-child(5),
+.admin-pre-approval-orders-table th:nth-child(5),
+.admin-pre-approval-orders-table td:nth-child(5) {
+  width: 12%;
+}
+
+.admin-open-orders-table th:nth-child(6),
+.admin-open-orders-table td:nth-child(6),
+.admin-pre-approval-orders-table th:nth-child(6),
+.admin-pre-approval-orders-table td:nth-child(6) {
+  width: 10%;
+}
+
+.admin-open-orders-table th:nth-child(7),
+.admin-open-orders-table td:nth-child(7),
+.admin-pre-approval-orders-table th:nth-child(7),
+.admin-pre-approval-orders-table td:nth-child(7) {
+  width: 18%;
+}
+
+.admin-open-orders-table th:nth-child(8),
+.admin-open-orders-table td:nth-child(8),
+.admin-pre-approval-orders-table th:nth-child(8),
+.admin-pre-approval-orders-table td:nth-child(8) {
+  width: 10%;
 }
 
 .admin-table tbody tr:nth-child(even) {

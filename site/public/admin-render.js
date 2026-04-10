@@ -673,6 +673,7 @@ export function renderPreApprovalOrdersTable(context) {
             <tr>
               <td>${escapeHtml(context.formatDisplayOrderId(item.order_id))}</td>
               <td>${escapeHtml(formatDate(item.created_at))}</td>
+              <td>${escapeHtml(item.progress_step || "-")}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
@@ -692,7 +693,7 @@ export function renderPreApprovalOrdersTable(context) {
         .join("")
     : `
         <tr>
-          <td colspan="7" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς έγκριση.</td>
+          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς έγκριση.</td>
         </tr>
       `;
 
@@ -738,6 +739,7 @@ export function renderOpenOrdersTable(context) {
             <tr>
               <td>${escapeHtml(context.formatDisplayOrderId(item.order_id))}</td>
               <td>${escapeHtml(formatDate(item.created_at))}</td>
+              <td>${escapeHtml(item.progress_step || "-")}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
@@ -757,7 +759,7 @@ export function renderOpenOrdersTable(context) {
         .join("")
     : `
         <tr>
-          <td colspan="7" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς εκτέλεση.</td>
+          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν παραγγελίες προς εκτέλεση.</td>
         </tr>
       `;
 
@@ -831,6 +833,7 @@ export function resetStats(context) {
       <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="order_id">ID <span class="admin-sort-indicator">↕</span></button></th>
       <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="ordered_at">Ημερομηνία παραγγελίας <span class="admin-sort-indicator">↕</span></button></th>
       <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="created_at">Ημερομηνία τιμολογίου <span class="admin-sort-indicator">↕</span></button></th>
+      <th><button type="button" class="admin-sort-btn" data-table-sort="recent" data-sort-key="progress_step">Βήμα εξέλιξης <span class="admin-sort-indicator">↕</span></button></th>
       <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_lines">Γραμμές <span class="admin-sort-indicator">↕</span></button></th>
       <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_pieces">Τεμάχια <span class="admin-sort-indicator">↕</span></button></th>
       <th class="admin-table-number"><button type="button" class="admin-sort-btn admin-sort-btn-number" data-table-sort="recent" data-sort-key="total_net_value">Αξία <span class="admin-sort-indicator">↕</span></button></th>
@@ -840,7 +843,7 @@ export function resetStats(context) {
   }
   context.elements.recentOrdersBody.innerHTML = `
     <tr>
-      <td colspan="8" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
+      <td colspan="9" class="admin-table-empty">Δεν υπάρχουν ακόμη δεδομένα.</td>
     </tr>
   `;
   context.state.currentRecentOrdersPage = 1;

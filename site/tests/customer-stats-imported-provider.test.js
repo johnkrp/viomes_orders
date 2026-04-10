@@ -188,13 +188,14 @@ function createImportedDbFixture() {
           },
         ];
       }
-      if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 10")) {
+      if (sql.includes("FROM imported_orders") && sql.includes("LIMIT 100")) {
         if (sql.includes("SUBSTR(created_at, 1, 10) >= ?")) {
           return [
             {
               order_id: "C001::2026-02-15::INV-2",
               document_no: "INV-2",
               created_at: `${currentYear}-02-15`,
+              progress_step: "2",
               total_lines: 1,
               total_pieces: 10,
               total_net_value: 175.6,
@@ -207,6 +208,7 @@ function createImportedDbFixture() {
             order_id: "C001::2026-02-15::INV-2",
             document_no: "INV-2",
             created_at: `${currentYear}-02-15`,
+            progress_step: "2",
             total_lines: 1,
             total_pieces: 10,
             total_net_value: 175.6,
@@ -216,9 +218,28 @@ function createImportedDbFixture() {
             order_id: "C001::2025-12-10::INV-1",
             document_no: "INV-1",
             created_at: `${previousYear}-12-10`,
+            progress_step: "1",
             total_lines: 2,
             total_pieces: 5,
             total_net_value: 70,
+            average_discount_pct: 0,
+          },
+        ];
+      }
+      if (
+        sql.includes("FROM imported_orders") &&
+        sql.includes("ORDER BY created_at DESC, document_no DESC") &&
+        !sql.includes("LIMIT 100")
+      ) {
+        return [
+          {
+            order_id: "C001::2026-02-15::INV-2",
+            document_no: "INV-2",
+            created_at: `${currentYear}-02-15`,
+            progress_step: "2",
+            total_lines: 1,
+            total_pieces: 10,
+            total_net_value: 175.6,
             average_discount_pct: 0,
           },
         ];
@@ -236,6 +257,7 @@ function createImportedDbFixture() {
               order_id: "C001::2026-02-15::INV-2",
               document_no: "INV-2",
               created_at: `${currentYear}-02-15`,
+              progress_step: "2",
               total_lines: 1,
               total_pieces: 10,
               total_net_value: 175.6,
@@ -248,6 +270,7 @@ function createImportedDbFixture() {
             order_id: "C001::2026-02-15::INV-2",
             document_no: "INV-2",
             created_at: `${currentYear}-02-15`,
+              progress_step: "2",
             total_lines: 1,
             total_pieces: 10,
             total_net_value: 175.6,
@@ -346,6 +369,7 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.top_products_by_qty[0].code, "P1");
   assert.equal(payload.top_products_by_value[0].code, "P1");
   assert.equal(payload.recent_orders.length, 1);
+  assert.equal(payload.recent_orders[0].progress_step, "2");
   assert.equal(payload.detailed_orders.length, 1);
   assert.equal(payload.detailed_orders[0].lines.length, 1);
   assert.equal(payload.available_branches.length, 2);
