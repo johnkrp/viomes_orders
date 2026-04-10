@@ -1781,37 +1781,18 @@ button.secondary:hover,
 
 #detailedOrdersList .admin-table th:nth-child(2),
 #detailedOrdersList .admin-table td:nth-child(2) {
-  width: 220px;
-}
-
-#detailedOrdersList .admin-table th:nth-child(3),
-#detailedOrdersList .admin-table td:nth-child(3) {
-  width: 130px;
-}
-
-#detailedOrdersList .admin-table th:nth-child(4),
-#detailedOrdersList .admin-table td:nth-child(4) {
-  width: 190px;
-}
-
-#detailedOrdersList .admin-table th:nth-child(5),
-#detailedOrdersList .admin-table td:nth-child(5),
-#detailedOrdersList .admin-table th:nth-child(6),
-#detailedOrdersList .admin-table td:nth-child(6),
-#detailedOrdersList .admin-table th:nth-child(7),
-#detailedOrdersList .admin-table td:nth-child(7),
-#detailedOrdersList .admin-table th:nth-child(8),
-#detailedOrdersList .admin-table td:nth-child(8) {
-  width: auto;
+  width: 280px;
 }
 
 #detailedOrdersList .admin-table th:nth-child(3),
 #detailedOrdersList .admin-table td:nth-child(3),
 #detailedOrdersList .admin-table th:nth-child(4),
-#detailedOrdersList .admin-table td:nth-child(4) {
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+#detailedOrdersList .admin-table td:nth-child(4),
+#detailedOrdersList .admin-table th:nth-child(5),
+#detailedOrdersList .admin-table td:nth-child(5),
+#detailedOrdersList .admin-table th:nth-child(6),
+#detailedOrdersList .admin-table td:nth-child(6) {
+  width: auto;
 }
 
 .admin-table-action {

@@ -292,8 +292,6 @@ function createImportedDbFixture() {
             unit_price: 17.56,
             discount_pct: 0,
             line_net_value: 175.6,
-            progress_step: "6. ΕΞΥΠΗΡΕΤΗΣΗ",
-            progress_step_description: "ΕΞΥΠΗΡΕΤΗΣΗ",
           },
         ];
       }
@@ -350,14 +348,6 @@ test("imported-data provider builds the customer stats contract from imported ta
   assert.equal(payload.recent_orders.length, 1);
   assert.equal(payload.detailed_orders.length, 1);
   assert.equal(payload.detailed_orders[0].lines.length, 1);
-  assert.equal(
-    payload.detailed_orders[0].lines[0].progress_step,
-    "6. ΕΞΥΠΗΡΕΤΗΣΗ",
-  );
-  assert.equal(
-    payload.detailed_orders[0].lines[0].progress_step_description,
-    "ΕΞΥΠΗΡΕΤΗΣΗ",
-  );
   assert.equal(payload.available_branches.length, 2);
   assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
   assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
@@ -413,53 +403,6 @@ test("imported-data provider falls back to zero receivables when no ledger snaps
 
 test("imported-data provider tolerates sales tables without progression columns", async () => {
   const db = createImportedDbFixture();
-  const originalAll = db.all.bind(db);
-  db.all = async (sql, params = []) => {
-    if (sql.includes("PRAGMA table_info(imported_sales_lines)")) {
-      return [
-        { name: "source_file" },
-        { name: "order_date" },
-        { name: "order_year" },
-        { name: "order_month" },
-        { name: "document_no" },
-        { name: "document_type" },
-        { name: "item_code" },
-        { name: "item_description" },
-        { name: "unit_code" },
-        { name: "qty" },
-        { name: "qty_base" },
-        { name: "unit_price" },
-        { name: "net_value" },
-        { name: "discount_pct_1" },
-        { name: "discount_pct_2" },
-        { name: "discount_pct_total" },
-        { name: "customer_code" },
-        { name: "customer_name" },
-        { name: "delivery_code" },
-        { name: "delivery_description" },
-        { name: "account_code" },
-        { name: "account_description" },
-        { name: "branch_code" },
-        { name: "branch_description" },
-        { name: "note_1" },
-      ];
-    }
-    if (
-      sql.includes("COALESCE(progress_step") ||
-      sql.includes("COALESCE(progress_step_description")
-    ) {
-      throw new Error(`Unexpected progression column select: ${sql}`);
-    }
-    if (
-      sql.includes("FROM imported_sales_lines") &&
-      sql.includes("AND document_no = ?")
-    ) {
-      const rows = await originalAll(sql, params);
-      return rows.map(({ progress_step, progress_step_description, ...row }) => row);
-    }
-    return originalAll(sql, params);
-  };
-
   const provider = createSqliteCustomerStatsProvider({
     db,
     sqlDialect: "sqlite",
@@ -467,6 +410,5 @@ test("imported-data provider tolerates sales tables without progression columns"
 
   const payload = await provider.getCustomerStats("C001");
   assert.equal(payload.detailed_orders.length, 1);
-  assert.equal(payload.detailed_orders[0].lines[0].progress_step, "");
-  assert.equal(payload.detailed_orders[0].lines[0].progress_step_description, "");
+  assert.equal(payload.detailed_orders[0].lines[0].code, "P1");
 });

@@ -211,8 +211,6 @@ export function renderSelectedOrderDetails(context) {
             <tr>
               <td>${escapeHtml(line.code)}</td>
               <td>${escapeHtml(line.description)}</td>
-              <td>${escapeHtml(line.progress_step || "-")}</td>
-              <td>${escapeHtml(line.progress_step_description || "-")}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(line.qty))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(line.unit_price))}</td>
               <td class="admin-table-number">${escapeHtml(formatPercentRoundedUp(line.discount_pct))}</td>
@@ -223,7 +221,7 @@ export function renderSelectedOrderDetails(context) {
           .join("")
       : `
         <tr>
-          <td colspan="8" class="admin-table-empty">Η παραγγελία δεν έχει γραμμές ειδών.</td>
+          <td colspan="6" class="admin-table-empty">Η παραγγελία δεν έχει γραμμές ειδών.</td>
         </tr>
       `;
 
@@ -247,8 +245,6 @@ export function renderSelectedOrderDetails(context) {
             <tr>
               <th>Κωδικός</th>
               <th>Περιγραφή</th>
-              <th>Βήμα εξέλιξης</th>
-              <th>Περιγραφή βήματος</th>
               <th class="admin-table-number">Τεμάχια</th>
               <th class="admin-table-number">Τιμή μονάδας</th>
               <th class="admin-table-number">Έκπτωση</th>
