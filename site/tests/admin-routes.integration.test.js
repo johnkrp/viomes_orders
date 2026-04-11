@@ -356,6 +356,21 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
   }
 });
 
+test("admin static modules are served without caching so the UI picks up updates", async () => {
+  const app = await startTestApp();
+
+  try {
+    const response = await fetch(`${app.baseUrl}/admin-render.js`);
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("cache-control") || "", /no-store/i);
+    assert.match(response.headers.get("pragma") || "", /no-cache/i);
+    assert.match(response.headers.get("expires") || "", /0/);
+  } finally {
+    await app.close();
+  }
+});
+
 test("order export endpoint validates payloads and returns an xlsx file for valid requests", async () => {
   const app = await startTestApp();
 

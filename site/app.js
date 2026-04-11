@@ -346,7 +346,13 @@ export function createApp({
   });
 
   app.use((req, res, next) => {
-    if (req.path === "/admin.html" || req.path === "/admin.js" || req.path === "/styles.css") {
+    const isAdminAsset =
+      req.path === "/admin.html" ||
+      req.path === "/admin.js" ||
+      req.path === "/styles.css" ||
+      req.path.endsWith(".js");
+
+    if (isAdminAsset) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
