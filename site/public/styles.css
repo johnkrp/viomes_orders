@@ -1974,7 +1974,7 @@ button.secondary:hover,
 
 .admin-recent-orders-table th:nth-child(1),
 .admin-recent-orders-table td:nth-child(1) {
-  width: 24%;
+  width: 16%;
 }
 
 .admin-recent-orders-table th:nth-child(2),
@@ -2014,11 +2014,19 @@ button.secondary:hover,
   width: 12%;
 }
 
+.admin-recent-orders-table {
+  table-layout: fixed;
+}
+
+.admin-recent-orders-table .admin-sort-btn {
+  width: 100%;
+}
+
 .admin-open-orders-table th:nth-child(1),
 .admin-open-orders-table td:nth-child(1),
 .admin-pre-approval-orders-table th:nth-child(1),
 .admin-pre-approval-orders-table td:nth-child(1) {
-  width: 24%;
+  width: 16%;
 }
 
 .admin-open-orders-table th:nth-child(2),
@@ -2060,7 +2068,7 @@ button.secondary:hover,
 .admin-open-orders-table td:nth-child(7),
 .admin-pre-approval-orders-table th:nth-child(7),
 .admin-pre-approval-orders-table td:nth-child(7) {
-  width: 18%;
+  width: 10%;
 }
 
 .admin-open-orders-table th:nth-child(8),
