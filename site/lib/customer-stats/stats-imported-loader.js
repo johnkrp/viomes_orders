@@ -394,8 +394,7 @@ export async function loadImportedCustomerStats(context) {
             COUNT(*) AS total_lines,
             COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
             COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value,
-            COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
-            COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step
+            COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
           FROM imported_sales_lines
           WHERE customer_code = ?
             AND ${importedExpressions.countInOrderTotals} = 1
@@ -690,7 +689,8 @@ export async function loadImportedCustomerStats(context) {
         COUNT(*) AS total_lines,
         COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
         COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value,
-        COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct
+        COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+        COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step
       FROM imported_sales_lines
       WHERE customer_code = ?
         AND ${importedExpressions.countInOrderTotals} = 1

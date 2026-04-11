@@ -82,7 +82,9 @@ export function buildAverageDaysBetweenOrders(orders) {
   }
 
   if (!gaps.length) return null;
-  return Number((gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length).toFixed(1));
+  return Number(
+    (gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length).toFixed(1),
+  );
 }
 
 export function buildDaysSinceLastOrder(lastOrderDate, now = new Date()) {
@@ -142,18 +144,26 @@ export function normalizeReceivables(receivables) {
     currency: receivables?.currency || "EUR",
     open_balance: asMoney(receivables?.open_balance),
     overdue_balance: asMoney(receivables?.overdue_balance),
-    progressive_credit: asMoney(receivables?.progressive_credit ?? receivables?.total_credit),
+    progressive_credit: asMoney(
+      receivables?.progressive_credit ?? receivables?.total_credit,
+    ),
     items: items.map((item) => ({
       document_no: item.document_no ?? item.document ?? item.id ?? "",
       document_date: item.document_date ?? item.date ?? null,
       reason: item.reason ?? item.description ?? "",
       due_date: item.due_date ?? null,
-      amount_total: asMoney(item.amount_total ?? item.amount ?? item.total_amount ?? item.debit),
+      amount_total: asMoney(
+        item.amount_total ?? item.amount ?? item.total_amount ?? item.debit,
+      ),
       amount_paid: asMoney(item.amount_paid ?? item.paid ?? item.credit ?? 0),
-      open_balance: asMoney(item.open_balance ?? item.balance ?? item.ledger_balance ?? 0),
+      open_balance: asMoney(
+        item.open_balance ?? item.balance ?? item.ledger_balance ?? 0,
+      ),
       debit: asMoney(item.debit),
       credit: asMoney(item.credit),
-      ledger_balance: asMoney(item.ledger_balance ?? item.open_balance ?? item.balance),
+      ledger_balance: asMoney(
+        item.ledger_balance ?? item.open_balance ?? item.balance,
+      ),
       is_overdue: Boolean(item.is_overdue),
       status: item.status || "",
     })),
@@ -164,18 +174,30 @@ export function normalizeStatsPayload(payload, customerCode) {
   const code = ensureCustomerCode(customerCode);
   const customer = payload?.customer;
   if (!customer?.code || !customer?.name) {
-    throw new Error(`Customer stats payload for ${code} is missing customer identity fields.`);
+    throw new Error(
+      `Customer stats payload for ${code} is missing customer identity fields.`,
+    );
   }
 
   const summary = payload?.summary || {};
   const hasRangeSummary =
     payload && Object.prototype.hasOwnProperty.call(payload, "range_summary");
   const rangeSummary = hasRangeSummary ? payload.range_summary || {} : null;
-  const recentOrders = Array.isArray(payload?.recent_orders) ? payload.recent_orders : [];
-  const openOrders = Array.isArray(payload?.open_orders) ? payload.open_orders : [];
-  const preApprovalOrders = Array.isArray(payload?.pre_approval_orders) ? payload.pre_approval_orders : [];
-  const detailedOpenOrders = Array.isArray(payload?.detailed_open_orders) ? payload.detailed_open_orders : [];
-  const detailedPreApprovalOrders = Array.isArray(payload?.detailed_pre_approval_orders)
+  const recentOrders = Array.isArray(payload?.recent_orders)
+    ? payload.recent_orders
+    : [];
+  const openOrders = Array.isArray(payload?.open_orders)
+    ? payload.open_orders
+    : [];
+  const preApprovalOrders = Array.isArray(payload?.pre_approval_orders)
+    ? payload.pre_approval_orders
+    : [];
+  const detailedOpenOrders = Array.isArray(payload?.detailed_open_orders)
+    ? payload.detailed_open_orders
+    : [];
+  const detailedPreApprovalOrders = Array.isArray(
+    payload?.detailed_pre_approval_orders,
+  )
     ? payload.detailed_pre_approval_orders
     : [];
   const now = new Date();
@@ -184,19 +206,27 @@ export function normalizeStatsPayload(payload, customerCode) {
 
   const currentYear = now.getUTCFullYear();
   const fallbackYears = [currentYear - 2, currentYear - 1, currentYear];
-  const providedYearlySeries = Array.isArray(payload?.monthly_sales?.yearly_series)
+  const providedYearlySeries = Array.isArray(
+    payload?.monthly_sales?.yearly_series,
+  )
     ? payload.monthly_sales.yearly_series
     : [
-        { year: currentYear - 1, months: payload?.monthly_sales?.previous_year },
+        {
+          year: currentYear - 1,
+          months: payload?.monthly_sales?.previous_year,
+        },
         { year: currentYear, months: payload?.monthly_sales?.current_year },
       ];
-  const normalizedYearlySeries = normalizeMonthlyYearlySeries(providedYearlySeries, fallbackYears);
+  const normalizedYearlySeries = normalizeMonthlyYearlySeries(
+    providedYearlySeries,
+    fallbackYears,
+  );
   const previousYearSeries =
-    normalizedYearlySeries.find((entry) => entry.year === currentYear - 1)?.months ||
-    normalizeMonthlySeries(payload?.monthly_sales?.previous_year);
+    normalizedYearlySeries.find((entry) => entry.year === currentYear - 1)
+      ?.months || normalizeMonthlySeries(payload?.monthly_sales?.previous_year);
   const currentYearSeries =
-    normalizedYearlySeries.find((entry) => entry.year === currentYear)?.months ||
-    normalizeMonthlySeries(payload?.monthly_sales?.current_year);
+    normalizedYearlySeries.find((entry) => entry.year === currentYear)
+      ?.months || normalizeMonthlySeries(payload?.monthly_sales?.current_year);
 
   return {
     customer: {
@@ -212,16 +242,25 @@ export function normalizeStatsPayload(payload, customerCode) {
       total_orders: totalOrders,
       total_pieces: asInteger(summary.total_pieces),
       total_revenue: totalRevenue,
-      revenue_3m: asMoney(summary.revenue_3m ?? buildRevenueSince(recentOrders, now, 90)),
-      revenue_6m: asMoney(summary.revenue_6m ?? buildRevenueSince(recentOrders, now, 180)),
-      revenue_12m: asMoney(summary.revenue_12m ?? buildRevenueSince(recentOrders, now, 365)),
+      revenue_3m: asMoney(
+        summary.revenue_3m ?? buildRevenueSince(recentOrders, now, 90),
+      ),
+      revenue_6m: asMoney(
+        summary.revenue_6m ?? buildRevenueSince(recentOrders, now, 180),
+      ),
+      revenue_12m: asMoney(
+        summary.revenue_12m ?? buildRevenueSince(recentOrders, now, 365),
+      ),
       average_order_value: asMoney(
-        summary.average_order_value ?? (totalOrders ? totalRevenue / totalOrders : 0),
+        summary.average_order_value ??
+          (totalOrders ? totalRevenue / totalOrders : 0),
       ),
       average_days_between_orders:
-        summary.average_days_between_orders ?? buildAverageDaysBetweenOrders(recentOrders),
+        summary.average_days_between_orders ??
+        buildAverageDaysBetweenOrders(recentOrders),
       days_since_last_order:
-        summary.days_since_last_order ?? buildDaysSinceLastOrder(summary.last_order_date, now),
+        summary.days_since_last_order ??
+        buildDaysSinceLastOrder(summary.last_order_date, now),
       last_order_date: summary.last_order_date || null,
     },
     range_summary: hasRangeSummary
@@ -237,7 +276,8 @@ export function normalizeStatsPayload(payload, customerCode) {
       yearly_series: normalizedYearlySeries,
     },
     product_sales: {
-      metric: payload?.product_sales?.metric === "pieces" ? "pieces" : "revenue",
+      metric:
+        payload?.product_sales?.metric === "pieces" ? "pieces" : "revenue",
       items: Array.isArray(payload?.product_sales?.items)
         ? payload.product_sales.items.map(productSalesRow)
         : [],

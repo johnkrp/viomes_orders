@@ -2,27 +2,34 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import ExcelJS from "exceljs";
 import express from "express";
+import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { spawn } from "node:child_process";
-import { hashPassword, newSessionToken, verifyPassword } from "./lib/admin-auth.js";
+import {
+  hashPassword,
+  newSessionToken,
+  verifyPassword,
+} from "./lib/admin-auth.js";
 import { searchImportedCustomers } from "./lib/admin-customer-search.js";
 import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
 import { openDatabase } from "./lib/db/client.js";
 import { initDatabaseSchema } from "./lib/db/init-schema.js";
-import { buildCorsOriginDelegate, buildSessionCookieOptions } from "./lib/http-security.js";
 import {
-  registerAdminAuthRoutes,
-  registerAdminCustomerRoutes,
-  registerAdminImportRoutes,
-} from "./lib/routes/admin.js";
-import { registerPublicRoutes } from "./lib/routes/public.js";
+  buildCorsOriginDelegate,
+  buildSessionCookieOptions,
+} from "./lib/http-security.js";
 import {
   ensureImportedCustomerBranchProjection,
   getImportedSalesProjectionHealth,
   IMPORTED_SALES_ARCHITECTURE,
   LATEST_IMPORT_RUN_SQL,
 } from "./lib/imported-sales.js";
+import {
+  registerAdminAuthRoutes,
+  registerAdminCustomerRoutes,
+  registerAdminImportRoutes,
+} from "./lib/routes/admin.js";
+import { registerPublicRoutes } from "./lib/routes/public.js";
 import { validateRuntimeConfig } from "./lib/runtime-config.js";
 
 export const APP_NAME = "VIOMES Order Form API";
@@ -34,16 +41,35 @@ const ADMIN_IMPORT_UPLOAD_MAX_BYTES = 250 * 1024 * 1024;
 const ADMIN_IMPORT_OUTPUT_SNIPPET_MAX = 4000;
 
 const ORDER_EXPORT_SHEET_COLUMNS = [
-  { header: "\u039a\u03a9\u0394\u0399\u039a\u039f\u03a3", key: "code", width: 15 },
-  { header: "\u03a0\u0395\u03a1\u0399\u0393\u03a1\u0391\u03a6\u0397", key: "description", width: 45 },
+  {
+    header: "\u039a\u03a9\u0394\u0399\u039a\u039f\u03a3",
+    key: "code",
+    width: 15,
+  },
+  {
+    header: "\u03a0\u0395\u03a1\u0399\u0393\u03a1\u0391\u03a6\u0397",
+    key: "description",
+    width: 45,
+  },
   { header: "\u03a7\u03a1\u03a9\u039c\u0391", key: "color", width: 18 },
-  { header: "\u03a3\u03a5\u03a3\u039a\u0395\u03a5\u0391\u03a3\u0399\u0395\u03a3", key: "packs", width: 12 },
-  { header: "\u03a4\u0395\u039c\u0391\u03a7\u0399\u0391", key: "qty", width: 10 },
+  {
+    header:
+      "\u03a3\u03a5\u03a3\u039a\u0395\u03a5\u0391\u03a3\u0399\u0395\u03a3",
+    key: "packs",
+    width: 12,
+  },
+  {
+    header: "\u03a4\u0395\u039c\u0391\u03a7\u0399\u0391",
+    key: "qty",
+    width: 10,
+  },
   { header: "\u039f\u0393\u039a\u039f\u03a3 (L)", key: "vol", width: 10 },
 ];
 
 function sanitizeExportText(value, maxLength) {
-  return String(value ?? "").trim().slice(0, maxLength);
+  return String(value ?? "")
+    .trim()
+    .slice(0, maxLength);
 }
 
 function validateEmailAddress(value) {
@@ -60,9 +86,18 @@ function validateNonNegativeNumber(value) {
 }
 
 function validateOrderExportRequest(body) {
-  const customerName = sanitizeExportText(body?.customerName, ORDER_EXPORT_MAX_TEXT_LENGTH);
-  const customerEmail = sanitizeExportText(body?.customerEmail, ORDER_EXPORT_MAX_TEXT_LENGTH);
-  const comment = sanitizeExportText(body?.comment, ORDER_EXPORT_MAX_COMMENT_LENGTH);
+  const customerName = sanitizeExportText(
+    body?.customerName,
+    ORDER_EXPORT_MAX_TEXT_LENGTH,
+  );
+  const customerEmail = sanitizeExportText(
+    body?.customerEmail,
+    ORDER_EXPORT_MAX_TEXT_LENGTH,
+  );
+  const comment = sanitizeExportText(
+    body?.comment,
+    ORDER_EXPORT_MAX_COMMENT_LENGTH,
+  );
   const items = Array.isArray(body?.items) ? body.items : null;
 
   if (!items || !items.length) {
@@ -72,7 +107,9 @@ function validateOrderExportRequest(body) {
   }
 
   if (items.length > ORDER_EXPORT_MAX_ITEMS) {
-    const error = new Error(`Order export supports up to ${ORDER_EXPORT_MAX_ITEMS} items.`);
+    const error = new Error(
+      `Order export supports up to ${ORDER_EXPORT_MAX_ITEMS} items.`,
+    );
     error.status = 400;
     throw error;
   }
@@ -92,7 +129,8 @@ function validateOrderExportRequest(body) {
         ? ""
         : Number(item.packs);
     const qty = Number(item?.qty);
-    const volumeLiters = item?.volume_liters === undefined ? 0 : Number(item.volume_liters);
+    const volumeLiters =
+      item?.volume_liters === undefined ? 0 : Number(item.volume_liters);
 
     if (!code) {
       const error = new Error(`Item ${index + 1} is missing a product code.`);
@@ -113,7 +151,9 @@ function validateOrderExportRequest(body) {
     }
 
     if (packs !== "" && !validatePositiveInteger(packs)) {
-      const error = new Error(`Item ${index + 1} has an invalid package count.`);
+      const error = new Error(
+        `Item ${index + 1} has an invalid package count.`,
+      );
       error.status = 400;
       throw error;
     }
@@ -159,7 +199,9 @@ function sanitizeUploadedFilename(value, fallbackName) {
 }
 
 function validateImportUploadFilename(uploadTarget, filename) {
-  const normalized = String(filename || "").trim().toLowerCase();
+  const normalized = String(filename || "")
+    .trim()
+    .toLowerCase();
   if (!normalized) {
     const error = new Error("Upload filename is required.");
     error.status = 400;
@@ -176,20 +218,26 @@ function validateImportUploadFilename(uploadTarget, filename) {
   const ledgerNames = new Set(["yearly-receivables.csv", "new-kart.csv"]);
 
   if (uploadTarget.kind === "sales" && ledgerNames.has(normalized)) {
-    const error = new Error(`Filename "${filename}" looks like a ledger upload. Use the ledger dataset instead.`);
+    const error = new Error(
+      `Filename "${filename}" looks like a ledger upload. Use the ledger dataset instead.`,
+    );
     error.status = 400;
     throw error;
   }
 
   if (uploadTarget.kind === "ledger" && salesNames.has(normalized)) {
-    const error = new Error(`Filename "${filename}" looks like a sales upload. Use the sales dataset instead.`);
+    const error = new Error(
+      `Filename "${filename}" looks like a sales upload. Use the sales dataset instead.`,
+    );
     error.status = 400;
     throw error;
   }
 }
 
 function resolveImportUploadTarget(datasetName) {
-  const normalized = String(datasetName || "").trim().toLowerCase();
+  const normalized = String(datasetName || "")
+    .trim()
+    .toLowerCase();
   if (["sales", "factuals", "yearly-factuals"].includes(normalized)) {
     return {
       kind: "sales",
@@ -219,9 +267,16 @@ function trimCommandOutput(text, maxLength = ADMIN_IMPORT_OUTPUT_SNIPPET_MAX) {
   return normalized.slice(normalized.length - maxLength);
 }
 
-export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir, backendDir } = {}) {
+export function buildRuntimeSettings({
+  env = process.env,
+  publicDir,
+  imagesDir,
+  backendDir,
+} = {}) {
   const port = Number(env.PORT || 3001);
-  const nodeEnv = String(env.NODE_ENV || "development").trim().toLowerCase();
+  const nodeEnv = String(env.NODE_ENV || "development")
+    .trim()
+    .toLowerCase();
   const adminUsernameEnv = String(env.ADMIN_USERNAME || "").trim();
   const adminPasswordEnv = String(env.ADMIN_PASSWORD || "");
   const defaultAdminPassword = "change-me-now";
@@ -237,7 +292,9 @@ export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir, 
     defaultAdminPassword,
     sessionCookieName: env.SESSION_COOKIE_NAME || "viomes_admin_session",
     sessionMaxAgeSeconds: Number(env.SESSION_MAX_AGE_SECONDS || 28800),
-    syncAdminPasswordOnStartup: String(env.SYNC_ADMIN_PASSWORD_ON_STARTUP || "0")
+    syncAdminPasswordOnStartup: String(
+      env.SYNC_ADMIN_PASSWORD_ON_STARTUP || "0",
+    )
       .trim()
       .toLowerCase(),
     adminUploadApiKey: String(env.ADMIN_UPLOAD_API_KEY || "").trim(),
@@ -249,7 +306,9 @@ export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir, 
     publicDir,
     imagesDir,
     siteDir: path.resolve(publicDir, ".."),
-    backendDir: backendDir ? path.resolve(backendDir) : path.resolve(publicDir, "..", "..", "backend"),
+    backendDir: backendDir
+      ? path.resolve(backendDir)
+      : path.resolve(publicDir, "..", "..", "backend"),
     corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS,
   };
 }
@@ -257,7 +316,10 @@ export function buildRuntimeSettings({ env = process.env, publicDir, imagesDir, 
 function shouldUseSecureCookie(req, cookieSecureMode) {
   if (cookieSecureMode === "off") return false;
   if (cookieSecureMode === "on") return true;
-  return req.secure || String(req.headers["x-forwarded-proto"] || "").includes("https");
+  return (
+    req.secure ||
+    String(req.headers["x-forwarded-proto"] || "").includes("https")
+  );
 }
 
 function shouldSyncAdminPasswordOnStartup(value) {
@@ -283,7 +345,8 @@ export async function initializeRuntimeState({ settings }) {
   const dbClient = await openDatabase({ env: settings.env });
   const db = dbClient;
   await initDatabaseSchema({ db, kind: dbClient.kind });
-  const branchProjectionRepair = await ensureImportedCustomerBranchProjection(db);
+  const branchProjectionRepair =
+    await ensureImportedCustomerBranchProjection(db);
   if (branchProjectionRepair.repaired) {
     console.log(
       `Backfilled imported_customer_branches (${branchProjectionRepair.branch_count} rows) from imported_sales_lines during startup.`,
@@ -315,7 +378,9 @@ export async function initializeRuntimeState({ settings }) {
       `,
       [hashPassword(settings.adminPassword), admin.id],
     );
-    console.log(`Admin password synchronized for user "${settings.adminUsername}" during startup.`);
+    console.log(
+      `Admin password synchronized for user "${settings.adminUsername}" during startup.`,
+    );
   }
 
   const customerStatsProvider = createCustomerStatsProvider({
@@ -353,19 +418,21 @@ export function createApp({
       req.path.endsWith(".js");
 
     if (isAdminAsset) {
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, proxy-revalidate",
+      );
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
     }
     next();
   });
 
-  app.use(
-    (req, res, next) =>
-      cors({
-        origin: (origin, callback) => corsPolicy.origin(origin, req, callback),
-        credentials: true,
-      })(req, res, next),
+  app.use((req, res, next) =>
+    cors({
+      origin: (origin, callback) => corsPolicy.origin(origin, req, callback),
+      credentials: true,
+    })(req, res, next),
   );
   app.use(express.json());
   app.use(cookieParser());
@@ -373,8 +440,13 @@ export function createApp({
   app.use(express.static(settings.publicDir));
 
   async function getAuthenticatedAdmin(req) {
-    const bearerToken = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
-    if (settings.adminUploadApiKey && bearerToken === settings.adminUploadApiKey) {
+    const bearerToken = String(req.headers.authorization || "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (
+      settings.adminUploadApiKey &&
+      bearerToken === settings.adminUploadApiKey
+    ) {
       return { id: null, username: "upload-api" };
     }
 
@@ -411,7 +483,12 @@ export function createApp({
     }
   }
 
-  async function runAdminImport({ uploadTarget, filePath, originalFilename, adminUsername }) {
+  async function runAdminImport({
+    uploadTarget,
+    filePath,
+    originalFilename,
+    adminUsername,
+  }) {
     const args = formatImportCommandArgs({
       [uploadTarget.importerFlag]: filePath,
       "mysql-host": settings.env.MYSQL_HOST,
@@ -422,10 +499,21 @@ export function createApp({
     });
 
     if (typeof importRunner === "function") {
-      return importRunner({ args, settings, uploadTarget, filePath, originalFilename, adminUsername });
+      return importRunner({
+        args,
+        settings,
+        uploadTarget,
+        filePath,
+        originalFilename,
+        adminUsername,
+      });
     }
 
-    const scriptPath = path.join(settings.siteDir, "scripts", "run-entersoft-import.js");
+    const scriptPath = path.join(
+      settings.siteDir,
+      "scripts",
+      "run-entersoft-import.js",
+    );
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [scriptPath, ...args], {
         cwd: settings.siteDir,
@@ -443,7 +531,13 @@ export function createApp({
       });
       child.on("error", reject);
       child.on("close", (code, signal) => {
-        resolve({ code: code ?? 1, signal: signal || null, stdout, stderr, args });
+        resolve({
+          code: code ?? 1,
+          signal: signal || null,
+          stdout,
+          stderr,
+          args,
+        });
       });
     });
   }
@@ -503,7 +597,8 @@ export function createApp({
 
   app.post("/api/order/export-xlsx", async (req, res) => {
     try {
-      const { customerName, customerEmail, comment, items } = validateOrderExportRequest(req.body);
+      const { customerName, customerEmail, comment, items } =
+        validateOrderExportRequest(req.body);
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Order");
@@ -530,7 +625,8 @@ export function createApp({
         worksheet.columns.map((column) => column.header),
       );
       worksheet.getRow(5).font = { bold: true };
-      worksheet.getCell("A1").value = "\u03a0\u03b5\u03bb\u03ac\u03c4\u03b7\u03c2:";
+      worksheet.getCell("A1").value =
+        "\u03a0\u03b5\u03bb\u03ac\u03c4\u03b7\u03c2:";
       worksheet.getCell("A3").value = "\u03a3\u03c7\u03cc\u03bb\u03b9\u03b1:";
       ORDER_EXPORT_SHEET_COLUMNS.forEach((column, index) => {
         worksheet.getRow(5).getCell(index + 1).value = column.header;
@@ -554,11 +650,16 @@ export function createApp({
         "Content-Type",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
-      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`,
+      );
       res.send(Buffer.from(buffer));
     } catch (error) {
       logRouteError(error);
-      res.status(error.status || 500).json({ error: error.message || String(error) });
+      res
+        .status(error.status || 500)
+        .json({ error: error.message || String(error) });
     }
   });
 
