@@ -262,6 +262,7 @@ export function normalizeStatsPayload(payload, customerCode) {
       total_pieces: asInteger(order.total_pieces),
       total_net_value: asMoney(order.total_net_value),
       average_discount_pct: asMoney(order.average_discount_pct),
+      progress_step: order.progress_step || "",
     })),
     open_orders: openOrders.map((order) => ({
       order_id: order.order_id,
@@ -273,6 +274,7 @@ export function normalizeStatsPayload(payload, customerCode) {
       total_pieces: asInteger(order.total_pieces),
       total_net_value: asMoney(order.total_net_value),
       average_discount_pct: asMoney(order.average_discount_pct),
+      progress_step: order.progress_step || "",
     })),
     pre_approval_orders: preApprovalOrders.map((order) => ({
       order_id: order.order_id,
@@ -284,6 +286,7 @@ export function normalizeStatsPayload(payload, customerCode) {
       total_pieces: asInteger(order.total_pieces),
       total_net_value: asMoney(order.total_net_value),
       average_discount_pct: asMoney(order.average_discount_pct),
+      progress_step: order.progress_step || "",
     })),
     detailed_orders: Array.isArray(payload?.detailed_orders)
       ? payload.detailed_orders.map((order) => ({

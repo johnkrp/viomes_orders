@@ -86,6 +86,7 @@ function mapRecentOrders(rows) {
     average_discount_pct: asMoney(
       row.average_discount_pct ?? row.discount_pct ?? row.avg_discount_pct ?? 0,
     ),
+    progress_step: row.progress_step ?? row.progress_step_description ?? "",
   }));
 }
 
