@@ -34,3 +34,22 @@ test("recent orders table sorting respects created_at desc", () => {
   const items = getRecentOrdersForTable(context);
   assert.deepEqual(items.map((item) => item.order_id), ["2", "1"]);
 });
+
+test("recent orders table prefers recent_orders payload when available", () => {
+  const context = {
+    state: {
+      currentDetailedOrders: [
+        { order_id: "1", created_at: "2026-03-10", ordered_at: "2026-03-09", total_lines: 1, total_pieces: 1, total_net_value: 1, average_discount_pct: 0, progress_step: "-" },
+      ],
+      lastRenderedStatsPayload: {
+        recent_orders: [
+          { order_id: "1", created_at: "2026-03-10", ordered_at: "2026-03-09", total_lines: 1, total_pieces: 1, total_net_value: 1, average_discount_pct: 0, progress_step: "5. ΑΠΕΣΤΑΛΗ" },
+        ],
+      },
+      recentOrdersSort: { key: "created_at", direction: "desc" },
+    },
+  };
+
+  const items = getRecentOrdersForTable(context);
+  assert.equal(items[0].progress_step, "5. ΑΠΕΣΤΑΛΗ");
+});

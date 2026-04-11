@@ -69,7 +69,11 @@ export function filterProductItems(items, filters = {}) {
 
 export function getRecentOrdersForTable(context) {
   const sortState = context.state.recentOrdersSort;
-  return [...context.state.currentDetailedOrders].sort((a, b) => {
+  const sourceOrders = Array.isArray(context.state.lastRenderedStatsPayload?.recent_orders)
+    ? context.state.lastRenderedStatsPayload.recent_orders
+    : context.state.currentDetailedOrders;
+
+  return [...sourceOrders].sort((a, b) => {
     const key = sortState.key;
     let compare = 0;
 
