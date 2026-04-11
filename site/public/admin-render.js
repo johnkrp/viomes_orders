@@ -606,6 +606,7 @@ export function renderRecentOrdersTable(context) {
               <td>${escapeHtml(context.formatDisplayOrderId(item.order_id))}</td>
               <td>${escapeHtml(formatDate(item.ordered_at || item.created_at))}</td>
               <td>${escapeHtml(formatDate(item.created_at))}</td>
+              <td>${escapeHtml(item.progress_step || "-")}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_lines))}</td>
               <td class="admin-table-number">${escapeHtml(formatNumber(item.total_pieces))}</td>
               <td class="admin-table-number">${escapeHtml(formatMoney(item.total_net_value))}</td>
@@ -625,7 +626,7 @@ export function renderRecentOrdersTable(context) {
         .join("")
     : `
         <tr>
-          <td colspan="8" class="admin-table-empty">Δεν βρέθηκαν πρόσφατες εκτελεσμένες παραγγελίες.</td>
+          <td colspan="9" class="admin-table-empty">Δεν βρέθηκαν πρόσφατες εκτελεσμένες παραγγελίες.</td>
         </tr>
       `;
 
