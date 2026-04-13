@@ -2054,7 +2054,7 @@ button.secondary:hover,
 .admin-open-orders-table td:nth-child(5),
 .admin-pre-approval-orders-table th:nth-child(5),
 .admin-pre-approval-orders-table td:nth-child(5) {
-  width: 12%;
+  width: 8%;
 }
 
 .admin-open-orders-table th:nth-child(6),
