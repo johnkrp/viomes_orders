@@ -2296,6 +2296,7 @@ button.secondary:hover,
   }
 
   .admin-results-grid {
+    grid-template-columns: 1fr;
     gap: 0.85rem;
   }
 
