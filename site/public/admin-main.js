@@ -73,6 +73,7 @@ import {
   escapeHtml,
   formatDate,
   normalizeSalesTimeRange,
+  matchesBranchSearch,
   parseIsoDate,
   sleep,
 } from "./admin-utils.js";
@@ -450,10 +451,7 @@ function focusPrimarySearchField() {
 }
 
 function filterBranches(term, selectedBranchCode = state.currentBranchCode) {
-  const normalizedTerm = String(term || "")
-    .trim()
-    .toLocaleLowerCase("el-GR");
-  if (!normalizedTerm) {
+  if (!String(term || "").trim()) {
     renderFilteredBranchOptions(
       state.currentAvailableBranches,
       selectedBranchCode,
@@ -462,13 +460,7 @@ function filterBranches(term, selectedBranchCode = state.currentBranchCode) {
   }
 
   const filtered = state.currentAvailableBranches.filter((branch) => {
-    const code = String(branch.branch_code || "").toLocaleLowerCase("el-GR");
-    const description = String(
-      branch.branch_description || "",
-    ).toLocaleLowerCase("el-GR");
-    return (
-      code.includes(normalizedTerm) || description.includes(normalizedTerm)
-    );
+    return matchesBranchSearch(branch, term, getBranchOptionLabel);
   });
 
   renderFilteredBranchOptions(filtered, selectedBranchCode);

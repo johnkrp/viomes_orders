@@ -52,6 +52,66 @@ export function normalizeSalesTimeRange(value) {
   return allowedValues.has(normalized) ? normalized : DEFAULT_SALES_TIME_RANGE;
 }
 
+const GREEK_TO_LATIN_MAP = {
+  α: "a",
+  β: "v",
+  γ: "g",
+  δ: "d",
+  ε: "e",
+  ζ: "z",
+  η: "i",
+  θ: "th",
+  ι: "i",
+  κ: "k",
+  λ: "l",
+  μ: "m",
+  ν: "n",
+  ξ: "x",
+  ο: "o",
+  π: "p",
+  ρ: "r",
+  σ: "s",
+  ς: "s",
+  τ: "t",
+  υ: "y",
+  φ: "f",
+  χ: "x",
+  ψ: "ps",
+  ω: "o",
+};
+
+export function normalizeBranchSearchText(value) {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLocaleLowerCase("el-GR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ς/g, "σ");
+
+  return [...normalized]
+    .map((char) => GREEK_TO_LATIN_MAP[char] || char)
+    .join("")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function matchesBranchSearch(branch, term, getBranchOptionLabel = null) {
+  const normalizedTerm = normalizeBranchSearchText(term);
+  if (!normalizedTerm) return true;
+
+  const label =
+    typeof getBranchOptionLabel === "function" ? getBranchOptionLabel(branch) : "";
+  const searchableValues = [
+    branch?.branch_code || "",
+    branch?.branch_description || "",
+    label,
+  ];
+
+  return searchableValues.some((candidate) =>
+    normalizeBranchSearchText(candidate).includes(normalizedTerm),
+  );
+}
+
 export function formatMoney(value) {
   return new Intl.NumberFormat("el-GR", {
     style: "currency",
