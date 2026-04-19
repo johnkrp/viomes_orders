@@ -195,8 +195,9 @@ export async function loadImportedCustomerStats(context) {
             COALESCE(SUM(total_net_value), 0) AS total_revenue
           FROM imported_orders
           WHERE customer_code = ?
+            ${importedOrdersDateWindowFilter.clause}
         `,
-        [code],
+        [code, ...importedOrdersDateWindowFilter.params],
       )
     : await db.get(
         `

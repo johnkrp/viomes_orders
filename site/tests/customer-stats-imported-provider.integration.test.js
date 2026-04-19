@@ -382,6 +382,16 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(allTimePayload.product_sales.items.length, 2);
     assert.equal(allTimePayload.recent_orders.length, 2);
     assert.equal(allTimePayload.monthly_sales.previous_year[11].revenue, 70);
+    assert.equal(allTimePayload.range_summary.total_orders, 2);
+    assert.equal(allTimePayload.range_summary.total_pieces, 15);
+    assert.equal(allTimePayload.range_summary.total_revenue, 245.6);
+
+    const lastYearPayload = await provider.getCustomerStats("C001", {
+      salesTimeRange: "last_year",
+    });
+    assert.equal(lastYearPayload.range_summary.total_orders, 1);
+    assert.equal(lastYearPayload.range_summary.total_pieces, 5);
+    assert.equal(lastYearPayload.range_summary.total_revenue, 70);
 
     const scopedPayload = await provider.getCustomerStats("C001", {
       branchScopeDescription: "Branch 1",
