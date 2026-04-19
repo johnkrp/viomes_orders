@@ -39,6 +39,7 @@ export function saveAdminState(elements, state) {
       currentBranchCode: state.currentBranchCode,
       currentAvailableBranches: state.currentAvailableBranches,
       currentSalesTimeRange: state.currentSalesTimeRange,
+      currentCardTimeRanges: state.currentCardTimeRanges,
       currentProductSalesPage: state.currentProductSalesPage,
       currentReceivablesPage: state.currentReceivablesPage,
       currentRecentOrdersPage: state.currentRecentOrdersPage,

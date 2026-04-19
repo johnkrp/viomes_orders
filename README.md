@@ -31,6 +31,14 @@ The active production path is Node + MySQL. The old FastAPI code now lives under
   - MySQL/MariaDB
   - current real host: `213.158.90.203`
 
+### Live Deployment
+
+- Site: https://orders.viomes.gr
+- Hosted on shared Plesk
+- Deployment repo: https://github.com/johnkrp/viomes_orders.git
+- Live DB: host 213.158.90.203, port 3306, database admin_viomes_orders, user admin_viomes_app
+- After each repo change, pull/deploy so the live site stays current
+
 Core data layout:
 
 - operational:

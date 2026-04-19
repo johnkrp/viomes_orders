@@ -108,6 +108,11 @@ const state = {
   openOrdersSort: { key: "created_at", direction: "desc" },
   preApprovalOrdersSort: { key: "created_at", direction: "desc" },
   currentProductSalesFilters: { code: "", description: "" },
+  currentCardTimeRanges: {
+    recent_executed: DEFAULT_SALES_TIME_RANGE,
+    total_pieces: DEFAULT_SALES_TIME_RANGE,
+    total_revenue: DEFAULT_SALES_TIME_RANGE,
+  },
   currentCustomerCode: null,
   currentBranchCode: "",
   currentAvailableBranches: [],
@@ -158,6 +163,10 @@ function getAllTimeRangeControls() {
   );
 }
 
+function getCardTimeRangeControls() {
+  return Array.from(document.querySelectorAll(".card-time-range-control"));
+}
+
 function buildRangeSummaryKey(statsKey, range) {
   return `${statsKey}::${normalizeSalesTimeRange(range)}`;
 }
@@ -182,6 +191,18 @@ function syncSalesTimeRangeControls(value) {
   const normalizedValue = normalizeSalesTimeRange(value);
   getSalesTimeRangeControls().forEach((control) => {
     control.value = normalizedValue;
+  });
+}
+
+function syncCardTimeRangeControls(values = state.currentCardTimeRanges) {
+  getCardTimeRangeControls().forEach((control) => {
+    const target = String(control.dataset.rangeTarget || "").trim();
+    if (!target) return;
+    const normalizedValue = normalizeSalesTimeRange(
+      values?.[target] || control.value || DEFAULT_SALES_TIME_RANGE,
+    );
+    control.value = normalizedValue;
+    state.currentCardTimeRanges[target] = normalizedValue;
   });
 }
 
@@ -360,10 +381,19 @@ async function setStatsLoading(
 }
 
 function getCardTimeRangeValue(target) {
+  const normalizedTarget = String(target || "").trim();
+  if (normalizedTarget && state.currentCardTimeRanges[normalizedTarget]) {
+    return normalizeSalesTimeRange(state.currentCardTimeRanges[normalizedTarget]);
+  }
+
   const control = document.querySelector(
     `.card-time-range-control[data-range-target="${target}"]`,
   );
-  return normalizeSalesTimeRange(control?.value || DEFAULT_SALES_TIME_RANGE);
+  const normalizedValue = normalizeSalesTimeRange(
+    control?.value || DEFAULT_SALES_TIME_RANGE,
+  );
+  if (normalizedTarget) state.currentCardTimeRanges[normalizedTarget] = normalizedValue;
+  return normalizedValue;
 }
 
 function filterOrdersByRange(orders, range, now = new Date()) {
@@ -553,6 +583,11 @@ function restoreAdminStateView(snapshot) {
     snapshot.currentSalesTimeRange || DEFAULT_SALES_TIME_RANGE,
   );
   syncSalesTimeRangeControls(state.currentSalesTimeRange);
+  state.currentCardTimeRanges = {
+    ...state.currentCardTimeRanges,
+    ...(snapshot.currentCardTimeRanges || {}),
+  };
+  syncCardTimeRangeControls(state.currentCardTimeRanges);
   setSearchPanelCollapsed(Boolean(snapshot.searchPanelCollapsed));
 
   if (
@@ -882,6 +917,7 @@ const moduleContext = {
 };
 
 normalizeSalesTimeRangeControlsText();
+syncCardTimeRangeControls();
 
 elements.loginForm?.addEventListener("submit", handleLogin);
 elements.logoutBtn?.addEventListener("click", handleLogout);
@@ -955,9 +991,13 @@ getSalesTimeRangeControls().forEach((control) => {
 document.querySelectorAll(".card-time-range-control").forEach((control) => {
   control.addEventListener("change", () => {
     if (!state.lastRenderedStatsPayload) return;
+    const target = String(control.dataset.rangeTarget || "").trim();
     const selectedRange = normalizeSalesTimeRange(
       control.value || DEFAULT_SALES_TIME_RANGE,
     );
+    if (target) {
+      state.currentCardTimeRanges[target] = selectedRange;
+    }
     if (state.currentCustomerCode) {
       void fetchRangeSummary(
         selectedRange,
@@ -966,7 +1006,6 @@ document.querySelectorAll(".card-time-range-control").forEach((control) => {
         state.currentCustomerSearchFilters,
       );
     }
-    renderStats(state.lastRenderedStatsPayload);
   });
 });
 
