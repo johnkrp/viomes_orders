@@ -225,12 +225,24 @@ export function renderSelectedOrderDetails(context) {
         </tr>
       `;
 
+  const orderMetaParts = [];
+  if (selectedOrder.branch_code) {
+    orderMetaParts.push(`Υποκατάστημα: ${selectedOrder.branch_code}`);
+  }
+  if (selectedOrder.branch_description) {
+    orderMetaParts.push(selectedOrder.branch_description);
+  }
+  if (selectedOrder.document_type) {
+    orderMetaParts.push(`Τύπος: ${selectedOrder.document_type}`);
+  }
+
   context.elements.detailedOrdersList.innerHTML = `
     <article class="admin-order-card admin-order-card-active">
       <div class="admin-order-head">
         <div>
           <h3>${escapeHtml(context.formatDisplayOrderId(selectedOrder.order_id))}</h3>
           <p class="admin-panel-note">Παραγγελία: ${escapeHtml(formatDate(selectedOrder.ordered_at || selectedOrder.created_at))} | Τιμολόγιο: ${escapeHtml(formatDate(selectedOrder.created_at))}</p>
+          ${orderMetaParts.length ? `<p class="admin-panel-note">${escapeHtml(orderMetaParts.join(" | "))}</p>` : ""}
         </div>
         <div class="admin-order-summary">
           <strong>${escapeHtml(formatMoney(selectedOrder.total_net_value))}</strong>

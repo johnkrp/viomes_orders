@@ -48,6 +48,21 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
           average_discount_pct: 0,
         },
       ],
+      detailed_orders: [
+        {
+          order_id: "A",
+          created_at: "2026-02-15",
+          ordered_at: "2026-02-14",
+          sent_at: "2026-02-16",
+          branch_code: "B1",
+          branch_description: "Branch 1",
+          total_lines: 1,
+          total_pieces: 2,
+          total_net_value: 50,
+          average_discount_pct: 0,
+          lines: [],
+        },
+      ],
     },
     "C001",
   );
@@ -96,4 +111,6 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
   });
   assert.equal(payload.recent_orders[0].ordered_at, "2026-02-14");
   assert.equal(payload.recent_orders[0].sent_at, "2026-02-16");
+  assert.equal(payload.detailed_orders[0].branch_code, "B1");
+  assert.equal(payload.detailed_orders[0].branch_description, "Branch 1");
 });
