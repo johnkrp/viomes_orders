@@ -48,14 +48,16 @@ export function asRoundedUpPercent(value) {
 }
 
 export function buildDetailedOrder(order, lines, overrides = {}) {
+  const firstLine = Array.isArray(lines) && lines.length ? lines[0] : null;
   return {
     order_id: order.order_id,
     document_type: overrides.document_type ?? order.document_type,
     created_at: order.created_at,
     ordered_at: order.ordered_at || order.created_at,
     sent_at: order.sent_at || null,
-    branch_code: order.branch_code || null,
-    branch_description: order.branch_description || null,
+    branch_code: order.branch_code || firstLine?.branch_code || null,
+    branch_description:
+      order.branch_description || firstLine?.branch_description || null,
     notes: overrides.notes ?? order.notes ?? "",
     total_lines: asInteger(order.total_lines),
     total_pieces: asInteger(order.total_pieces),

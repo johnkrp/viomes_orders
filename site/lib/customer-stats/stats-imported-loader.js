@@ -274,8 +274,6 @@ export async function loadImportedCustomerStats(context) {
         AND ${importedExpressions.analyticsFilter}${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
       GROUP BY item_code
       ORDER BY item_code ASC
-              COALESCE(MAX(branch_code), '') AS branch_code,
-              COALESCE(MAX(branch_description), '') AS branch_description,
     `,
     [
       code,
@@ -469,8 +467,6 @@ export async function loadImportedCustomerStats(context) {
             pending.created_at,
             pending.ordered_at,
             pending.sent_at,
-            pending.branch_code,
-            pending.branch_description,
             pending.total_lines,
             pending.total_pieces,
             pending.total_net_value,
@@ -485,8 +481,6 @@ export async function loadImportedCustomerStats(context) {
               order_date AS created_at,
               MAX(ordered_at) AS ordered_at,
               MAX(sent_at) AS sent_at,
-              COALESCE(MAX(branch_code), '') AS branch_code,
-              COALESCE(MAX(branch_description), '') AS branch_description,
               COUNT(*) AS total_lines,
               COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
               COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
@@ -579,8 +573,6 @@ export async function loadImportedCustomerStats(context) {
         pending.created_at,
         pending.ordered_at,
         pending.sent_at,
-        pending.branch_code,
-        pending.branch_description,
         pending.total_lines,
         pending.total_pieces,
         pending.total_net_value,
@@ -595,8 +587,6 @@ export async function loadImportedCustomerStats(context) {
           order_date AS created_at,
           MAX(ordered_at) AS ordered_at,
           MAX(sent_at) AS sent_at,
-          COALESCE(MAX(branch_code), '') AS branch_code,
-          COALESCE(MAX(branch_description), '') AS branch_description,
           COUNT(*) AS total_lines,
           COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
           COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
@@ -696,8 +686,6 @@ export async function loadImportedCustomerStats(context) {
         order_date AS created_at,
         MAX(ordered_at) AS ordered_at,
         MAX(sent_at) AS sent_at,
-        COALESCE(MAX(branch_code), '') AS branch_code,
-        COALESCE(MAX(branch_description), '') AS branch_description,
         COUNT(*) AS total_lines,
         COALESCE(SUM(${importedExpressions.effectivePieces}), 0) AS total_pieces,
         COALESCE(SUM(${importedExpressions.effectiveRevenue}), 0) AS total_net_value,
@@ -725,6 +713,8 @@ export async function loadImportedCustomerStats(context) {
         SELECT
           item_code AS code,
           item_description AS description,
+          branch_code,
+          branch_description,
           ${importedExpressions.effectivePieces} AS qty,
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
@@ -758,6 +748,8 @@ export async function loadImportedCustomerStats(context) {
         SELECT
           item_code AS code,
           item_description AS description,
+          branch_code,
+          branch_description,
           COALESCE(qty_base, 0) AS qty,
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
@@ -795,6 +787,8 @@ export async function loadImportedCustomerStats(context) {
         SELECT
           item_code AS code,
           item_description AS description,
+          branch_code,
+          branch_description,
           COALESCE(qty_base, 0) AS qty,
           unit_price,
           ${IMPORTED_DISCOUNT_PERCENT_EXPRESSION} AS discount_pct,
