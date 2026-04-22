@@ -129,7 +129,7 @@ export function formatPercentRoundedUp(value) {
   if (value === null || value === undefined || value === "") return "-";
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return "-";
-  return `${Math.ceil(numericValue)}%`;
+  return `${Math.round(numericValue)}%`;
 }
 
 export function formatDays(value) {

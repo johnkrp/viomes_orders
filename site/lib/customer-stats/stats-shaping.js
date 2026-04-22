@@ -44,7 +44,7 @@ export async function loadMonthlyYearlySeries(db, query, customerCode, years) {
 export function asRoundedUpPercent(value) {
   const numericValue = Number(value ?? 0);
   if (!Number.isFinite(numericValue)) return 0;
-  return Math.ceil(numericValue);
+  return Math.round(numericValue);
 }
 
 export function buildDetailedOrder(order, lines, overrides = {}) {
