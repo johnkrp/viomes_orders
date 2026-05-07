@@ -9,7 +9,7 @@ COLUMN_MAP = {
     "code": "Κωδ.Είδους",
     "description": "Περιγραφή",
     "color": "Χρώμα",
-    "pieces_per_package": "Υποσυσκευασία",
+    "pieces_per_package": "Συσκευασία",
     "volume_liters": "Όγκος",
     "image_url": "URL",
 }

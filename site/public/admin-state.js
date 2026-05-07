@@ -20,10 +20,14 @@ export function clearAdminState() {
 }
 
 export function fillSearchFields(elements, filters = {}) {
-  if (elements.customerNameQuery) elements.customerNameQuery.value = filters.customer_name || "";
-  if (elements.customerCodeQuery) elements.customerCodeQuery.value = filters.customer_code || "";
-  if (elements.branchCodeQuery) elements.branchCodeQuery.value = filters.branch_code || "";
-  if (elements.branchDescriptionQuery) elements.branchDescriptionQuery.value = filters.branch_description || "";
+  if (elements.customerNameQuery)
+    elements.customerNameQuery.value = filters.customer_name || "";
+  if (elements.customerCodeQuery)
+    elements.customerCodeQuery.value = filters.customer_code || "";
+  if (elements.branchCodeQuery)
+    elements.branchCodeQuery.value = filters.branch_code || "";
+  if (elements.branchDescriptionQuery)
+    elements.branchDescriptionQuery.value = filters.branch_description || "";
 }
 
 export function saveAdminState(elements, state) {

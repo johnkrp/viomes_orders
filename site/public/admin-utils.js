@@ -47,8 +47,18 @@ export function parseIsoDate(value) {
 }
 
 export function normalizeSalesTimeRange(value) {
-  const normalized = String(value || DEFAULT_SALES_TIME_RANGE).trim().toLowerCase();
-  const allowedValues = new Set(["1m", "3m", "6m", "12m", "this_year", "last_year", "all"]);
+  const normalized = String(value || DEFAULT_SALES_TIME_RANGE)
+    .trim()
+    .toLowerCase();
+  const allowedValues = new Set([
+    "1m",
+    "3m",
+    "6m",
+    "12m",
+    "this_year",
+    "last_year",
+    "all",
+  ]);
   return allowedValues.has(normalized) ? normalized : DEFAULT_SALES_TIME_RANGE;
 }
 
@@ -100,7 +110,9 @@ export function matchesBranchSearch(branch, term, getBranchOptionLabel = null) {
   if (!normalizedTerm) return true;
 
   const label =
-    typeof getBranchOptionLabel === "function" ? getBranchOptionLabel(branch) : "";
+    typeof getBranchOptionLabel === "function"
+      ? getBranchOptionLabel(branch)
+      : "";
   const searchableValues = [
     branch?.branch_code || "",
     branch?.branch_description || "",
@@ -141,7 +153,11 @@ export function numberStateClass(value) {
   return Number(value || 0) < 0 ? " admin-number-negative" : "";
 }
 
-export function compareSortableValues(a, b, { direction = "asc", numeric = false, date = false } = {}) {
+export function compareSortableValues(
+  a,
+  b,
+  { direction = "asc", numeric = false, date = false } = {},
+) {
   let left = a ?? "";
   let right = b ?? "";
 
@@ -159,22 +175,27 @@ export function compareSortableValues(a, b, { direction = "asc", numeric = false
   if (typeof left === "number" && typeof right === "number") {
     result = left - right;
   } else {
-    result = String(left).localeCompare(String(right), "el", { numeric: true, sensitivity: "base" });
+    result = String(left).localeCompare(String(right), "el", {
+      numeric: true,
+      sensitivity: "base",
+    });
   }
 
   return direction === "desc" ? result * -1 : result;
 }
 
 export function updateSortIndicators(tableId, sortState) {
-  document.querySelectorAll(`.admin-sort-btn[data-table-sort="${tableId}"]`).forEach((button) => {
-    const indicator = button.querySelector(".admin-sort-indicator");
-    if (!indicator) return;
+  document
+    .querySelectorAll(`.admin-sort-btn[data-table-sort="${tableId}"]`)
+    .forEach((button) => {
+      const indicator = button.querySelector(".admin-sort-indicator");
+      if (!indicator) return;
 
-    const key = String(button.getAttribute("data-sort-key") || "").trim();
-    if (key === sortState.key) {
-      indicator.textContent = sortState.direction === "asc" ? "↑" : "↓";
-    } else {
-      indicator.textContent = "↕";
-    }
-  });
+      const key = String(button.getAttribute("data-sort-key") || "").trim();
+      if (key === sortState.key) {
+        indicator.textContent = sortState.direction === "asc" ? "↑" : "↓";
+      } else {
+        indicator.textContent = "↕";
+      }
+    });
 }

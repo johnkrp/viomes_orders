@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { renderRecentOrdersTable, renderSelectedOrderDetails } from "../public/admin-render.js";
+import {
+  renderRecentOrdersTable,
+  renderSelectedOrderDetails,
+} from "../public/admin-render.js";
 
 test("recent orders table renders the progress step column", () => {
   const originalDocument = globalThis.document;

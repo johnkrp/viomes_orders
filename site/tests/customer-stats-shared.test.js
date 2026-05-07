@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { normalizeStatsPayload } from "../lib/customer-stats/shared.js";
 
 test("normalizeStatsPayload preserves contract defaults and monthly coverage", () => {
@@ -27,14 +27,37 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
       },
       product_sales: {
         metric: "pieces",
-        items: [{ code: "P1", description: "Prod", pieces: 4, orders: 2, revenue: 99.995 }],
+        items: [
+          {
+            code: "P1",
+            description: "Prod",
+            pieces: 4,
+            orders: 2,
+            revenue: 99.995,
+          },
+        ],
       },
       receivables: {
         progressive_credit: 55.25,
-        items: [{ document: "INV-1", amount: 10, balance: 3, reason: "Movement", debit: 10, credit: 7 }],
+        items: [
+          {
+            document: "INV-1",
+            amount: 10,
+            balance: 3,
+            reason: "Movement",
+            debit: 10,
+            credit: 7,
+          },
+        ],
       },
       available_branches: [
-        { branch_code: "B1", branch_description: "Branch 1", orders: 2, revenue: 123.456, raw_rows: 4 },
+        {
+          branch_code: "B1",
+          branch_description: "Branch 1",
+          orders: 2,
+          revenue: 123.456,
+          raw_rows: 4,
+        },
       ],
       recent_orders: [
         {
@@ -73,7 +96,11 @@ test("normalizeStatsPayload preserves contract defaults and monthly coverage", (
   assert.equal(payload.customer.branch_description, "Branch 1");
   assert.equal(payload.summary.total_revenue, 123.46);
   assert.equal(payload.monthly_sales.current_year.length, 12);
-  assert.deepEqual(payload.monthly_sales.current_year[2], { month: 3, revenue: 100, pieces: 5 });
+  assert.deepEqual(payload.monthly_sales.current_year[2], {
+    month: 3,
+    revenue: 100,
+    pieces: 5,
+  });
   assert.equal(payload.monthly_sales.yearly_series.length, 3);
   assert.equal(payload.monthly_sales.yearly_series[0].year, 2024);
   assert.equal(payload.monthly_sales.yearly_series[0].months[0].revenue, 25);

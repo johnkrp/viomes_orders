@@ -72,8 +72,8 @@ import {
 import {
   escapeHtml,
   formatDate,
-  normalizeSalesTimeRange,
   matchesBranchSearch,
+  normalizeSalesTimeRange,
   parseIsoDate,
   sleep,
 } from "./admin-utils.js";
@@ -383,7 +383,9 @@ async function setStatsLoading(
 function getCardTimeRangeValue(target) {
   const normalizedTarget = String(target || "").trim();
   if (normalizedTarget && state.currentCardTimeRanges[normalizedTarget]) {
-    return normalizeSalesTimeRange(state.currentCardTimeRanges[normalizedTarget]);
+    return normalizeSalesTimeRange(
+      state.currentCardTimeRanges[normalizedTarget],
+    );
   }
 
   const control = document.querySelector(
@@ -392,7 +394,8 @@ function getCardTimeRangeValue(target) {
   const normalizedValue = normalizeSalesTimeRange(
     control?.value || DEFAULT_SALES_TIME_RANGE,
   );
-  if (normalizedTarget) state.currentCardTimeRanges[normalizedTarget] = normalizedValue;
+  if (normalizedTarget)
+    state.currentCardTimeRanges[normalizedTarget] = normalizedValue;
   return normalizedValue;
 }
 
