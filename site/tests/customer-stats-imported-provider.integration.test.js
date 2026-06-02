@@ -335,7 +335,9 @@ test("SQLite-backed imported stats integration returns the expected contract", a
       db,
       sqlDialect: "sqlite",
     });
-    const payload = await provider.getCustomerStats("C001");
+    const payload = await provider.getCustomerStats("C001", {
+      salesTimeRange: "all",
+    });
 
     assert.equal(payload.customer.code, "C001");
     assert.equal(payload.customer.email, "alpha@example.com");
@@ -348,8 +350,8 @@ test("SQLite-backed imported stats integration returns the expected contract", a
     assert.equal(payload.top_products_by_qty[0].code, "P1");
     assert.equal(payload.top_products_by_value[0].code, "P1");
     assert.equal(payload.available_branches.length, 2);
-    assert.equal(payload.product_sales.items.length, 1);
-    assert.equal(payload.recent_orders.length, 1);
+    assert.equal(payload.product_sales.items.length, 2);
+    assert.equal(payload.recent_orders.length, 2);
     assert.equal(payload.monthly_sales.current_year[1].revenue, 175.6);
     assert.equal(payload.monthly_sales.previous_year[11].revenue, 70);
     assert.equal(payload.monthly_sales.yearly_series.length, 3);
@@ -369,6 +371,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
 
     const branchPayload = await provider.getCustomerStats("C001", {
       branchCode: "B1",
+      salesTimeRange: "all",
     });
     assert.equal(branchPayload.customer.aggregation_level, "branch");
     assert.equal(branchPayload.customer.branch_code, "B1");
@@ -395,6 +398,7 @@ test("SQLite-backed imported stats integration returns the expected contract", a
 
     const scopedPayload = await provider.getCustomerStats("C001", {
       branchScopeDescription: "Branch 1",
+      salesTimeRange: "all",
     });
     assert.equal(scopedPayload.customer.aggregation_level, "customer");
     assert.equal(scopedPayload.customer.branch_code, null);

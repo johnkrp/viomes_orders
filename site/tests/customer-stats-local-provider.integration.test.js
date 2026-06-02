@@ -117,7 +117,9 @@ test("SQLite-backed local-order stats integration returns the expected contract"
     );
 
     const provider = createSqliteCustomerStatsProvider({ db, sqlDialect: "sqlite" });
-    const payload = await provider.getCustomerStats("C001");
+    const payload = await provider.getCustomerStats("C001", {
+      salesTimeRange: "all",
+    });
 
     assert.equal(payload.customer.code, "C001");
     assert.equal(payload.customer.email, "buyer@example.com");
@@ -127,8 +129,8 @@ test("SQLite-backed local-order stats integration returns the expected contract"
     assert.equal(payload.summary.average_order_value, 81.87);
     assert.equal(payload.top_products_by_qty[0].code, "P1");
     assert.equal(payload.top_products_by_value[0].code, "P1");
-    assert.equal(payload.recent_orders.length, 1);
-    assert.equal(payload.detailed_orders.length, 1);
+    assert.equal(payload.recent_orders.length, 3);
+    assert.equal(payload.detailed_orders.length, 3);
     assert.equal(payload.detailed_orders[0].lines.length, 2);
     assert.equal(payload.recent_orders[0].ordered_at, `${currentYear}-02-15`);
     assert.equal(payload.recent_orders[0].sent_at, null);
