@@ -20852,6 +20852,15 @@
       "pieces_per_package": 1,
       "volume_liters": 0.0,
       "color": "ΔΙΑΦΟΡΑ"
+    },
+    {
+      "id": 2318,
+      "code": "306-01",
+      "description": "ΒΟΥΡΤΣΑ ΠΙΓΚΑΛ d7x37h cm-ΛΕΥΚΟ",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_306-01.jpg",
+      "pieces_per_package": 42,
+      "volume_liters": 0.0021,
+      "color": "ΛΕΥΚΟ"
     }
   ]
 }

@@ -437,6 +437,7 @@ export async function loadImportedCustomerStats(context) {
            AND open_lines.order_date = open_orders.created_at
            AND COALESCE(open_lines.document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}
           WHERE open_orders.customer_code = ?
+            AND (COALESCE(open_orders.progress_step, '') LIKE '4.%')
             ${importedOrdersDateWindowFilter.clause}
           GROUP BY
             open_orders.order_id,
@@ -549,6 +550,7 @@ export async function loadImportedCustomerStats(context) {
            AND ROUND(executed_no_ref.total_net_value, 2) = ROUND(pending.total_net_value, 2)
           WHERE executed_by_ref.customer_code IS NULL
             AND executed_no_ref.customer_code IS NULL
+            AND (COALESCE(pending.progress_step, '') LIKE '4.%')
           ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
           LIMIT 100
         `,
@@ -662,6 +664,10 @@ export async function loadImportedCustomerStats(context) {
        )
       WHERE progressed_by_ref.customer_code IS NULL
         AND progressed_no_ref.customer_code IS NULL
+        AND (
+          COALESCE(pending.progress_step, '') LIKE '1.%'
+          OR COALESCE(pending.progress_step, '') LIKE '2.%'
+        )
       ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
       LIMIT 100
     `,
