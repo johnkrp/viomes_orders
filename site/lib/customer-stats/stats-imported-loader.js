@@ -15,7 +15,6 @@ import {
   buildImportedBranchClause,
   buildImportedBranchScopeClause,
   buildImportedOrderIdExpression,
-  buildImportedOrderRefExpression,
   loadImportedCustomerBranches,
   loadImportedLedgerLines,
   loadImportedLedgerSnapshot,
@@ -39,35 +38,28 @@ const EXECUTED_ORDER_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
 const OPEN_EXECUTION_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
   FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
 );
-const PRE_APPROVAL_DOCUMENT_TYPES =
-  FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes.includes("Ξ Ξ‘Ξ΅")
-    ? ["Ξ Ξ‘Ξ΅"]
-    : ["Ξ Ξ‘Ξ΅", ...FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes];
+// Left table ("παραγγελίες προς έγκριση"): pre-execution sales orders (ΠΑΡ, ΕΑΠ).
 const PRE_APPROVAL_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
-  PRE_APPROVAL_DOCUMENT_TYPES,
-);
-const PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL = buildDocumentTypeSqlList(
-  Array.from(
-    new Set([
-      ...FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes,
-      ...FACTUAL_LIFECYCLE_RULES.executedOrderDocumentTypes,
-      "ΠΑΑ",
-    ]),
-  ),
+  FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes,
 );
 
-function buildImportedOpenOrderRefExpression(sqlDialect) {
-  if (sqlDialect === "mysql") {
-    return "NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(SUBSTRING_INDEX(note_1, ':', -1))), '|', ''), ' ', ''), '.', ''), ':', ''), '')";
-  }
+// Routing between the two pending tables is driven purely by the document's
+// progress step (the ΕΞΕΛΙΞΗ column), matched by its leading number so that
+// spacing/accents in the Greek label do not affect matching:
+//   left  ("προς έγκριση")  -> progress 1.* (ΑΡΧΙΚΟ) or 2.* (ΕΓΚΡΙΘΗΚΕ)
+//   right ("προς εκτέλεση") -> progress 4.* (ΠΡΟΣ ΣΥΛΛΟΓΗ)
+const PRE_APPROVAL_PROGRESS_PREFIXES = ["1", "2"];
+const OPEN_EXECUTION_PROGRESS_PREFIXES = ["4"];
 
-  return `NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(
-    CASE
-      WHEN INSTR(note_1, ':') > 0 THEN SUBSTR(note_1, INSTR(note_1, ':') + 1)
-      ELSE note_1
-    END
-  )), '|', ''), ' ', ''), '.', ''), ':', ''), '')`;
+function buildProgressStepPrefixFilter(prefixes) {
+  const parts = prefixes.map(() => "TRIM(progress_step) LIKE ?");
+  return {
+    clause: ` AND (${parts.join(" OR ")})`,
+    params: prefixes.map((prefix) => `${prefix}.%`),
+  };
 }
+
+
 export async function loadImportedCustomerStats(context) {
   const {
     db,
@@ -410,269 +402,70 @@ export async function loadImportedCustomerStats(context) {
         ],
       );
 
-  const importedOrderRefExpression =
-    buildImportedOrderRefExpression(sqlDialect);
-  const importedOpenOrderRefExpression =
-    buildImportedOpenOrderRefExpression(sqlDialect);
+  const openExecutionProgressFilter = buildProgressStepPrefixFilter(
+    OPEN_EXECUTION_PROGRESS_PREFIXES,
+  );
+  const preApprovalProgressFilter = buildProgressStepPrefixFilter(
+    PRE_APPROVAL_PROGRESS_PREFIXES,
+  );
 
-  const openOrdersRows = useImportedProjections
-    ? await db.all(
-        `
-          SELECT
-            open_orders.order_id,
-            open_orders.document_no,
-            open_orders.created_at,
-            open_orders.ordered_at,
-            open_orders.sent_at,
-            open_orders.total_lines,
-            COALESCE(SUM(COALESCE(open_lines.qty_base, 0)), 0) AS total_pieces,
-            COALESCE(SUM(COALESCE(open_lines.net_value, 0)), 0) AS total_net_value,
-            open_orders.average_discount_pct,
-            open_orders.progress_step,
-            open_orders.document_type
-          FROM imported_open_orders open_orders
-          LEFT JOIN imported_sales_lines open_lines
-            ON open_lines.customer_code = open_orders.customer_code
-           AND open_lines.document_no = open_orders.document_no
-           AND open_lines.order_date = open_orders.created_at
-           AND COALESCE(open_lines.document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}
-          WHERE open_orders.customer_code = ?
-            ${importedOrdersDateWindowFilter.clause}
-          GROUP BY
-            open_orders.order_id,
-            open_orders.document_no,
-            open_orders.created_at,
-            open_orders.ordered_at,
-            open_orders.sent_at,
-            open_orders.total_lines,
-            open_orders.average_discount_pct,
-            open_orders.progress_step,
-            open_orders.document_type
-          ORDER BY
-            COALESCE(NULLIF(open_orders.sent_at, ''), NULLIF(open_orders.ordered_at, ''), open_orders.created_at) DESC,
-            open_orders.document_no DESC
-          LIMIT 100
-        `,
-        [
-          code,
-          ...importedDataFilter.params,
-          ...importedOrdersDateWindowFilter.params,
-        ],
-      )
-    : await db.all(
-        `
-          SELECT
-            pending.order_id,
-            pending.document_no,
-            pending.created_at,
-            pending.ordered_at,
-            pending.sent_at,
-            pending.total_lines,
-            pending.total_pieces,
-            pending.total_net_value,
-            pending.average_discount_pct,
-            pending.progress_step,
-            pending.document_type
-          FROM (
-            SELECT
-              ${importedOrderIdExpression} AS order_id,
-              document_no,
-              customer_code,
-              order_date AS created_at,
-              MAX(ordered_at) AS ordered_at,
-              MAX(sent_at) AS sent_at,
-              COUNT(*) AS total_lines,
-              COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-              COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
-              COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
-              COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
-              MAX(document_type) AS document_type,
-              MAX(${importedOpenOrderRefExpression}) AS order_ref
-            FROM imported_sales_lines
-            WHERE customer_code = ?
-              AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-            GROUP BY customer_code, document_no, order_date
-          ) pending
-          LEFT JOIN (
-            SELECT
-              customer_code,
-              order_ref,
-              MAX(total_lines) AS total_lines,
-              MAX(total_pieces) AS total_pieces,
-              MAX(total_net_value) AS total_net_value
-            FROM (
-              SELECT
-                customer_code,
-                ${importedOpenOrderRefExpression} AS order_ref,
-                document_no,
-                order_date,
-                COUNT(*) AS total_lines,
-                COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-                COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
-              FROM imported_sales_lines
-              WHERE customer_code = ?
-                AND ${importedExpressions.countInOrderTotals} = 1
-                AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
-                AND ${importedOpenOrderRefExpression} IS NOT NULL${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-              GROUP BY customer_code, ${importedOpenOrderRefExpression}, document_no, order_date
-            ) executed_docs
-            GROUP BY customer_code, order_ref
-          ) executed_by_ref
-            ON executed_by_ref.customer_code = pending.customer_code
-           AND pending.order_ref IS NOT NULL
-           AND pending.order_ref <> ''
-           AND executed_by_ref.order_ref = pending.order_ref
-           AND executed_by_ref.total_lines >= pending.total_lines
-           AND executed_by_ref.total_pieces >= pending.total_pieces
-           AND ROUND(executed_by_ref.total_net_value, 2) >= ROUND(pending.total_net_value, 2)
-          LEFT JOIN (
-            SELECT
-              customer_code,
-              order_date AS created_at,
-              COUNT(*) AS total_lines,
-              COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-              COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
-              COALESCE(MAX(${importedOpenOrderRefExpression}), '') AS order_ref
-            FROM imported_sales_lines
-            WHERE customer_code = ?
-              AND ${importedExpressions.countInOrderTotals} = 1
-              AND COALESCE(document_type, '') IN (${EXECUTED_ORDER_DOCUMENT_TYPES_SQL})
-              AND (${importedOpenOrderRefExpression} IS NULL OR ${importedOpenOrderRefExpression} = '')${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-            GROUP BY customer_code, document_no, order_date
-          ) executed_no_ref
-            ON executed_no_ref.customer_code = pending.customer_code
-           AND (pending.order_ref IS NULL OR pending.order_ref = '')
-           AND (executed_no_ref.order_ref IS NULL OR executed_no_ref.order_ref = '')
-           AND executed_no_ref.created_at = pending.created_at
-           AND executed_no_ref.total_lines = pending.total_lines
-           AND executed_no_ref.total_pieces = pending.total_pieces
-           AND ROUND(executed_no_ref.total_net_value, 2) = ROUND(pending.total_net_value, 2)
-          WHERE executed_by_ref.customer_code IS NULL
-            AND executed_no_ref.customer_code IS NULL
-          ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
-          LIMIT 100
-        `,
-        [
-          code,
-          ...importedDataFilter.params,
-          ...importedLinesDateWindowFilter.params,
-          code,
-          ...importedDataFilter.params,
-          ...importedLinesDateWindowFilter.params,
-          code,
-          ...importedDataFilter.params,
-          ...importedLinesDateWindowFilter.params,
-        ],
-      );
-
-  const preApprovalOrdersRows = await db.all(
+  // Right table ("παραγγελίες προς εκτέλεση"): ΠΔΣ documents whose progress
+  // step is 4.* (ΠΡΟΣ ΣΥΛΛΟΓΗ). Routing is by progress only — no reference matching.
+  const openOrdersRows = await db.all(
     `
       SELECT
-        pending.order_id,
-        pending.document_no,
-        pending.created_at,
-        pending.ordered_at,
-        pending.sent_at,
-        pending.total_lines,
-        pending.total_pieces,
-        pending.total_net_value,
-        pending.average_discount_pct,
-        pending.progress_step,
-        pending.document_type
-      FROM (
-        SELECT
-          ${importedOrderIdExpression} AS order_id,
-          document_no,
-          customer_code,
-          order_date AS created_at,
-          MAX(ordered_at) AS ordered_at,
-          MAX(sent_at) AS sent_at,
-          COUNT(*) AS total_lines,
-          COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-          COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
-          COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
-          COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
-          MAX(document_type) AS document_type,
-          MAX(${importedOrderRefExpression}) AS order_ref
-        FROM imported_sales_lines
-        WHERE customer_code = ?
-          AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-        GROUP BY customer_code, document_no, order_date
-      ) pending
-      LEFT JOIN (
-        SELECT
-          customer_code,
-          order_ref,
-          COALESCE(MAX(CASE WHEN is_rejection = 0 THEN total_lines END), 0)
-            + COALESCE(MAX(CASE WHEN is_rejection = 1 THEN total_lines END), 0) AS total_lines,
-          COALESCE(MAX(CASE WHEN is_rejection = 0 THEN total_pieces END), 0)
-            + COALESCE(MAX(CASE WHEN is_rejection = 1 THEN total_pieces END), 0) AS total_pieces,
-          COALESCE(MAX(CASE WHEN is_rejection = 0 THEN total_net_value END), 0)
-            + COALESCE(MAX(CASE WHEN is_rejection = 1 THEN total_net_value END), 0) AS total_net_value
-        FROM (
-          SELECT
-            customer_code,
-            ${importedOrderRefExpression} AS order_ref,
-            document_no,
-            order_date,
-            CASE WHEN MAX(COALESCE(document_type, '')) = 'ΠΑΑ' THEN 1 ELSE 0 END AS is_rejection,
-            COUNT(*) AS total_lines,
-            COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-            COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
-          FROM imported_sales_lines
-          WHERE customer_code = ?
-            AND COALESCE(document_type, '') IN (${PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL})
-            AND ${importedOrderRefExpression} IS NOT NULL${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-          GROUP BY customer_code, ${importedOrderRefExpression}, document_no, order_date
-        ) progressed_docs
-        GROUP BY customer_code, order_ref
-      ) progressed_by_ref
-        ON progressed_by_ref.customer_code = pending.customer_code
-       AND (
-         (
-           pending.order_ref IS NOT NULL
-           AND pending.order_ref <> ''
-           AND progressed_by_ref.order_ref = pending.order_ref
-           AND progressed_by_ref.total_lines >= pending.total_lines
-           AND progressed_by_ref.total_pieces >= pending.total_pieces
-           AND ROUND(progressed_by_ref.total_net_value, 2) >= ROUND(pending.total_net_value, 2)
-         )
-       )
-      LEFT JOIN (
-        SELECT
-          customer_code,
-          order_date AS created_at,
-          COUNT(*) AS total_lines,
-          COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
-          COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
-          COALESCE(MAX(${importedOrderRefExpression}), '') AS order_ref
-        FROM imported_sales_lines
-        WHERE customer_code = ?
-          AND COALESCE(document_type, '') IN (${PRE_APPROVAL_CLOSURE_DOCUMENT_TYPES_SQL})
-          AND (${importedOrderRefExpression} IS NULL OR ${importedOrderRefExpression} = '')${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
-        GROUP BY customer_code, document_no, order_date
-      ) progressed_no_ref
-        ON progressed_no_ref.customer_code = pending.customer_code
-       AND (
-         ((pending.order_ref IS NULL OR pending.order_ref = '') AND (progressed_no_ref.order_ref IS NULL OR progressed_no_ref.order_ref = ''))
-         AND progressed_no_ref.created_at = pending.created_at
-         AND progressed_no_ref.total_lines = pending.total_lines
-         AND progressed_no_ref.total_pieces = pending.total_pieces
-         AND ROUND(progressed_no_ref.total_net_value, 2) = ROUND(pending.total_net_value, 2)
-       )
-      WHERE progressed_by_ref.customer_code IS NULL
-        AND progressed_no_ref.customer_code IS NULL
-      ORDER BY COALESCE(pending.sent_at, pending.ordered_at, pending.created_at) DESC, pending.document_no DESC
+        ${importedOrderIdExpression} AS order_id,
+        document_no,
+        order_date AS created_at,
+        MAX(ordered_at) AS ordered_at,
+        MAX(sent_at) AS sent_at,
+        COUNT(*) AS total_lines,
+        COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+        COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+        COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+        COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
+        MAX(document_type) AS document_type
+      FROM imported_sales_lines
+      WHERE customer_code = ?
+        AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${openExecutionProgressFilter.clause}${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+      GROUP BY customer_code, document_no, order_date
+      ORDER BY COALESCE(NULLIF(MAX(sent_at), ''), NULLIF(MAX(ordered_at), ''), order_date) DESC, document_no DESC
       LIMIT 100
     `,
     [
       code,
+      ...openExecutionProgressFilter.params,
       ...importedDataFilter.params,
       ...importedLinesDateWindowFilter.params,
+    ],
+  );
+
+  // Left table ("παραγγελίες προς έγκριση"): ΠΑΡ/ΕΑΠ documents whose progress
+  // step is 1.* (ΑΡΧΙΚΟ) or 2.* (ΕΓΚΡΙΘΗΚΕ). Routing is by progress only.
+  const preApprovalOrdersRows = await db.all(
+    `
+      SELECT
+        ${importedOrderIdExpression} AS order_id,
+        document_no,
+        order_date AS created_at,
+        MAX(ordered_at) AS ordered_at,
+        MAX(sent_at) AS sent_at,
+        COUNT(*) AS total_lines,
+        COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+        COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
+        COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
+        COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
+        MAX(document_type) AS document_type
+      FROM imported_sales_lines
+      WHERE customer_code = ?
+        AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})${preApprovalProgressFilter.clause}${importedDataFilter.clause}${importedLinesDateWindowFilter.clause}
+      GROUP BY customer_code, document_no, order_date
+      ORDER BY COALESCE(NULLIF(MAX(sent_at), ''), NULLIF(MAX(ordered_at), ''), order_date) DESC, document_no DESC
+      LIMIT 100
+    `,
+    [
       code,
-      ...importedDataFilter.params,
-      ...importedLinesDateWindowFilter.params,
-      code,
+      ...preApprovalProgressFilter.params,
       ...importedDataFilter.params,
       ...importedLinesDateWindowFilter.params,
     ],
@@ -756,7 +549,7 @@ export async function loadImportedCustomerStats(context) {
           COALESCE(net_value, 0) AS line_net_value
         FROM imported_sales_lines
         WHERE customer_code = ?
-          AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})
+          AND COALESCE(document_type, '') IN (${OPEN_EXECUTION_DOCUMENT_TYPES_SQL})${openExecutionProgressFilter.clause}
           ${importedDataFilter.clause}
           ${importedLinesDateWindowFilter.clause}
           AND document_no = ?
@@ -765,6 +558,7 @@ export async function loadImportedCustomerStats(context) {
       `,
       [
         code,
+        ...openExecutionProgressFilter.params,
         ...importedDataFilter.params,
         ...importedLinesDateWindowFilter.params,
         order.document_no,
@@ -795,7 +589,7 @@ export async function loadImportedCustomerStats(context) {
           COALESCE(net_value, 0) AS line_net_value
         FROM imported_sales_lines
         WHERE customer_code = ?
-          AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})
+          AND COALESCE(document_type, '') IN (${PRE_APPROVAL_DOCUMENT_TYPES_SQL})${preApprovalProgressFilter.clause}
           ${importedDataFilter.clause}
           ${importedLinesDateWindowFilter.clause}
           AND document_no = ?
@@ -804,6 +598,7 @@ export async function loadImportedCustomerStats(context) {
       `,
       [
         code,
+        ...preApprovalProgressFilter.params,
         ...importedDataFilter.params,
         ...importedLinesDateWindowFilter.params,
         order.document_no,

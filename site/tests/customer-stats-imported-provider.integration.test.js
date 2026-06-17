@@ -411,12 +411,74 @@ test("SQLite-backed imported stats integration returns the expected contract", a
   }
 });
 
-test("SQLite-backed imported stats excludes progressed pre-approvals and executed open orders in scoped fallback mode", async () => {
+async function insertImportedSalesLine(db, row) {
+  const r = {
+    source_file: "2026.CSV",
+    order_date: "2026-01-01",
+    order_year: 2026,
+    order_month: 1,
+    document_no: "DOC",
+    document_type: "",
+    item_code: "P1",
+    item_description: "Item",
+    unit_code: "PCS",
+    qty: 1,
+    qty_base: 1,
+    unit_price: 10,
+    net_value: 10,
+    discount_pct_1: 0,
+    discount_pct_2: 0,
+    discount_pct_total: 0,
+    customer_code: "C900",
+    customer_name: "Progress Customer",
+    delivery_code: "D1",
+    delivery_description: "Main",
+    account_code: "A1",
+    account_description: "Account",
+    branch_code: "B1",
+    branch_description: "Branch 1",
+    ordered_at: null,
+    sent_at: null,
+    note_1: "",
+    progress_step: "",
+    progress_step_description: "",
+    ...row,
+  };
+  await db.run(
+    `
+      INSERT INTO imported_sales_lines(
+        source_file, order_date, order_year, order_month, document_no, document_type,
+        item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
+        discount_pct_1, discount_pct_2, discount_pct_total,
+        customer_code, customer_name, delivery_code, delivery_description, account_code,
+        account_description, branch_code, branch_description, ordered_at, sent_at, note_1,
+        progress_step, progress_step_description
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      r.source_file, r.order_date, r.order_year, r.order_month, r.document_no, r.document_type,
+      r.item_code, r.item_description, r.unit_code, r.qty, r.qty_base, r.unit_price, r.net_value,
+      r.discount_pct_1, r.discount_pct_2, r.discount_pct_total,
+      r.customer_code, r.customer_name, r.delivery_code, r.delivery_description, r.account_code,
+      r.account_description, r.branch_code, r.branch_description, r.ordered_at, r.sent_at, r.note_1,
+      r.progress_step, r.progress_step_description,
+    ],
+  );
+}
+
+function documentNumbersFromOrders(orders) {
+  return orders
+    .map((order) => String(order.order_id || "").split("::")[2])
+    .sort();
+}
+
+test("SQLite-backed imported stats routes pending orders by progress step", async () => {
   const db = await openTestDb();
   const currentYear = new Date().getUTCFullYear();
+  const orderDate = `${currentYear}-03-01`;
+  const [eapType, parType] = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes;
   const openType = FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes[0];
-  const executedType = FACTUAL_LIFECYCLE_RULES.executedOrderDocumentTypes[0];
-  const preApprovalType = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes[0];
 
   try {
     await db.run(
@@ -424,158 +486,94 @@ test("SQLite-backed imported stats excludes progressed pre-approvals and execute
         INSERT INTO imported_customers(customer_code, customer_name, delivery_code, delivery_description, source_file)
         VALUES (?, ?, ?, ?, ?)
       `,
-      ["C778", "Reference Customer", "D1", "Main", "2026.CSV"],
+      ["C900", "Progress Customer", "D1", "Main", "2026.CSV"],
     );
 
-    await db.run(
-      `
-        INSERT INTO imported_sales_lines(
-          source_file, order_date, order_year, order_month, document_no, document_type,
-          item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
-          discount_pct_1, discount_pct_2, discount_pct_total,
-          customer_code, customer_name, delivery_code, delivery_description, account_code,
-          account_description, branch_code, branch_description, note_1
-        )
-        VALUES
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        "2026.CSV",
-        `${currentYear}-03-01`,
-        currentYear,
-        3,
-        "OPEN-1",
-        openType,
-        "P1",
-        "Open order",
-        "PCS",
-        10,
-        10,
-        10,
-        100,
-        0,
-        0,
-        0,
-        "C777",
-        "Branch Scoped Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "ΕΝΕΡΓΕΙΑ ΚΗΠΟΥ 2025 (ΜΕΤΑΛΛΙΚΟ STAND)  | ΚΑΜ1 ΠΡΟΣ ΚΑΣ",
-        "2026.CSV",
-        `${currentYear}-03-02`,
-        currentYear,
-        3,
-        "EXEC-1",
-        executedType,
-        "P1",
-        "Executed order",
-        "PCS",
-        10,
-        10,
-        10,
-        100,
-        0,
-        0,
-        0,
-        "C777",
-        "Branch Scoped Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "ΕΝΕΡΓΕΙΑ ΚΗΠΟΥ 2025 (ΜΕΤΑΛΛΙΚΟ STAND) ΚΑΜ1 ΠΡΟΣ ΚΑΣ",
-        "2026.CSV",
-        `${currentYear}-03-02`,
-        currentYear,
-        3,
-        "PRE-1",
-        preApprovalType,
-        "P2",
-        "Pre approval",
-        "PCS",
-        5,
-        5,
-        10,
-        50,
-        0,
-        0,
-        0,
-        "C777",
-        "Branch Scoped Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "ref:pre-1",
-        "2026.CSV",
-        `${currentYear}-03-03`,
-        currentYear,
-        3,
-        "PROG-1",
-        openType,
-        "P2",
-        "Progressed order",
-        "PCS",
-        5,
-        5,
-        10,
-        50,
-        0,
-        0,
-        0,
-        "C777",
-        "Branch Scoped Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "ref:pre-1",
-      ],
-    );
+    // Left table ("προς έγκριση"): ΠΑΡ/ΕΑΠ in progress 1.* or 2.*
+    await insertImportedSalesLine(db, {
+      document_no: "PAR-INITIAL",
+      document_type: parType,
+      progress_step: "1. ΑΡΧΙΚΟ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 3,
+    });
+    await insertImportedSalesLine(db, {
+      document_no: "PAR-APPROVED",
+      document_type: parType,
+      progress_step: "2. ΕΓΚΡΙΘΗΚΕ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 3,
+    });
+    await insertImportedSalesLine(db, {
+      document_no: "EAP-INITIAL",
+      document_type: eapType,
+      progress_step: "1. ΑΡΧΙΚΟ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 3,
+    });
+    // Excluded: ΠΑΡ that already moved past approval (progress 6.*)
+    await insertImportedSalesLine(db, {
+      document_no: "PAR-SERVED",
+      document_type: parType,
+      progress_step: "6. ΕΞΥΠΗΡΕΤΗΣΗ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 3,
+    });
+    // Right table ("προς εκτέλεση"): ΠΔΣ in progress 4.*
+    await insertImportedSalesLine(db, {
+      document_no: "PDS-PICK",
+      document_type: openType,
+      progress_step: "4. ΠΡΟΣ ΣΥΛΛΟΓΗ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 3,
+    });
+    // Excluded: ΠΔΣ already shipped (progress 5.*)
+    await insertImportedSalesLine(db, {
+      document_no: "PDS-SENT",
+      document_type: openType,
+      progress_step: "5. ΑΠΕΣΤΑΛΗ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 3,
+    });
 
     const provider = createSqliteCustomerStatsProvider({
       db,
       sqlDialect: "sqlite",
     });
-    const payload = await provider.getCustomerStats("C777", {
-      branchCode: "B1",
+    const payload = await provider.getCustomerStats("C900", {
       salesTimeRange: "all",
     });
 
-    assert.equal(payload.customer.aggregation_level, "branch");
-    assert.equal(payload.customer.branch_code, "B1");
+    assert.deepEqual(documentNumbersFromOrders(payload.pre_approval_orders), [
+      "EAP-INITIAL",
+      "PAR-APPROVED",
+      "PAR-INITIAL",
+    ]);
+    assert.equal(payload.detailed_pre_approval_orders.length, 3);
+
     assert.equal(payload.open_orders.length, 1);
-    assert.equal(payload.pre_approval_orders.length, 0);
-    assert.equal(payload.detailed_open_orders.length, 1);
-    assert.equal(payload.detailed_pre_approval_orders.length, 0);
-    assert.equal(payload.recent_orders.length, 1);
     assert.equal(
       payload.open_orders[0].order_id,
-      `C777::${currentYear}-03-03::PROG-1`,
+      `C900::${orderDate}::PDS-PICK`,
     );
+    assert.ok(payload.open_orders[0].progress_step.startsWith("4."));
+    assert.equal(payload.detailed_open_orders.length, 1);
   } finally {
     await db.close();
   }
 });
 
-test("SQLite-backed imported stats keeps referenced pre-approvals when progressed rows have empty references", async () => {
+test("SQLite-backed imported stats matches progress step by leading number", async () => {
   const db = await openTestDb();
   const currentYear = new Date().getUTCFullYear();
+  const orderDate = `${currentYear}-04-01`;
   const openType = FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes[0];
-  const preApprovalType = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes[0];
 
   try {
     await db.run(
@@ -583,389 +581,52 @@ test("SQLite-backed imported stats keeps referenced pre-approvals when progresse
         INSERT INTO imported_customers(customer_code, customer_name, delivery_code, delivery_description, source_file)
         VALUES (?, ?, ?, ?, ?)
       `,
-      ["C778", "Reference Customer", "D1", "Main", "2026.CSV"],
+      ["C901", "Prefix Customer", "D1", "Main", "2026.CSV"],
     );
 
-    await db.run(
-      `
-        INSERT INTO imported_sales_lines(
-          source_file, order_date, order_year, order_month, document_no, document_type,
-          item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
-          discount_pct_1, discount_pct_2, discount_pct_total,
-          customer_code, customer_name, delivery_code, delivery_description, account_code,
-          account_description, branch_code, branch_description, note_1
-        )
-        VALUES
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        "2026.CSV",
-        `${currentYear}-03-23`,
-        currentYear,
-        3,
-        "PRE-REF-1",
-        preApprovalType,
-        "P1",
-        "Pre approval",
-        "PCS",
-        10,
-        10,
-        10,
-        100,
-        0,
-        0,
-        0,
-        "C778",
-        "Reference Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:4302748473",
-        "2026.CSV",
-        `${currentYear}-03-23`,
-        currentYear,
-        3,
-        "OPEN-NO-REF-1",
-        openType,
-        "P1",
-        "Open order",
-        "PCS",
-        10,
-        10,
-        10,
-        100,
-        0,
-        0,
-        0,
-        "C778",
-        "Reference Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "",
-      ],
-    );
+    // Matches: "4." with no space after the dot
+    await insertImportedSalesLine(db, {
+      customer_code: "C901",
+      document_no: "PDS-A",
+      document_type: openType,
+      progress_step: "4.ΠΡΟΣ ΣΥΛΛΟΓΗ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 4,
+    });
+    // Matches: leading/trailing whitespace and a different label
+    await insertImportedSalesLine(db, {
+      customer_code: "C901",
+      document_no: "PDS-B",
+      document_type: openType,
+      progress_step: " 4. ΑΛΛΟ ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 4,
+    });
+    // Excluded: "14." must not be treated as a "4." prefix
+    await insertImportedSalesLine(db, {
+      customer_code: "C901",
+      document_no: "PDS-C",
+      document_type: openType,
+      progress_step: "14. ΑΛΛΟ",
+      order_date: orderDate,
+      order_year: currentYear,
+      order_month: 4,
+    });
 
     const provider = createSqliteCustomerStatsProvider({
       db,
       sqlDialect: "sqlite",
     });
-    const payload = await provider.getCustomerStats("C778", {
+    const payload = await provider.getCustomerStats("C901", {
       salesTimeRange: "all",
     });
 
-    assert.equal(payload.pre_approval_orders.length, 1);
-    assert.equal(
-      payload.pre_approval_orders[0].order_id,
-      `C778::${currentYear}-03-23::PRE-REF-1`,
-    );
-  } finally {
-    await db.close();
-  }
-});
-
-test("SQLite-backed imported stats keeps partially progressed referenced pre-approvals", async () => {
-  const db = await openTestDb();
-  const currentYear = new Date().getUTCFullYear();
-  const openType = FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes[0];
-  const preApprovalType = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes[0];
-
-  try {
-    await db.run(
-      `
-        INSERT INTO imported_customers(customer_code, customer_name, delivery_code, delivery_description, source_file)
-        VALUES (?, ?, ?, ?, ?)
-      `,
-      ["C779", "Partial Progress Customer", "D1", "Main", "2026.CSV"],
-    );
-
-    await db.run(
-      `
-        INSERT INTO imported_sales_lines(
-          source_file, order_date, order_year, order_month, document_no, document_type,
-          item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
-          discount_pct_1, discount_pct_2, discount_pct_total,
-          customer_code, customer_name, delivery_code, delivery_description, account_code,
-          account_description, branch_code, branch_description, note_1
-        )
-        VALUES
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        "2026.CSV",
-        `${currentYear}-03-23`,
-        currentYear,
-        3,
-        "PRE-PARTIAL-1",
-        preApprovalType,
-        "P1",
-        "Pre approval line 1",
-        "PCS",
-        1,
-        1,
-        10,
-        10,
-        0,
-        0,
-        0,
-        "C779",
-        "Partial Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-PARTIAL-1",
-        "2026.CSV",
-        `${currentYear}-03-23`,
-        currentYear,
-        3,
-        "PRE-PARTIAL-1",
-        preApprovalType,
-        "P2",
-        "Pre approval line 2",
-        "PCS",
-        1,
-        1,
-        10,
-        10,
-        0,
-        0,
-        0,
-        "C779",
-        "Partial Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-PARTIAL-1",
-        "2026.CSV",
-        `${currentYear}-03-24`,
-        currentYear,
-        3,
-        "OPEN-PARTIAL-1",
-        openType,
-        "P1",
-        "Open line 1",
-        "PCS",
-        1,
-        1,
-        10,
-        10,
-        0,
-        0,
-        0,
-        "C779",
-        "Partial Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-PARTIAL-1",
-        "2026.CSV",
-        `${currentYear}-03-24`,
-        currentYear,
-        3,
-        "OPEN-PARTIAL-1",
-        openType,
-        "P2",
-        "Open line 2",
-        "PCS",
-        1,
-        0,
-        10,
-        0,
-        0,
-        0,
-        0,
-        "C779",
-        "Partial Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-PARTIAL-1",
-      ],
-    );
-
-    const provider = createSqliteCustomerStatsProvider({
-      db,
-      sqlDialect: "sqlite",
-    });
-    const payload = await provider.getCustomerStats("C779", {
-      salesTimeRange: "all",
-    });
-
-    assert.equal(payload.pre_approval_orders.length, 1);
-    assert.equal(
-      payload.pre_approval_orders[0].order_id,
-      `C779::${currentYear}-03-23::PRE-PARTIAL-1`,
-    );
-  } finally {
-    await db.close();
-  }
-});
-
-test("SQLite-backed imported stats excludes referenced pre-approvals when progression is split with rejection", async () => {
-  const db = await openTestDb();
-  const currentYear = new Date().getUTCFullYear();
-  const openType = FACTUAL_LIFECYCLE_RULES.openExecutionDocumentTypes[0];
-  const preApprovalType = FACTUAL_LIFECYCLE_RULES.preExecutionDocumentTypes[0];
-
-  try {
-    await db.run(
-      `
-        INSERT INTO imported_customers(customer_code, customer_name, delivery_code, delivery_description, source_file)
-        VALUES (?, ?, ?, ?, ?)
-      `,
-      ["C780", "Split Progress Customer", "D1", "Main", "2026.CSV"],
-    );
-
-    await db.run(
-      `
-        INSERT INTO imported_sales_lines(
-          source_file, order_date, order_year, order_month, document_no, document_type,
-          item_code, item_description, unit_code, qty, qty_base, unit_price, net_value,
-          discount_pct_1, discount_pct_2, discount_pct_total,
-          customer_code, customer_name, delivery_code, delivery_description, account_code,
-          account_description, branch_code, branch_description, note_1
-        )
-        VALUES
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        "2026.CSV",
-        `${currentYear}-03-16`,
-        currentYear,
-        3,
-        "PRE-SPLIT-1",
-        preApprovalType,
-        "P1",
-        "Pre approval main",
-        "PCS",
-        1,
-        1,
-        99.93,
-        99.93,
-        0,
-        0,
-        0,
-        "C780",
-        "Split Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-SPLIT-1",
-        "2026.CSV",
-        `${currentYear}-03-16`,
-        currentYear,
-        3,
-        "PRE-SPLIT-1",
-        preApprovalType,
-        "P2",
-        "Pre approval rejected",
-        "PCS",
-        1,
-        1,
-        12.77,
-        12.77,
-        0,
-        0,
-        0,
-        "C780",
-        "Split Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-SPLIT-1",
-        "2026.CSV",
-        `${currentYear}-03-17`,
-        currentYear,
-        3,
-        "OPEN-SPLIT-1",
-        openType,
-        "P1",
-        "Open progressed",
-        "PCS",
-        1,
-        1,
-        99.93,
-        99.93,
-        0,
-        0,
-        0,
-        "C780",
-        "Split Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-SPLIT-1",
-        "2026.CSV",
-        `${currentYear}-03-17`,
-        currentYear,
-        3,
-        "REJ-SPLIT-1",
-        "ΠΑΑ",
-        "P2",
-        "Rejected remainder",
-        "PCS",
-        1,
-        1,
-        12.77,
-        12.77,
-        0,
-        0,
-        0,
-        "C780",
-        "Split Progress Customer",
-        "D1",
-        "Main",
-        "A1",
-        "Account",
-        "B1",
-        "Branch 1",
-        "Αρ.Παραγγελίας:REF-SPLIT-1",
-      ],
-    );
-
-    const provider = createSqliteCustomerStatsProvider({
-      db,
-      sqlDialect: "sqlite",
-    });
-    const payload = await provider.getCustomerStats("C780", {
-      salesTimeRange: "all",
-    });
-
-    assert.equal(payload.pre_approval_orders.length, 0);
+    assert.deepEqual(documentNumbersFromOrders(payload.open_orders), [
+      "PDS-A",
+      "PDS-B",
+    ]);
   } finally {
     await db.close();
   }

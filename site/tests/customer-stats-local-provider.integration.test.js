@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import sqlite3 from "sqlite3";
+import test from "node:test";
 import { open } from "sqlite";
+import sqlite3 from "sqlite3";
 import { createSqliteCustomerStatsProvider } from "../lib/customer-stats/sqlite-provider.js";
 import { initDatabaseSchema } from "../lib/db/init-schema.js";
 
