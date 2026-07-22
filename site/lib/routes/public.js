@@ -10,6 +10,8 @@ export function registerPublicRoutes(app, context) {
     IMPORTED_SALES_ARCHITECTURE,
     LATEST_IMPORT_RUN_SQL,
     logRouteError,
+    validateOrderSubmission,
+    createOrderSubmission,
   } = context;
 
   app.get("/", (req, res) => res.sendFile(path.join(settings.publicDir, "index.html")));
@@ -104,6 +106,19 @@ export function registerPublicRoutes(app, context) {
     } catch (error) {
       logRouteError(error);
       res.status(500).json({ error: String(error) });
+    }
+  });
+
+  app.post("/api/orders/submit", async (req, res) => {
+    try {
+      const submission = validateOrderSubmission(req.body);
+      const { orderId } = await createOrderSubmission(db, submission);
+      res.json({ ok: true, order_id: orderId });
+    } catch (error) {
+      logRouteError(error);
+      res
+        .status(error.status || 500)
+        .json({ error: error.message || String(error) });
     }
   });
 }

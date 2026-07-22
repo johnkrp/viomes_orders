@@ -29,3 +29,9 @@ backend/archive/legacy-inputs/
 backend/legacy_fastapi/app.db
 .DS_Store
 Thumbs.db
+.env
+.env.*
+!.env.example
+site/.env
+site/.env.*
+!site/.env.example

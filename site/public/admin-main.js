@@ -34,6 +34,10 @@ import {
   openSelectedOrderInOrderForm as openSelectedOrderInOrderFormModule,
 } from "./admin-handoff.js";
 import {
+  decideOrderSubmission as decideOrderSubmissionModule,
+  fetchOrderSubmissions as fetchOrderSubmissionsModule,
+} from "./admin-orders.js";
+import {
   getBranchOptionLabel as getBranchOptionLabelModule,
   renderBranchSelector as renderBranchSelectorModule,
   renderFilteredBranchOptions as renderFilteredBranchOptionsModule,
@@ -82,6 +86,7 @@ const elements = createAdminElements();
 assertAdminDomContract(elements);
 
 const state = {
+  currentOrderSubmissions: [],
   currentDetailedOrders: [],
   currentDetailedOpenOrders: [],
   currentDetailedPreApprovalOrders: [],
@@ -869,6 +874,14 @@ function openRankedOrderForm() {
   return openRankedOrderFormModule(moduleContext);
 }
 
+function fetchOrderSubmissions() {
+  return fetchOrderSubmissionsModule(moduleContext);
+}
+
+function decideOrderSubmission(orderId, action) {
+  return decideOrderSubmissionModule(moduleContext, orderId, action);
+}
+
 const moduleContext = {
   apiBase: API_BASE,
   counters,
@@ -955,6 +968,20 @@ elements.detailedOrdersList?.addEventListener("click", (event) => {
   if (!trigger) return;
   event.preventDefault();
   openSelectedOrderInOrderForm(trigger.getAttribute("data-open-order-form"));
+});
+
+elements.refreshOrderSubmissionsBtn?.addEventListener(
+  "click",
+  fetchOrderSubmissions,
+);
+
+elements.orderSubmissionsBody?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action]");
+  if (!button) return;
+  const orderId = button.getAttribute("data-order-id");
+  const action = button.getAttribute("data-action");
+  if (!orderId || !["approve", "reject"].includes(action)) return;
+  void decideOrderSubmission(orderId, action);
 });
 
 elements.productSalesMetric?.addEventListener("change", () => {
@@ -1210,6 +1237,7 @@ refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
     restoreAdminStateView(restoredAdminState);
     focusPrimarySearchField();
+    void fetchOrderSubmissions();
   } else {
     elements.username.focus();
   }

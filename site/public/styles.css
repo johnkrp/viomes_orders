@@ -2087,6 +2087,21 @@ button.secondary:hover,
   text-align: center !important;
 }
 
+.admin-order-submission-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.order-submission-warehouse {
+  width: 110px;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
 @keyframes adminSpin {
   to {
     transform: rotate(360deg);

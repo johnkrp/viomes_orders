@@ -1337,6 +1337,35 @@ function openGmailDraft(toEmail, subject, body) {
   window.open(url, "_blank");
 }
 
+async function submitOrderToBackend(meta) {
+  try {
+    const response = await fetch(`${API_BASE}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerName: meta.payload.customer_name,
+        customerSubstore: meta.payload.customer_substore,
+        customerEmail: meta.payload.customer_email,
+        notes: meta.payload.notes,
+        items: meta.payload.lines.map((line) => ({
+          code: line.itemCode,
+          qty: line.qty,
+        })),
+      }),
+    });
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(payload?.error || `HTTP ${response.status}`);
+    }
+
+    return { ok: true, orderId: payload?.order_id };
+  } catch (error) {
+    console.error(error);
+    return { ok: false, error };
+  }
+}
+
 function openSubmitModal() {
   submitModal?.classList.add("open");
   submitModal?.setAttribute("aria-hidden", "false");
@@ -1420,11 +1449,12 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-sendGmailBtn?.addEventListener("click", () => {
+sendGmailBtn?.addEventListener("click", async () => {
   if (!lastOrder) return;
 
   try {
-    els.submitStatus.textContent = "Δημιουργία Excel...";
+    els.submitStatus.textContent = "Καταχώρηση παραγγελίας...";
+    const submission = await submitOrderToBackend(lastOrder);
     const filename = downloadOrderExcelFromCart(cart);
     const body = buildEmailBodyNice(
       lastOrder.payload,
@@ -1433,7 +1463,9 @@ sendGmailBtn?.addEventListener("click", () => {
     );
 
     closeSubmitModal();
-    els.submitStatus.textContent = `Κατέβηκε το ${filename}. Άνοιξε draft στο Gmail.`;
+    els.submitStatus.textContent = submission.ok
+      ? `Καταχωρήθηκε η παραγγελία (#${submission.orderId}). Κατέβηκε το ${filename}. Άνοιξε draft στο Gmail.`
+      : `Προσοχή: δεν καταχωρήθηκε στο σύστημα (${submission.error?.message || "σφάλμα"}). Κατέβηκε το ${filename}. Άνοιξε draft στο Gmail.`;
     openGmailDraft(ORDERS_EMAIL, lastOrder.subject, body);
   } catch (error) {
     console.error(error);
@@ -1441,11 +1473,12 @@ sendGmailBtn?.addEventListener("click", () => {
   }
 });
 
-sendMailtoBtn?.addEventListener("click", () => {
+sendMailtoBtn?.addEventListener("click", async () => {
   if (!lastOrder) return;
 
   try {
-    els.submitStatus.textContent = "Δημιουργία Excel...";
+    els.submitStatus.textContent = "Καταχώρηση παραγγελίας...";
+    const submission = await submitOrderToBackend(lastOrder);
     const filename = downloadOrderExcelFromCart(cart);
     const body = buildEmailBodyNice(
       lastOrder.payload,
@@ -1454,7 +1487,9 @@ sendMailtoBtn?.addEventListener("click", () => {
     );
 
     closeSubmitModal();
-    els.submitStatus.textContent = `Κατέβηκε το ${filename}. Άνοιξε draft στο Outlook.`;
+    els.submitStatus.textContent = submission.ok
+      ? `Καταχωρήθηκε η παραγγελία (#${submission.orderId}). Κατέβηκε το ${filename}. Άνοιξε draft στο Outlook.`
+      : `Προσοχή: δεν καταχωρήθηκε στο σύστημα (${submission.error?.message || "σφάλμα"}). Κατέβηκε το ${filename}. Άνοιξε draft στο Outlook.`;
     openOutlookWebDraft(ORDERS_EMAIL, lastOrder.subject, body);
   } catch (error) {
     console.error(error);

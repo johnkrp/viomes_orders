@@ -714,6 +714,62 @@ export async function initDatabaseSchema({ db, kind }) {
   await ensureColumn(
     db,
     kind,
+    "orders",
+    "customer_substore",
+    `customer_substore ${typeText}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "status",
+    `status ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"} NOT NULL DEFAULT 'pending'`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "warehouse_code",
+    `warehouse_code ${typeText}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "submitted_at",
+    `submitted_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "approved_by",
+    `approved_by ${typeText}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "approved_at",
+    `approved_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "es1_document_code",
+    `es1_document_code ${typeText}`,
+  );
+  await ensureIndex(
+    db,
+    kind,
+    "orders",
+    "idx_orders_status_submitted_at",
+    "(status, submitted_at)",
+  );
+  await ensureColumn(
+    db,
+    kind,
     "imported_sales_lines",
     "ordered_at",
     `ordered_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,

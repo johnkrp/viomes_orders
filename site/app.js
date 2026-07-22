@@ -25,9 +25,17 @@ import {
   LATEST_IMPORT_RUN_SQL,
 } from "./lib/imported-sales.js";
 import {
+  approveOrderSubmission,
+  createOrderSubmission,
+  listPendingOrderSubmissions,
+  rejectOrderSubmission,
+  validateOrderSubmission,
+} from "./lib/order-submissions.js";
+import {
   registerAdminAuthRoutes,
   registerAdminCustomerRoutes,
   registerAdminImportRoutes,
+  registerAdminOrderSubmissionRoutes,
 } from "./lib/routes/admin.js";
 import { registerPublicRoutes } from "./lib/routes/public.js";
 import { validateRuntimeConfig } from "./lib/runtime-config.js";
@@ -557,6 +565,8 @@ export function createApp({
     IMPORTED_SALES_ARCHITECTURE,
     LATEST_IMPORT_RUN_SQL,
     logRouteError,
+    validateOrderSubmission,
+    createOrderSubmission,
   });
 
   registerAdminImportRoutes(app, {
@@ -592,6 +602,15 @@ export function createApp({
     db,
     searchImportedCustomers,
     customerStatsProvider,
+    logRouteError,
+  });
+
+  registerAdminOrderSubmissionRoutes(app, {
+    requireAdmin,
+    db,
+    listPendingOrderSubmissions,
+    approveOrderSubmission,
+    rejectOrderSubmission,
     logRouteError,
   });
 

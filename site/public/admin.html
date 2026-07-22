@@ -103,6 +103,50 @@
         </section>
 
         <section id="dashboardPanel" class="admin-dashboard" hidden>
+          <section id="orderSubmissionsPanel" class="panel admin-panel">
+            <div class="panel-head panel-head-inline">
+              <div>
+                <h2>Νέες παραγγελίες πωλητών</h2>
+                <p class="admin-panel-note">
+                  Παραγγελίες που υποβλήθηκαν από τη φόρμα πωλητή και
+                  εκκρεμούν έλεγχο πριν καταχωρηθούν στο ES1.
+                </p>
+              </div>
+              <div class="admin-inline-controls">
+                <button
+                  id="refreshOrderSubmissionsBtn"
+                  type="button"
+                  class="btn ghost"
+                >
+                  Ανανέωση
+                </button>
+              </div>
+            </div>
+
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Πελάτης</th>
+                    <th>Υποκατάστημα</th>
+                    <th>Είδη</th>
+                    <th>Τεμάχια</th>
+                    <th>Σχόλια</th>
+                    <th>Υποβλήθηκε</th>
+                    <th>Ενέργειες</th>
+                  </tr>
+                </thead>
+                <tbody id="orderSubmissionsBody">
+                  <tr>
+                    <td colspan="7" class="admin-table-empty">
+                      Δεν υπάρχουν εκκρεμείς παραγγελίες.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <section id="customerSearchPanel" class="panel admin-panel">
             <div class="panel-head panel-head-inline">
               <div>

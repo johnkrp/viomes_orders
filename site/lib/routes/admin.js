@@ -260,8 +260,85 @@ export function registerAdminCustomerRoutes(app, context) {
   });
 }
 
+export function registerAdminOrderSubmissionRoutes(app, context) {
+  const {
+    requireAdmin,
+    db,
+    listPendingOrderSubmissions,
+    approveOrderSubmission,
+    rejectOrderSubmission,
+    logRouteError,
+  } = context;
+
+  app.get("/api/admin/order-submissions", requireAdmin, async (req, res) => {
+    try {
+      const items = await listPendingOrderSubmissions(db);
+      res.json({ items });
+    } catch (error) {
+      logRouteError(error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  app.post(
+    "/api/admin/order-submissions/:id/approve",
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const orderId = Number(req.params.id);
+        if (!Number.isInteger(orderId) || orderId <= 0) {
+          res.status(400).json({ error: "Invalid order id." });
+          return;
+        }
+
+        const warehouseCode =
+          String(req.body?.warehouse_code || "").trim() || null;
+        await approveOrderSubmission(
+          db,
+          orderId,
+          req.admin?.username || "unknown",
+          { warehouseCode },
+        );
+        res.json({ ok: true });
+      } catch (error) {
+        logRouteError(error);
+        res
+          .status(error.status || 500)
+          .json({ error: error.message || String(error) });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/order-submissions/:id/reject",
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const orderId = Number(req.params.id);
+        if (!Number.isInteger(orderId) || orderId <= 0) {
+          res.status(400).json({ error: "Invalid order id." });
+          return;
+        }
+
+        await rejectOrderSubmission(
+          db,
+          orderId,
+          req.admin?.username || "unknown",
+        );
+        res.json({ ok: true });
+      } catch (error) {
+        logRouteError(error);
+        res
+          .status(error.status || 500)
+          .json({ error: error.message || String(error) });
+      }
+    },
+  );
+}
+
 export function registerAdminRoutes(app, context) {
   registerAdminImportRoutes(app, context);
   registerAdminAuthRoutes(app, context);
   registerAdminCustomerRoutes(app, context);
+  registerAdminOrderSubmissionRoutes(app, context);
 }
