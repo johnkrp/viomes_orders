@@ -24,6 +24,19 @@ async function ensureColumn(db, kind, table, column, ddl) {
   await db.run(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
 }
 
+async function ensureOwnerAdminColumn(db, kind, defaultOwnerUsername) {
+  if (await hasColumn(db, kind, "admin_users", "is_owner")) return;
+
+  await db.run(
+    `ALTER TABLE admin_users ADD COLUMN is_owner ${kind === "mysql" ? "TINYINT(1)" : "INTEGER"} NOT NULL DEFAULT 0`,
+  );
+  if (defaultOwnerUsername) {
+    await db.run(`UPDATE admin_users SET is_owner = 1 WHERE username = ?`, [
+      defaultOwnerUsername,
+    ]);
+  }
+}
+
 async function hasIndex(db, kind, table, indexName) {
   if (kind === "mysql") {
     const row = await db.get(
@@ -471,6 +484,7 @@ export async function initDatabaseSchema({ db, kind }) {
   const typeInt = kind === "mysql" ? "INT" : "INTEGER";
   const typeReal = kind === "mysql" ? "DOUBLE" : "REAL";
 
+  await ensureOwnerAdminColumn(db, kind, "admin");
   await ensureColumn(
     db,
     kind,

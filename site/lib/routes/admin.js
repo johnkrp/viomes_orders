@@ -124,7 +124,7 @@ export function registerAdminAuthRoutes(app, context) {
 
       const admin = await db.get(
         `
-          SELECT id, username, password_hash, is_active
+          SELECT id, username, password_hash, is_active, is_owner
           FROM admin_users
           WHERE username = ?
         `,
@@ -132,7 +132,9 @@ export function registerAdminAuthRoutes(app, context) {
       );
 
       if (!admin || !admin.is_active || !verifyPassword(password, admin.password_hash)) {
-        res.status(401).json({ ok: false, username: null, authenticated: false });
+        res
+          .status(401)
+          .json({ ok: false, username: null, authenticated: false, is_owner: false });
         return;
       }
 
@@ -154,7 +156,12 @@ export function registerAdminAuthRoutes(app, context) {
         ...cookieOptions,
         maxAge: settings.sessionMaxAgeSeconds * 1000,
       });
-      res.json({ ok: true, username: admin.username, authenticated: true });
+      res.json({
+        ok: true,
+        username: admin.username,
+        authenticated: true,
+        is_owner: Boolean(admin.is_owner),
+      });
     } catch (error) {
       logRouteError(error);
       res.status(500).json({ error: String(error) });
@@ -165,13 +172,13 @@ export function registerAdminAuthRoutes(app, context) {
     try {
       const token = req.cookies?.[settings.sessionCookieName];
       if (!token) {
-        res.json({ ok: true, username: null, authenticated: false });
+        res.json({ ok: true, username: null, authenticated: false, is_owner: false });
         return;
       }
 
       const admin = await db.get(
         `
-          SELECT u.username
+          SELECT u.username, u.is_owner
           FROM admin_sessions s
           JOIN admin_users u ON u.id = s.admin_user_id
           WHERE s.token = ?
@@ -182,11 +189,16 @@ export function registerAdminAuthRoutes(app, context) {
       );
 
       if (!admin) {
-        res.json({ ok: true, username: null, authenticated: false });
+        res.json({ ok: true, username: null, authenticated: false, is_owner: false });
         return;
       }
 
-      res.json({ ok: true, username: admin.username, authenticated: true });
+      res.json({
+        ok: true,
+        username: admin.username,
+        authenticated: true,
+        is_owner: Boolean(admin.is_owner),
+      });
     } catch (error) {
       logRouteError(error);
       res.status(500).json({ error: String(error) });
@@ -262,7 +274,7 @@ export function registerAdminCustomerRoutes(app, context) {
 
 export function registerAdminOrderSubmissionRoutes(app, context) {
   const {
-    requireAdmin,
+    requireOwnerAdmin,
     db,
     listPendingOrderSubmissions,
     approveOrderSubmission,
@@ -270,7 +282,7 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
     logRouteError,
   } = context;
 
-  app.get("/api/admin/order-submissions", requireAdmin, async (req, res) => {
+  app.get("/api/admin/order-submissions", requireOwnerAdmin, async (req, res) => {
     try {
       const items = await listPendingOrderSubmissions(db);
       res.json({ items });
@@ -282,7 +294,7 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
 
   app.post(
     "/api/admin/order-submissions/:id/approve",
-    requireAdmin,
+    requireOwnerAdmin,
     async (req, res) => {
       try {
         const orderId = Number(req.params.id);
@@ -311,7 +323,7 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
 
   app.post(
     "/api/admin/order-submissions/:id/reject",
-    requireAdmin,
+    requireOwnerAdmin,
     async (req, res) => {
       try {
         const orderId = Number(req.params.id);

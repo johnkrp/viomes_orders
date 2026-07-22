@@ -22,6 +22,7 @@ function createDbFixture() {
         username: "admin",
         password_hash: hashPassword("secret"),
         is_active: 1,
+        is_owner: 1,
       },
     ],
   ]);
@@ -47,7 +48,7 @@ function createDbFixture() {
           (candidate) => candidate.id === session.admin_user_id,
         );
         return user && user.is_active
-          ? { id: user.id, username: user.username }
+          ? { id: user.id, username: user.username, is_owner: user.is_owner }
           : undefined;
       }
       if (
@@ -61,7 +62,9 @@ function createDbFixture() {
         const user = [...adminUsers.values()].find(
           (candidate) => candidate.id === session.admin_user_id,
         );
-        return user && user.is_active ? { username: user.username } : undefined;
+        return user && user.is_active
+          ? { username: user.username, is_owner: user.is_owner }
+          : undefined;
       }
       if (sql.includes("SELECT COUNT(*) AS n FROM products")) {
         return { n: 0 };
@@ -282,6 +285,7 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
     assert.equal(response.status, 200);
     const loginPayload = await response.json();
     assert.equal(loginPayload.authenticated, true);
+    assert.equal(loginPayload.is_owner, true);
 
     const cookie = response.headers.get("set-cookie");
     assert.match(cookie, /viomes_admin_session=/);
@@ -296,6 +300,7 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
       ok: true,
       username: "admin",
       authenticated: true,
+      is_owner: true,
     });
 
     response = await fetch(
@@ -350,6 +355,7 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
       ok: true,
       username: null,
       authenticated: false,
+      is_owner: false,
     });
   } finally {
     await app.close();

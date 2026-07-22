@@ -464,7 +464,7 @@ export function createApp({
     const now = new Date().toISOString();
     return db.get(
       `
-        SELECT u.id, u.username
+        SELECT u.id, u.username, u.is_owner
         FROM admin_sessions s
         JOIN admin_users u ON u.id = s.admin_user_id
         WHERE s.token = ?
@@ -480,6 +480,27 @@ export function createApp({
       const admin = await getAuthenticatedAdmin(req);
       if (!admin) {
         res.status(401).json({ detail: "Unauthorized" });
+        return;
+      }
+
+      req.admin = admin;
+      next();
+    } catch (error) {
+      logRouteError(error);
+      res.status(500).json({ error: String(error) });
+      return;
+    }
+  }
+
+  async function requireOwnerAdmin(req, res, next) {
+    try {
+      const admin = await getAuthenticatedAdmin(req);
+      if (!admin) {
+        res.status(401).json({ detail: "Unauthorized" });
+        return;
+      }
+      if (!admin.is_owner) {
+        res.status(403).json({ detail: "Forbidden" });
         return;
       }
 
@@ -606,7 +627,7 @@ export function createApp({
   });
 
   registerAdminOrderSubmissionRoutes(app, {
-    requireAdmin,
+    requireOwnerAdmin,
     db,
     listPendingOrderSubmissions,
     approveOrderSubmission,

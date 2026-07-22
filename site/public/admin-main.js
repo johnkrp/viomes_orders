@@ -458,6 +458,9 @@ function setAuthenticatedUI(me) {
   elements.loginPanel.hidden = authenticated;
   elements.dashboardPanel.hidden = !authenticated;
   elements.logoutBtn.hidden = !authenticated;
+  if (elements.orderSubmissionsPanel) {
+    elements.orderSubmissionsPanel.hidden = !(authenticated && me?.is_owner);
+  }
 
   if (!authenticated) {
     setSessionInfo("Δεν υπάρχει ενεργή συνεδρία διαχειριστή.");
@@ -886,6 +889,8 @@ const moduleContext = {
   apiBase: API_BASE,
   counters,
   elements,
+  escapeHtml,
+  fetchOrderSubmissions,
   formatDate,
   getBranchOptionLabel,
   importDatasetLabels: IMPORT_DATASET_LABELS,
@@ -1237,7 +1242,9 @@ refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
     restoreAdminStateView(restoredAdminState);
     focusPrimarySearchField();
-    void fetchOrderSubmissions();
+    if (me.is_owner) {
+      void fetchOrderSubmissions();
+    }
   } else {
     elements.username.focus();
   }

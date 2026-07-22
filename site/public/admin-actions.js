@@ -21,6 +21,9 @@ export async function handleLogin(context, event) {
 
     context.setAuthenticatedUI(result);
     void context.loadLatestImportMessage(result);
+    if (result.is_owner) {
+      void context.fetchOrderSubmissions();
+    }
     context.resetSearchSuggestions();
     context.resetSearchResults();
     context.resetStats();

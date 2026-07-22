@@ -22,6 +22,17 @@ function createDbFixture() {
         username: "admin",
         password_hash: hashPassword("secret"),
         is_active: 1,
+        is_owner: 1,
+      },
+    ],
+    [
+      "salesperson1",
+      {
+        id: 2,
+        username: "salesperson1",
+        password_hash: hashPassword("secret2"),
+        is_active: 1,
+        is_owner: 0,
       },
     ],
   ]);
@@ -56,7 +67,7 @@ function createDbFixture() {
           (candidate) => candidate.id === session.admin_user_id,
         );
         return user && user.is_active
-          ? { id: user.id, username: user.username }
+          ? { id: user.id, username: user.username, is_owner: user.is_owner }
           : undefined;
       }
       if (sql.includes("SELECT id, status FROM orders WHERE id = ?")) {
@@ -206,11 +217,11 @@ async function startTestApp() {
   return {
     baseUrl,
     db,
-    async loginCookie() {
+    async loginCookie(username = "admin", password = "secret") {
       const response = await fetch(`${baseUrl}/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "admin", password: "secret" }),
+        body: JSON.stringify({ username, password }),
       });
       assert.equal(response.status, 200);
       return response.headers.get("set-cookie");
@@ -371,6 +382,64 @@ test("admin order-submission reject sets status to rejected", async () => {
     const rejectedOrder = app.db.orders.get(orderId);
     assert.equal(rejectedOrder.status, "rejected");
     assert.equal(rejectedOrder.approved_by, "admin");
+  } finally {
+    await app.close();
+  }
+});
+
+test("order-submission routes are forbidden for a non-owner admin (salesman) login", async () => {
+  const app = await startTestApp();
+
+  try {
+    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerName: "Gamma Store",
+        items: [{ code: "P001", qty: 1 }],
+      }),
+    });
+    const { order_id: orderId } = await submitResponse.json();
+
+    const salespersonCookie = await app.loginCookie(
+      "salesperson1",
+      "secret2",
+    );
+
+    let response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: salespersonCookie },
+    });
+    assert.equal(response.status, 403);
+
+    response = await fetch(
+      `${app.baseUrl}/api/admin/order-submissions/${orderId}/approve`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: salespersonCookie },
+        body: JSON.stringify({}),
+      },
+    );
+    assert.equal(response.status, 403);
+
+    response = await fetch(
+      `${app.baseUrl}/api/admin/order-submissions/${orderId}/reject`,
+      {
+        method: "POST",
+        headers: { Cookie: salespersonCookie },
+      },
+    );
+    assert.equal(response.status, 403);
+
+    const untouchedOrder = app.db.orders.get(orderId);
+    assert.equal(untouchedOrder.status, "pending");
+
+    const ownerCookie = await app.loginCookie();
+    response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: ownerCookie },
+    });
+    assert.equal(response.status, 200);
+    const listPayload = await response.json();
+    assert.equal(listPayload.items.length, 1);
   } finally {
     await app.close();
   }
