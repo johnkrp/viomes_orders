@@ -16264,6 +16264,15 @@
       "color": "ΚΙΤΡΙΝΟ"
     },
     {
+      "id": 1809,
+      "code": "306-01",
+      "description": "ΒΟΥΡΤΣΑ ΠΙΓΚΑΛ d7x37h cm-ΛΕΥΚΟ",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_306-01.jpg",
+      "pieces_per_package": 42,
+      "volume_liters": 0.002100,
+      "color": "ΛΕΥΚΟ"
+    },
+    {
       "id": 1808,
       "code": "4-895",
       "description": "ΜΕΤΑΛΛΙΚΟ STAND ME ΡΟΔΕΣ 0,80x0,60 m-ΔΙΑΦΟΡΑ",
@@ -16272,5 +16281,6 @@
       "volume_liters": 0.0,
       "color": "ΔΙΑΦΟΡΑ"
     }
+    
   ]
 }
