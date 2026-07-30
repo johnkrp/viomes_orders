@@ -785,13 +785,6 @@ export async function initDatabaseSchema({ db, kind }) {
     db,
     kind,
     "orders",
-    "warehouse_code",
-    `warehouse_code ${typeText}`,
-  );
-  await ensureColumn(
-    db,
-    kind,
-    "orders",
     "submitted_at",
     `submitted_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
   );

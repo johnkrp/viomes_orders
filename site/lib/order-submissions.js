@@ -202,7 +202,7 @@ export async function listPendingOrderSubmissions(db) {
   const orders = await db.all(`
     SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
            total_qty_pieces, total_net_value, status, submitted_by, submitted_by_role,
-           submitted_at, warehouse_code
+           submitted_at
     FROM orders
     WHERE status = 'pending'
     ORDER BY submitted_at DESC
@@ -249,13 +249,7 @@ export async function listPendingOrderSubmissions(db) {
   });
 }
 
-async function setOrderSubmissionStatus(
-  db,
-  orderId,
-  status,
-  adminUsername,
-  { warehouseCode } = {},
-) {
+async function setOrderSubmissionStatus(db, orderId, status, adminUsername) {
   const order = await db.get(`SELECT id, status FROM orders WHERE id = ?`, [
     orderId,
   ]);
@@ -275,22 +269,15 @@ async function setOrderSubmissionStatus(
   await db.run(
     `
       UPDATE orders
-      SET status = ?, approved_by = ?, approved_at = ?, warehouse_code = ?
+      SET status = ?, approved_by = ?, approved_at = ?
       WHERE id = ?
     `,
-    [status, adminUsername, new Date().toISOString(), warehouseCode || null, orderId],
+    [status, adminUsername, new Date().toISOString(), orderId],
   );
 }
 
-export async function approveOrderSubmission(
-  db,
-  orderId,
-  adminUsername,
-  { warehouseCode } = {},
-) {
-  await setOrderSubmissionStatus(db, orderId, "approved", adminUsername, {
-    warehouseCode,
-  });
+export async function approveOrderSubmission(db, orderId, adminUsername) {
+  await setOrderSubmissionStatus(db, orderId, "approved", adminUsername);
 }
 
 export async function rejectOrderSubmission(db, orderId, adminUsername) {

@@ -236,7 +236,6 @@ function createDbFixture() {
           submitted_by_role: submittedByRole,
           submitted_at: submittedAt,
           created_at: createdAt,
-          warehouse_code: null,
           approved_by: null,
           approved_at: null,
         });
@@ -257,14 +256,12 @@ function createDbFixture() {
         return { changes: 1, lastID: nextOrderLineId - 1 };
       }
       if (sql.includes("UPDATE orders") && sql.includes("SET status = ?")) {
-        const [status, approvedBy, approvedAt, warehouseCode, orderId] =
-          params;
+        const [status, approvedBy, approvedAt, orderId] = params;
         const order = orders.get(Number(orderId));
         if (order) {
           order.status = status;
           order.approved_by = approvedBy;
           order.approved_at = approvedAt;
-          order.warehouse_code = warehouseCode;
         }
         return { changes: order ? 1 : 0, lastID: 0 };
       }
@@ -492,14 +489,12 @@ test("admin order-submission routes require auth and support list/approve/reject
       {
         method: "POST",
         headers: { "Content-Type": "application/json", Cookie: cookie },
-        body: JSON.stringify({ warehouse_code: "WH1" }),
       },
     );
     assert.equal(response.status, 200);
 
     const approvedOrder = app.db.orders.get(orderId);
     assert.equal(approvedOrder.status, "approved");
-    assert.equal(approvedOrder.warehouse_code, "WH1");
     assert.equal(approvedOrder.approved_by, "admin");
 
     response = await fetch(

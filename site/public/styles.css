@@ -2419,13 +2419,6 @@ button.success:active,
   white-space: pre-wrap;
 }
 
-.order-submission-warehouse {
-  width: 110px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-input);
-  font-size: 12px;
-}
 
 @keyframes adminSpin {
   to {

@@ -303,13 +303,10 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
           return;
         }
 
-        const warehouseCode =
-          String(req.body?.warehouse_code || "").trim() || null;
         await approveOrderSubmission(
           db,
           orderId,
           req.admin?.username || "unknown",
-          { warehouseCode },
         );
         res.json({ ok: true });
       } catch (error) {

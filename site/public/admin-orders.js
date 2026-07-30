@@ -237,12 +237,6 @@ export function renderOrderSubmissions(context) {
           <td>${formatTimestamp(order.submitted_at)}${submittedByHtml}</td>
           <td>
             <div class="admin-order-submission-actions">
-              <input
-                type="text"
-                class="order-submission-warehouse"
-                placeholder="Κωδ. αποθήκης"
-                data-warehouse-input
-              />
               <button type="button" class="btn" data-action="approve" data-order-id="${order.id}">
                 Έγκριση
               </button>
@@ -260,18 +254,9 @@ export function renderOrderSubmissions(context) {
 }
 
 export async function decideOrderSubmission(context, orderId, action) {
-  const row = context.elements.orderSubmissionsBody?.querySelector(
-    `tr[data-order-id="${orderId}"]`,
-  );
-  const warehouseCode =
-    row?.querySelector("[data-warehouse-input]")?.value?.trim() || "";
-
   try {
     await context.apiFetch(`/api/admin/order-submissions/${orderId}/${action}`, {
       method: "POST",
-      ...(action === "approve"
-        ? { body: JSON.stringify({ warehouse_code: warehouseCode }) }
-        : {}),
     });
     context.setStatus(
       action === "approve"
