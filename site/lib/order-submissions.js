@@ -181,8 +181,8 @@ export async function createOrderSubmission(db, submission) {
     const priced = valueByCode.get(item.code);
     await db.run(
       `
-        INSERT INTO order_lines(order_id, product_id, qty_pieces, unit_price, discount_pct, line_net_value)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO order_lines(order_id, product_id, qty_pieces, unit_price, discount_pct, line_net_value, price_source)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       [
         orderId,
@@ -191,6 +191,7 @@ export async function createOrderSubmission(db, submission) {
         priced?.unitPrice || 0,
         priced?.discountPct || 0,
         priced?.lineNetValue || 0,
+        priced?.source || "no_history",
       ],
     );
   }
@@ -215,7 +216,7 @@ export async function listPendingOrderSubmissions(db) {
   const lines = await db.all(
     `
       SELECT ol.order_id, ol.qty_pieces, ol.unit_price, ol.discount_pct, ol.line_net_value,
-             p.code, p.description
+             ol.price_source, p.code, p.description
       FROM order_lines ol
       JOIN products p ON p.id = ol.product_id
       WHERE ol.order_id IN (${placeholders})
@@ -236,6 +237,7 @@ export async function listPendingOrderSubmissions(db) {
       unit_price: line.unit_price,
       discount_pct: line.discount_pct,
       line_net_value: line.line_net_value,
+      price_source: line.price_source || null,
     });
   }
 
@@ -245,6 +247,11 @@ export async function listPendingOrderSubmissions(db) {
       ...order,
       lines: orderLines,
       value_is_partial: orderLines.some((line) => Number(line.unit_price) === 0),
+      // Priced from another customer's invoice - a far weaker signal than this
+      // customer's own history, and the approver has to be able to tell them apart.
+      value_has_fallback: orderLines.some(
+        (line) => line.price_source === "last_invoice_any_customer",
+      ),
     };
   });
 }

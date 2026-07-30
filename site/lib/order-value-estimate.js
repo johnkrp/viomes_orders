@@ -31,6 +31,37 @@ async function findLastInvoicedLine(db, { customerCode, itemCode }) {
   return db.get(sql, params);
 }
 
+const CUSTOMER_AVG_DISCOUNT_SQL = `
+  SELECT AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}) AS avg_discount_pct
+  FROM imported_sales_lines
+  WHERE customer_code = ?
+    AND document_type IN (${EXECUTED_PLACEHOLDERS})
+    AND unit_price > 0
+`;
+
+/**
+ * The ordering customer's own effective discount, averaged over everything they have
+ * actually been invoiced for.
+ *
+ * Needed because the any-customer price fallback would otherwise import the DONOR
+ * customer's commercial terms along with the unit price. That is not a rounding error:
+ * a 0%-discount account (e.g. DEDEMAN) donating a price to a 35%-discount account
+ * (e.g. THE MART) overstates the line by more than half.
+ *
+ * This is an average of real invoiced lines, not a reconstruction of the pricelist
+ * engine — it deliberately stays on the "what was actually charged" side of the line.
+ */
+async function findCustomerAverageDiscount(db, customerCode) {
+  if (!customerCode) return null;
+  const row = await db.get(CUSTOMER_AVG_DISCOUNT_SQL, [
+    customerCode,
+    ...EXECUTED_TYPES,
+  ]);
+  const value = Number(row?.avg_discount_pct);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return value;
+}
+
 /**
  * Estimates order value from the most recent ACTUAL invoiced price/discount for
  * each customer+item pair (falls back to any customer's last invoiced price for
@@ -39,6 +70,7 @@ async function findLastInvoicedLine(db, { customerCode, itemCode }) {
  */
 export async function estimateOrderValue(db, { customerCode, items }) {
   const lines = [];
+  let customerAverageDiscount;
 
   for (const item of items) {
     let row = null;
@@ -55,7 +87,23 @@ export async function estimateOrderValue(db, { customerCode, items }) {
     }
 
     const unitPrice = row ? Number(row.unit_price) || 0 : 0;
-    const discountPct = row ? Number(row.discount_pct) || 0 : 0;
+    let discountPct = row ? Number(row.discount_pct) || 0 : 0;
+
+    // On the fallback path the price came from another customer's invoice, so its
+    // discount reflects THEIR terms. Substitute this customer's own average discount
+    // when we have one; keep the donor's only if this customer has no history at all.
+    if (source === "last_invoice_any_customer") {
+      if (customerAverageDiscount === undefined) {
+        customerAverageDiscount = await findCustomerAverageDiscount(
+          db,
+          customerCode,
+        );
+      }
+      if (customerAverageDiscount !== null && customerAverageDiscount !== undefined) {
+        discountPct = customerAverageDiscount;
+      }
+    }
+
     const lineNetValue = row
       ? Number((unitPrice * (1 - discountPct / 100) * item.qty).toFixed(2))
       : 0;
@@ -71,6 +119,9 @@ export async function estimateOrderValue(db, { customerCode, items }) {
   }
 
   const pricedLines = lines.filter((line) => line.source !== "no_history").length;
+  const fallbackLines = lines.filter(
+    (line) => line.source === "last_invoice_any_customer",
+  ).length;
   const totalNetValue = Number(
     lines.reduce((sum, line) => sum + line.lineNetValue, 0).toFixed(2),
   );
@@ -79,7 +130,9 @@ export async function estimateOrderValue(db, { customerCode, items }) {
     lines,
     totalNetValue,
     pricedLines,
+    fallbackLines,
     totalLines: lines.length,
     isPartial: pricedLines < lines.length,
+    hasFallback: fallbackLines > 0,
   };
 }

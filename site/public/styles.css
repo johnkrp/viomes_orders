@@ -2406,6 +2406,12 @@ button.success:active,
   font-size: 11px;
 }
 
+.admin-order-line-fallback,
+.admin-order-value-fallback {
+  color: #98402f;
+  cursor: help;
+}
+
 .admin-order-detail-notes h4 {
   margin: 0 0 2px;
   font-size: 12px;

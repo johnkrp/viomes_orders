@@ -31,6 +31,26 @@ function buildSubmittedByHtml(order, escapeHtml) {
   return `<br><span class="muted">${escapeHtml(label)}</span>`;
 }
 
+/**
+ * The estimate's trustworthiness depends entirely on where the price came from, so the
+ * summary has to say which. Priced from the customer's own past invoices it lands within
+ * ~1%; priced from another customer's invoice it can be out by that customer's whole
+ * discount, so it gets a visibly different mark rather than the same plain "εκτ.".
+ */
+function buildValueHtml(order, { escapeHtml, formatMoney }) {
+  const money = escapeHtml(formatMoney(order.total_net_value));
+
+  if (order.value_is_partial) {
+    return `${money} <span class="muted" title="Μία ή περισσότερες γραμμές δεν έχουν ιστορικό τιμής — μη πλήρης εκτίμηση">εκτ.*</span>`;
+  }
+
+  if (order.value_has_fallback) {
+    return `${money} <span class="muted admin-order-value-fallback" title="Ο πελάτης δεν έχει αγοράσει ποτέ ένα ή περισσότερα από αυτά τα είδη. Η τιμή προέρχεται από τιμολόγιο άλλου πελάτη — χαμηλή αξιοπιστία.">εκτ.≈</span>`;
+  }
+
+  return `${money} <span class="muted">εκτ.</span>`;
+}
+
 function buildLinesTable(order, { escapeHtml, formatMoney }) {
   const lines = order.lines || [];
   if (!lines.length) {
@@ -40,8 +60,12 @@ function buildLinesTable(order, { escapeHtml, formatMoney }) {
   const rows = lines
     .map((line) => {
       const hasPrice = Number(line.unit_price) > 0;
+      const isFallback = line.price_source === "last_invoice_any_customer";
+      const fallbackMark = isFallback
+        ? ` <span class="admin-order-line-fallback" title="Ο πελάτης δεν έχει αγοράσει ποτέ αυτόν τον κωδικό. Η τιμή προέρχεται από τιμολόγιο ΑΛΛΟΥ πελάτη, με τη μέση έκπτωση αυτού του πελάτη.">≈</span>`
+        : "";
       const priceCell = hasPrice
-        ? escapeHtml(formatMoney(line.unit_price))
+        ? `${escapeHtml(formatMoney(line.unit_price))}${fallbackMark}`
         : `<span class="admin-order-line-missing" title="Δεν βρέθηκε ιστορικό τιμής για αυτόν τον κωδικό">χωρίς ιστορικό</span>`;
       const valueCell = hasPrice
         ? escapeHtml(formatMoney(line.line_net_value))
@@ -205,9 +229,7 @@ export function renderOrderSubmissions(context) {
         ? `<br><span class="muted">${escapeHtml(order.customer_email)}</span>`
         : "";
       const submittedByHtml = buildSubmittedByHtml(order, escapeHtml);
-      const valueHtml = order.value_is_partial
-        ? `${escapeHtml(formatMoney(order.total_net_value))} <span class="muted" title="Μία ή περισσότερες γραμμές δεν έχουν ιστορικό τιμής — μη πλήρης εκτίμηση">εκτ.*</span>`
-        : `${escapeHtml(formatMoney(order.total_net_value))} <span class="muted">εκτ.</span>`;
+      const valueHtml = buildValueHtml(order, { escapeHtml, formatMoney });
 
       const summaryRow = `
         <tr

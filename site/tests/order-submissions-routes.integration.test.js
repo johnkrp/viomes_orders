@@ -74,6 +74,24 @@ function createDbFixture() {
     orders,
     importedSalesLines,
     async get(sql, params = []) {
+      // The ordering customer's own average discount, used when a price has to be
+      // borrowed from another customer's invoice. Must be matched BEFORE the
+      // last-invoiced-line branch below, which also reads imported_sales_lines.
+      if (
+        sql.includes("FROM imported_sales_lines") &&
+        sql.includes("avg_discount_pct")
+      ) {
+        const [customerCode] = params;
+        const own = importedSalesLines.filter(
+          (row) => row.customerCode === customerCode,
+        );
+        if (!own.length) return { avg_discount_pct: null };
+        return {
+          avg_discount_pct:
+            own.reduce((sum, row) => sum + Number(row.discountPct || 0), 0) /
+            own.length,
+        };
+      }
       if (sql.includes("FROM imported_sales_lines")) {
         const hasCustomerFilter = sql.includes("AND customer_code = ?");
         const [itemCode, , , , customerCode] = params; // itemCode, 3 doc types, [customerCode]
@@ -179,6 +197,7 @@ function createDbFixture() {
               unit_price: line.unit_price,
               discount_pct: line.discount_pct,
               line_net_value: line.line_net_value,
+              price_source: line.price_source,
               code: product?.code,
               description: product?.description,
             };
@@ -242,8 +261,15 @@ function createDbFixture() {
         return { changes: 1, lastID: id };
       }
       if (sql.includes("INSERT INTO order_lines(")) {
-        const [orderId, productId, qtyPieces, unitPrice, discountPct, lineNetValue] =
-          params;
+        const [
+          orderId,
+          productId,
+          qtyPieces,
+          unitPrice,
+          discountPct,
+          lineNetValue,
+          priceSource,
+        ] = params;
         orderLines.push({
           id: nextOrderLineId++,
           order_id: orderId,
@@ -252,6 +278,7 @@ function createDbFixture() {
           unit_price: unitPrice,
           discount_pct: discountPct,
           line_net_value: lineNetValue,
+          price_source: priceSource,
         });
         return { changes: 1, lastID: nextOrderLineId - 1 };
       }
@@ -478,6 +505,7 @@ test("admin order-submission routes require auth and support list/approve/reject
         unit_price: 0,
         discount_pct: 0,
         line_net_value: 0,
+        price_source: "no_history",
       },
     ]);
     // No imported_sales_lines history seeded for P001/C001 in this test -> unpriced.
@@ -595,17 +623,79 @@ test("order value estimate uses last-invoiced customer price, falls back to any-
     const order = items[0];
     // 3 * 10 * (1 - 0.20) = 24 (customer's own last price/discount)
     // 1 *  0 * ...        =  0 (no history anywhere)
-    // 2 *  5 * (1 - 0)    = 10 (any-customer fallback price)
-    assert.equal(order.total_net_value, 34);
+    // 2 *  5 * (1 - 0.20) =  8 (borrowed price, but THIS customer's 20% discount,
+    //                           NOT the donor's 0% - see the THE MART/DEDEMAN case)
+    assert.equal(order.total_net_value, 32);
     assert.equal(order.value_is_partial, true);
 
     const byCode = Object.fromEntries(order.lines.map((line) => [line.code, line]));
     assert.equal(byCode.P001.unit_price, 10);
     assert.equal(byCode.P001.discount_pct, 20);
     assert.equal(byCode.P001.line_net_value, 24);
+    assert.equal(byCode.P001.price_source, "last_invoice_customer");
     assert.equal(byCode.P002.line_net_value, 0);
+    assert.equal(byCode.P002.price_source, "no_history");
     assert.equal(byCode.P003.unit_price, 5);
-    assert.equal(byCode.P003.line_net_value, 10);
+    assert.equal(byCode.P003.discount_pct, 20);
+    assert.equal(byCode.P003.line_net_value, 8);
+    assert.equal(byCode.P003.price_source, "last_invoice_any_customer");
+  } finally {
+    await app.close();
+  }
+});
+
+// Regression for the real THE MART / DEDEMAN case: THE MART (35% discount) ordered
+// family 1050, which it had never bought, so every line borrowed DEDEMAN's price -
+// and, before this fix, DEDEMAN's 0% discount with it. That showed €122.40 where
+// ~€79.56 was realistic, with no visual warning at all.
+test("a borrowed price does not import the donor customer's discount, and the order is flagged", async () => {
+  const app = await startTestApp();
+
+  try {
+    // C001 buys P001 at a 35% discount - that is C001's commercial reality.
+    app.db.importedSalesLines.push({
+      itemCode: "P001",
+      customerCode: "C001",
+      unitPrice: 10,
+      discountPct: 35,
+    });
+    // P003 was last invoiced to somebody else at full price (0% discount).
+    app.db.importedSalesLines.push({
+      itemCode: "P003",
+      customerCode: null,
+      unitPrice: 2,
+      discountPct: 0,
+    });
+
+    const cookie = await app.loginCookie();
+    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P003", qty: 36 }],
+      }),
+    });
+    assert.equal(submitResponse.status, 200);
+
+    const response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: cookie },
+    });
+    const { items } = await response.json();
+    const order = items[0];
+    const line = order.lines[0];
+
+    // Donor's 0% would give 36 * 2 = 72.00. C001's own 35% gives 46.80.
+    assert.equal(line.unit_price, 2);
+    assert.equal(line.discount_pct, 35);
+    assert.equal(line.line_net_value, 46.8);
+    assert.equal(order.total_net_value, 46.8);
+
+    // Every line is priced, so the old "partial" flag stays false - which is exactly
+    // why a separate fallback flag is needed for the approver to see the weak signal.
+    assert.equal(order.value_is_partial, false);
+    assert.equal(order.value_has_fallback, true);
+    assert.equal(line.price_source, "last_invoice_any_customer");
   } finally {
     await app.close();
   }
