@@ -26,6 +26,11 @@ let productHistoryMap = {};
 
 const cart = new Map();
 
+let actorState = { role: null, customerCode: null, customerName: null };
+let selectedStaffCustomer = null;
+let customerPickerSearchToken = 0;
+let customerBranches = [];
+
 const els = {
   q: document.getElementById("q"),
   toolbarQty: document.getElementById("toolbarQty"),
@@ -43,9 +48,26 @@ const els = {
   clearBtn: document.getElementById("clearBtn"),
   downloadExcelBtn: document.getElementById("downloadExcelBtn"),
   submitBtn: document.getElementById("submitBtn"),
+  submitToAdminBtn: document.getElementById("submitToAdminBtn"),
   submitStatus: document.getElementById("submitStatus"),
   reloadBtn: document.getElementById("reloadBtn"),
   pager: document.getElementById("pager"),
+  loginPanel: document.getElementById("loginPanel"),
+  loginForm: document.getElementById("loginForm"),
+  loginUsername: document.getElementById("loginUsername"),
+  loginPassword: document.getElementById("loginPassword"),
+  loginStatus: document.getElementById("loginStatus"),
+  appMain: document.getElementById("appMain"),
+  adminLinkBtn: document.getElementById("adminLinkBtn"),
+  logoutBtn: document.getElementById("logoutBtn"),
+  customerNameField: document.getElementById("customerNameField"),
+  customerSubstoreField: document.getElementById("customerSubstoreField"),
+  customerPickerPanel: document.getElementById("customerPickerPanel"),
+  customerPickerQuery: document.getElementById("customerPickerQuery"),
+  customerPickerResults: document.getElementById("customerPickerResults"),
+  customerPickerSelected: document.getElementById("customerPickerSelected"),
+  customerSubstoreSpinner: document.getElementById("customerSubstoreSpinner"),
+  customerIdentityDisplay: document.getElementById("customerIdentityDisplay"),
 };
 
 const imgModal = document.getElementById("imgModal");
@@ -54,6 +76,251 @@ const imgModalCap = document.getElementById("imgModalCap");
 const submitModal = document.getElementById("submitModal");
 const sendGmailBtn = document.getElementById("sendGmailBtn");
 const sendMailtoBtn = document.getElementById("sendMailtoBtn");
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    ...options,
+  });
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_error) {
+    payload = null;
+  }
+  return { ok: response.ok, status: response.status, payload };
+}
+
+async function checkAuthState() {
+  const [adminResult, customerResult] = await Promise.all([
+    fetchJson("/api/admin/me"),
+    fetchJson("/api/customer/me"),
+  ]);
+
+  if (adminResult.payload?.authenticated) {
+    return {
+      role: "staff",
+      username: adminResult.payload.username,
+      customerCode: null,
+      customerName: null,
+    };
+  }
+
+  if (customerResult.payload?.authenticated) {
+    return {
+      role: "customer",
+      username: customerResult.payload.username,
+      customerCode: customerResult.payload.customer_code,
+      customerName: customerResult.payload.customer_name || null,
+    };
+  }
+
+  return {
+    role: null,
+    username: null,
+    customerCode: null,
+    customerName: null,
+  };
+}
+
+function setLoginStatus(message, kind = "") {
+  if (!els.loginStatus) return;
+  els.loginStatus.textContent = message || "";
+  els.loginStatus.className = kind ? `status ${kind}` : "status";
+}
+
+function applyRoleUi(actor) {
+  actorState = actor;
+
+  const isAuthenticated = Boolean(actor.role);
+  if (els.loginPanel) els.loginPanel.hidden = isAuthenticated;
+  if (els.appMain) els.appMain.hidden = !isAuthenticated;
+  if (els.logoutBtn) els.logoutBtn.hidden = !isAuthenticated;
+
+  if (!isAuthenticated) return;
+
+  const isStaff = actor.role === "staff";
+  if (els.adminLinkBtn) els.adminLinkBtn.hidden = !isStaff;
+  if (els.customerPickerPanel) els.customerPickerPanel.hidden = !isStaff;
+  if (els.customerNameField) els.customerNameField.hidden = !isStaff;
+  if (els.customerSubstoreField) els.customerSubstoreField.hidden = !isStaff;
+
+  if (els.customerIdentityDisplay) {
+    els.customerIdentityDisplay.hidden = isStaff;
+    if (!isStaff) {
+      els.customerIdentityDisplay.textContent = actor.customerName
+        ? `Παραγγελία για: ${actor.customerName} (${actor.customerCode})`
+        : `Παραγγελία για κωδικό πελάτη: ${actor.customerCode}`;
+    }
+  }
+
+  if (!isStaff && els.customerName) {
+    els.customerName.value = actor.customerName || "";
+  }
+}
+
+function renderCustomerPickerResults(items) {
+  if (!els.customerPickerResults) return;
+  if (!items.length) {
+    els.customerPickerResults.innerHTML = "";
+    return;
+  }
+  els.customerPickerResults.innerHTML = items
+    .map(
+      (item) => `
+        <button type="button" class="customer-picker-result" data-code="${escapeHtml(item.code)}" data-name="${escapeHtml(item.name)}">
+          <span class="customer-picker-result-name">${escapeHtml(item.name)}</span>
+          <span class="customer-picker-result-meta">${escapeHtml(item.code)}${item.branch_description ? ` · ${escapeHtml(item.branch_description)}` : ""}</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+async function performCustomerPickerSearch(query) {
+  const trimmed = query.trim();
+  const searchToken = ++customerPickerSearchToken;
+  if (!trimmed) {
+    renderCustomerPickerResults([]);
+    return;
+  }
+
+  const [byName, byCode] = await Promise.all([
+    fetchJson(
+      `/api/admin/customers/search?customer_name=${encodeURIComponent(trimmed)}&limit=10`,
+    ),
+    fetchJson(
+      `/api/admin/customers/search?customer_code=${encodeURIComponent(trimmed)}&limit=10`,
+    ),
+  ]);
+
+  if (searchToken !== customerPickerSearchToken) return;
+
+  const merged = new Map();
+  for (const item of byName.payload?.items || []) merged.set(item.code, item);
+  for (const item of byCode.payload?.items || []) merged.set(item.code, item);
+
+  renderCustomerPickerResults([...merged.values()]);
+}
+
+function setCustomerSubstoreValue(value) {
+  if (!els.customerSubstore) return;
+  const trimmed = value || "";
+  const hasOption = Array.from(els.customerSubstore.options).some(
+    (opt) => opt.value === trimmed,
+  );
+  els.customerSubstore.value = hasOption ? trimmed : "";
+}
+
+function populateCustomerSubstoreOptions(branches) {
+  if (!els.customerSubstore) return;
+  const options = ['<option value="">— Χωρίς υποκατάστημα —</option>'];
+  for (const branch of branches) {
+    const label = branch.branch_description || branch.branch_code || "";
+    if (!label) continue;
+    const text = branch.branch_code && branch.branch_code !== label
+      ? `${label} · ${branch.branch_code}`
+      : label;
+    options.push(
+      `<option value="${escapeHtml(label)}">${escapeHtml(text)}</option>`,
+    );
+  }
+  els.customerSubstore.innerHTML = options.join("");
+  els.customerSubstore.value = "";
+}
+
+async function loadCustomerBranches(code) {
+  customerBranches = [];
+  const response = await fetchJson(
+    `/api/admin/customers/${encodeURIComponent(code)}/stats`,
+  );
+  customerBranches = Array.isArray(response.payload?.available_branches)
+    ? response.payload.available_branches
+    : [];
+}
+
+async function selectStaffCustomer(code, name) {
+  selectedStaffCustomer = { code, name };
+  if (els.customerName) els.customerName.value = name;
+  if (els.customerPickerResults) els.customerPickerResults.innerHTML = "";
+  if (els.customerPickerQuery) els.customerPickerQuery.value = "";
+  populateCustomerSubstoreOptions([]);
+  if (els.customerSubstore) els.customerSubstore.disabled = true;
+  if (els.customerSubstoreSpinner) els.customerSubstoreSpinner.hidden = false;
+  try {
+    await loadCustomerBranches(code);
+    populateCustomerSubstoreOptions(customerBranches);
+  } finally {
+    if (els.customerSubstore) els.customerSubstore.disabled = false;
+    if (els.customerSubstoreSpinner) els.customerSubstoreSpinner.hidden = true;
+  }
+}
+
+async function handleLoginSubmit(event) {
+  event.preventDefault();
+  const username = els.loginUsername?.value?.trim() || "";
+  const password = els.loginPassword?.value || "";
+  if (!username || !password) return;
+
+  setLoginStatus("Σύνδεση...", "");
+
+  const adminResponse = await fetchJson("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (adminResponse.status !== 200) {
+    const customerResponse = await fetchJson("/api/customer/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (customerResponse.status !== 200) {
+      setLoginStatus("Λάθος στοιχεία σύνδεσης.", "error");
+      return;
+    }
+  }
+
+  setLoginStatus("", "");
+  if (els.loginPassword) els.loginPassword.value = "";
+  await bootstrapApp();
+}
+
+let customerPickerDebounceTimer = null;
+els.customerPickerQuery?.addEventListener("input", () => {
+  clearTimeout(customerPickerDebounceTimer);
+  customerPickerDebounceTimer = setTimeout(() => {
+    performCustomerPickerSearch(els.customerPickerQuery.value || "");
+  }, 250);
+});
+
+els.customerPickerResults?.addEventListener("click", (event) => {
+  const button = event.target.closest(".customer-picker-result");
+  if (!button) return;
+  selectStaffCustomer(button.dataset.code, button.dataset.name);
+});
+
+els.loginForm?.addEventListener("submit", handleLoginSubmit);
+
+els.logoutBtn?.addEventListener("click", async () => {
+  const logoutUrl =
+    actorState.role === "staff" ? "/api/admin/logout" : "/api/customer/logout";
+  await fetchJson(logoutUrl, { method: "POST" });
+  // Drop the unload/pagehide listeners first so they can't re-persist the
+  // still-populated DOM fields into sessionStorage after we clear it below.
+  window.removeEventListener("pagehide", saveOrderFormState);
+  window.removeEventListener("beforeunload", saveOrderFormState);
+  try {
+    window.sessionStorage.removeItem(ORDER_FORM_STATE_KEY);
+    window.sessionStorage.removeItem(ORDER_FORM_IMPORT_KEY);
+    window.sessionStorage.removeItem(ORDER_FORM_RANKING_KEY);
+  } catch (_error) {
+    // Ignore storage failures; the reload below still starts a clean session.
+  }
+  window.location.reload();
+});
 
 function loadOrderFormState() {
   try {
@@ -106,11 +373,12 @@ function clearOrderFormRankingDraft() {
 
 function saveOrderFormState() {
   try {
+    const isStaff = actorState.role === "staff";
     const state = {
       q: els.q?.value || "",
       toolbarQty: els.toolbarQty?.value || "",
-      customerName: els.customerName?.value || "",
-      customerSubstore: els.customerSubstore?.value || "",
+      customerName: isStaff ? els.customerName?.value || "" : "",
+      customerSubstore: isStaff ? els.customerSubstore?.value || "" : "",
       customerEmail: els.customerEmail?.value || "",
       notes: els.notes?.value || "",
       currentPage,
@@ -138,9 +406,10 @@ function restoreCartFromState(state) {
 function restoreOrderFormFields(state) {
   if (els.q) els.q.value = state?.q || "";
   if (els.toolbarQty) els.toolbarQty.value = state?.toolbarQty || "";
-  if (els.customerName) els.customerName.value = state?.customerName || "";
-  if (els.customerSubstore)
-    els.customerSubstore.value = state?.customerSubstore || "";
+  if (actorState.role === "staff") {
+    if (els.customerName) els.customerName.value = state?.customerName || "";
+    setCustomerSubstoreValue(state?.customerSubstore || "");
+  }
   if (els.customerEmail) els.customerEmail.value = state?.customerEmail || "";
   if (els.notes) els.notes.value = state?.notes || "";
 }
@@ -211,12 +480,9 @@ function applyImportedOrderDraft(draft) {
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
-  if (els.customerSubstore)
-    els.customerSubstore.value =
-      draft.customerSubstore ||
-      draft.branchDescription ||
-      draft.branchCode ||
-      "";
+  setCustomerSubstoreValue(
+    draft.customerSubstore || draft.branchDescription || draft.branchCode || "",
+  );
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = draft.notes || "";
   currentPage = 1;
@@ -276,12 +542,9 @@ function applyCustomerRankingDraft(draft) {
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
   if (els.customerName) els.customerName.value = draft.customerName || "";
-  if (els.customerSubstore)
-    els.customerSubstore.value =
-      draft.customerSubstore ||
-      draft.branchDescription ||
-      draft.branchCode ||
-      "";
+  setCustomerSubstoreValue(
+    draft.customerSubstore || draft.branchDescription || draft.branchCode || "",
+  );
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = "";
   currentPage = 1;
@@ -1342,7 +1605,12 @@ async function submitOrderToBackend(meta) {
     const response = await fetch(`${API_BASE}/api/orders/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({
+        customerCode:
+          actorState.role === "staff"
+            ? selectedStaffCustomer?.code || ""
+            : "",
         customerName: meta.payload.customer_name,
         customerSubstore: meta.payload.customer_substore,
         customerEmail: meta.payload.customer_email,
@@ -1382,6 +1650,11 @@ function prepareOrderMeta() {
     return null;
   }
 
+  if (actorState.role === "staff" && !selectedStaffCustomer?.code) {
+    els.submitStatus.textContent = "Επιλέξτε πελάτη πριν την υποβολή.";
+    return null;
+  }
+
   const customerName =
     document.getElementById("customerName")?.value?.trim() || "";
   const customerSubstore =
@@ -1415,6 +1688,29 @@ function submitOrder() {
 
   lastOrder = meta;
   openSubmitModal();
+}
+
+async function submitOrderDirectlyToAdmin() {
+  els.submitStatus.textContent = "";
+  const meta = prepareOrderMeta();
+  if (!meta) return;
+
+  const confirmed = window.confirm(
+    "Η παραγγελία θα καταχωρηθεί απευθείας στην ουρά έγκρισης. Θέλετε να συνεχίσετε;",
+  );
+  if (!confirmed) return;
+
+  if (els.submitToAdminBtn) els.submitToAdminBtn.disabled = true;
+  els.submitStatus.textContent = "Καταχώρηση παραγγελίας στο Admin...";
+
+  try {
+    const submission = await submitOrderToBackend(meta);
+    els.submitStatus.textContent = submission.ok
+      ? `Καταχωρήθηκε η παραγγελία (#${submission.orderId}) στο Admin.`
+      : `Σφάλμα: δεν καταχωρήθηκε η παραγγελία στο Admin (${submission.error?.message || "σφάλμα"}).`;
+  } finally {
+    if (els.submitToAdminBtn) els.submitToAdminBtn.disabled = false;
+  }
 }
 
 imgModal?.addEventListener("click", (event) => {
@@ -1530,7 +1826,7 @@ els.toolbarQty?.addEventListener("paste", () =>
   setTimeout(sanitizeToolbarQty, 0),
 );
 els.customerName?.addEventListener("input", saveOrderFormState);
-els.customerSubstore?.addEventListener("input", saveOrderFormState);
+els.customerSubstore?.addEventListener("change", saveOrderFormState);
 els.customerEmail?.addEventListener("input", saveOrderFormState);
 els.notes?.addEventListener("input", saveOrderFormState);
 
@@ -1541,14 +1837,20 @@ els.preparedAddBtn?.addEventListener("click", () => {
 els.clearBtn?.addEventListener("click", () => {
   cart.clear();
   renderCart();
-  if (els.customerName) els.customerName.value = "";
-  if (els.customerSubstore) els.customerSubstore.value = "";
+  if (actorState.role === "staff") {
+    selectedStaffCustomer = null;
+    customerBranches = [];
+    if (els.customerName) els.customerName.value = "";
+    if (els.customerPickerSelected) els.customerPickerSelected.textContent = "";
+    populateCustomerSubstoreOptions([]);
+  }
   if (els.customerEmail) els.customerEmail.value = "";
   if (els.notes) els.notes.value = "";
   setToolbarMsg("");
   saveOrderFormState();
 });
 els.submitBtn?.addEventListener("click", submitOrder);
+els.submitToAdminBtn?.addEventListener("click", submitOrderDirectlyToAdmin);
 els.downloadExcelBtn?.addEventListener("click", downloadExcelOnly);
 els.reloadBtn?.addEventListener("click", clearTopFilters);
 els.reloadBtn?.addEventListener("pointerup", clearTopFilters);
@@ -1558,17 +1860,34 @@ els.reloadBtn?.addEventListener("touchend", clearTopFilters, {
 window.addEventListener("pagehide", saveOrderFormState);
 window.addEventListener("beforeunload", saveOrderFormState);
 
-restoreDraftCatalogInputs(restoredOrderFormState);
-restoreImportedCatalogCodes(restoredOrderFormState);
-restoreRankedCatalogCodes(restoredOrderFormState);
-restoreCartFromState(restoredOrderFormState);
-restoreOrderFormFields(restoredOrderFormState);
-loadCatalog(
-  Number.isFinite(Number(restoredOrderFormState?.currentPage))
-    ? Number(restoredOrderFormState.currentPage)
-    : 1,
-  restoredOrderFormState?.lastQuery || restoredOrderFormState?.q || "",
-);
-renderCart();
-updatePreparedAddButton();
-saveOrderFormState();
+let appStarted = false;
+
+function startApp() {
+  if (appStarted) return;
+  appStarted = true;
+
+  restoreDraftCatalogInputs(restoredOrderFormState);
+  restoreImportedCatalogCodes(restoredOrderFormState);
+  restoreRankedCatalogCodes(restoredOrderFormState);
+  restoreCartFromState(restoredOrderFormState);
+  restoreOrderFormFields(restoredOrderFormState);
+  loadCatalog(
+    Number.isFinite(Number(restoredOrderFormState?.currentPage))
+      ? Number(restoredOrderFormState.currentPage)
+      : 1,
+    restoredOrderFormState?.lastQuery || restoredOrderFormState?.q || "",
+  );
+  renderCart();
+  updatePreparedAddButton();
+  saveOrderFormState();
+}
+
+async function bootstrapApp() {
+  const actor = await checkAuthState();
+  applyRoleUi(actor);
+  if (actor.role) {
+    startApp();
+  }
+}
+
+bootstrapApp();

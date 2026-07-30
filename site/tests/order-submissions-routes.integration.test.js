@@ -14,6 +14,7 @@ const siteDir = path.resolve(__dirname, "..");
 
 function createDbFixture() {
   const sessions = new Map();
+  const customerSessions = new Map();
   const adminUsers = new Map([
     [
       "admin",
@@ -36,19 +37,55 @@ function createDbFixture() {
       },
     ],
   ]);
+  const customerUsers = new Map([
+    [
+      "cust1",
+      {
+        id: 1,
+        username: "cust1",
+        password_hash: hashPassword("custsecret"),
+        customer_code: "C001",
+        is_active: 1,
+      },
+    ],
+  ]);
+  const importedCustomers = new Map([
+    ["C001", { customer_code: "C001", customer_name: "Alpha Store", is_inactive: 0 }],
+    ["C002", { customer_code: "C002", customer_name: "Beta Store", is_inactive: 0 }],
+    ["C003", { customer_code: "C003", customer_name: "Gamma Store", is_inactive: 0 }],
+    ["C999", { customer_code: "C999", customer_name: "Inactive Store", is_inactive: 1 }],
+  ]);
   const products = new Map([
     ["P001", { id: 101, code: "P001", description: "First Product" }],
     ["P002", { id: 102, code: "P002", description: "Second Product" }],
+    ["P003", { id: 103, code: "P003", description: "Third Product" }],
   ]);
   const orders = new Map();
   const orderLines = [];
+  // Fake "last invoiced" history for the value-estimate lookup. Each entry:
+  // { itemCode, customerCode (null = matches the "any customer" fallback query), unitPrice, discountPct }
+  const importedSalesLines = [];
   let nextOrderId = 1;
   let nextOrderLineId = 1;
 
   return {
     sessions,
+    customerSessions,
     orders,
+    importedSalesLines,
     async get(sql, params = []) {
+      if (sql.includes("FROM imported_sales_lines")) {
+        const hasCustomerFilter = sql.includes("AND customer_code = ?");
+        const [itemCode, , , , customerCode] = params; // itemCode, 3 doc types, [customerCode]
+        const match = importedSalesLines.find((row) =>
+          hasCustomerFilter
+            ? row.itemCode === itemCode && row.customerCode === customerCode
+            : row.itemCode === itemCode && row.customerCode === null,
+        );
+        return match
+          ? { unit_price: match.unitPrice, discount_pct: match.discountPct }
+          : undefined;
+      }
       if (
         sql.includes("FROM admin_users") &&
         sql.includes("WHERE username = ?")
@@ -68,6 +105,40 @@ function createDbFixture() {
         );
         return user && user.is_active
           ? { id: user.id, username: user.username, is_owner: user.is_owner }
+          : undefined;
+      }
+      if (
+        sql.includes("FROM customer_users") &&
+        sql.includes("WHERE username = ?")
+      ) {
+        return customerUsers.get(params[0]);
+      }
+      if (
+        sql.includes("FROM customer_sessions s") &&
+        sql.includes("JOIN customer_users u")
+      ) {
+        const [token] = params;
+        const session = customerSessions.get(token);
+        if (!session || session.expires_at <= new Date().toISOString())
+          return undefined;
+        const user = [...customerUsers.values()].find(
+          (candidate) => candidate.id === session.customer_user_id,
+        );
+        return user && user.is_active
+          ? { id: user.id, username: user.username, customer_code: user.customer_code }
+          : undefined;
+      }
+      if (
+        sql.includes("FROM imported_customers") &&
+        sql.includes("WHERE customer_code = ?")
+      ) {
+        const record = importedCustomers.get(params[0]);
+        return record
+          ? {
+              code: record.customer_code,
+              name: record.customer_name,
+              is_inactive: record.is_inactive,
+            }
           : undefined;
       }
       if (sql.includes("SELECT id, status FROM orders WHERE id = ?")) {
@@ -105,6 +176,9 @@ function createDbFixture() {
             return {
               order_id: line.order_id,
               qty_pieces: line.qty_pieces,
+              unit_price: line.unit_price,
+              discount_pct: line.discount_pct,
+              line_net_value: line.line_net_value,
               code: product?.code,
               description: product?.description,
             };
@@ -124,13 +198,26 @@ function createDbFixture() {
         });
         return { changes: 1, lastID: sessions.size };
       }
+      if (sql.includes("INSERT INTO customer_sessions")) {
+        const [customerUserId, token, expiresAt] = params;
+        customerSessions.set(token, {
+          customer_user_id: customerUserId,
+          token,
+          expires_at: expiresAt,
+        });
+        return { changes: 1, lastID: customerSessions.size };
+      }
       if (sql.includes("INSERT INTO orders(")) {
         const [
           customerName,
           customerEmail,
+          customerCode,
           customerSubstore,
           notes,
           totalQtyPieces,
+          totalNetValue,
+          submittedBy,
+          submittedByRole,
           submittedAt,
           createdAt,
         ] = params;
@@ -139,11 +226,14 @@ function createDbFixture() {
           id,
           customer_name: customerName,
           customer_email: customerEmail,
+          customer_code: customerCode,
           customer_substore: customerSubstore,
           notes,
           total_qty_pieces: totalQtyPieces,
-          total_net_value: 0,
+          total_net_value: totalNetValue,
           status: "pending",
+          submitted_by: submittedBy,
+          submitted_by_role: submittedByRole,
           submitted_at: submittedAt,
           created_at: createdAt,
           warehouse_code: null,
@@ -153,12 +243,16 @@ function createDbFixture() {
         return { changes: 1, lastID: id };
       }
       if (sql.includes("INSERT INTO order_lines(")) {
-        const [orderId, productId, qtyPieces] = params;
+        const [orderId, productId, qtyPieces, unitPrice, discountPct, lineNetValue] =
+          params;
         orderLines.push({
           id: nextOrderLineId++,
           order_id: orderId,
           product_id: productId,
           qty_pieces: qtyPieces,
+          unit_price: unitPrice,
+          discount_pct: discountPct,
+          line_net_value: lineNetValue,
         });
         return { changes: 1, lastID: nextOrderLineId - 1 };
       }
@@ -226,6 +320,15 @@ async function startTestApp() {
       assert.equal(response.status, 200);
       return response.headers.get("set-cookie");
     },
+    async customerLoginCookie(username = "cust1", password = "custsecret") {
+      const response = await fetch(`${baseUrl}/api/customer/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      assert.equal(response.status, 200);
+      return response.headers.get("set-cookie");
+    },
     async close() {
       await new Promise((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),
@@ -242,19 +345,41 @@ test("order submission endpoint validates and persists a pending order", async (
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        customerName: "",
+        items: [{ code: "P001", qty: 3 }],
+      }),
+    });
+    assert.equal(response.status, 401);
+
+    const cookie = await app.loginCookie();
+
+    response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
         items: [{ code: "P001", qty: 3 }],
       }),
     });
     assert.equal(response.status, 400);
     let payload = await response.json();
-    assert.match(payload.error, /customer name/i);
+    assert.match(payload.error, /select a customer/i);
 
     response = await fetch(`${app.baseUrl}/api/orders/submit`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({
-        customerName: "Alpha Store",
+        customerCode: "C999",
+        items: [{ code: "P001", qty: 3 }],
+      }),
+    });
+    assert.equal(response.status, 400);
+    payload = await response.json();
+    assert.match(payload.error, /unknown or inactive customer code/i);
+
+    response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
         items: [{ code: "UNKNOWN", qty: 1 }],
       }),
     });
@@ -264,9 +389,9 @@ test("order submission endpoint validates and persists a pending order", async (
 
     response = await fetch(`${app.baseUrl}/api/orders/submit`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({
-        customerName: "Alpha Store",
+        customerCode: "C001",
         customerSubstore: "Branch 1",
         customerEmail: "buyer@example.com",
         notes: "Please ship fast",
@@ -283,8 +408,40 @@ test("order submission endpoint validates and persists a pending order", async (
 
     const order = app.db.orders.get(payload.order_id);
     assert.equal(order.customer_name, "Alpha Store");
+    assert.equal(order.customer_code, "C001");
     assert.equal(order.status, "pending");
     assert.equal(order.total_qty_pieces, 5);
+    assert.equal(order.submitted_by, "admin");
+    assert.equal(order.submitted_by_role, "staff");
+  } finally {
+    await app.close();
+  }
+});
+
+test("order submission endpoint stamps the session's real customer_code even if the request body spoofs another one", async () => {
+  const app = await startTestApp();
+
+  try {
+    const customerCookie = await app.customerLoginCookie();
+
+    const response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: customerCookie },
+      body: JSON.stringify({
+        customerCode: "C002",
+        customerName: "Spoofed Name",
+        items: [{ code: "P001", qty: 1 }],
+      }),
+    });
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+
+    const order = app.db.orders.get(payload.order_id);
+    assert.equal(order.customer_code, "C001");
+    assert.equal(order.customer_name, "Alpha Store");
+    // A self-service order must be attributable to the customer account, not to staff.
+    assert.equal(order.submitted_by, "cust1");
+    assert.equal(order.submitted_by_role, "customer");
   } finally {
     await app.close();
   }
@@ -297,17 +454,17 @@ test("admin order-submission routes require auth and support list/approve/reject
     let response = await fetch(`${app.baseUrl}/api/admin/order-submissions`);
     assert.equal(response.status, 401);
 
+    const cookie = await app.loginCookie();
+
     const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({
-        customerName: "Alpha Store",
+        customerCode: "C001",
         items: [{ code: "P001", qty: 4 }],
       }),
     });
     const { order_id: orderId } = await submitResponse.json();
-
-    const cookie = await app.loginCookie();
 
     response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
       headers: { Cookie: cookie },
@@ -317,8 +474,18 @@ test("admin order-submission routes require auth and support list/approve/reject
     assert.equal(listPayload.items.length, 1);
     assert.equal(listPayload.items[0].id, orderId);
     assert.deepEqual(listPayload.items[0].lines, [
-      { code: "P001", description: "First Product", qty: 4 },
+      {
+        code: "P001",
+        description: "First Product",
+        qty: 4,
+        unit_price: 0,
+        discount_pct: 0,
+        line_net_value: 0,
+      },
     ]);
+    // No imported_sales_lines history seeded for P001/C001 in this test -> unpriced.
+    assert.equal(listPayload.items[0].total_net_value, 0);
+    assert.equal(listPayload.items[0].value_is_partial, true);
 
     response = await fetch(
       `${app.baseUrl}/api/admin/order-submissions/${orderId}/approve`,
@@ -359,16 +526,17 @@ test("admin order-submission reject sets status to rejected", async () => {
   const app = await startTestApp();
 
   try {
+    const cookie = await app.loginCookie();
+
     const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({
-        customerName: "Beta Store",
+        customerCode: "C002",
         items: [{ code: "P002", qty: 1 }],
       }),
     });
     const { order_id: orderId } = await submitResponse.json();
-    const cookie = await app.loginCookie();
 
     const response = await fetch(
       `${app.baseUrl}/api/admin/order-submissions/${orderId}/reject`,
@@ -387,24 +555,85 @@ test("admin order-submission reject sets status to rejected", async () => {
   }
 });
 
+test("order value estimate uses last-invoiced customer price, falls back to any-customer price, and leaves truly unpriced lines at zero", async () => {
+  const app = await startTestApp();
+
+  try {
+    // P001: this customer has bought it before -> use their own last invoiced price/discount.
+    app.db.importedSalesLines.push({
+      itemCode: "P001",
+      customerCode: "C001",
+      unitPrice: 10,
+      discountPct: 20,
+    });
+    // P003: C001 has never bought it, but someone else has -> fall back to that price.
+    app.db.importedSalesLines.push({
+      itemCode: "P003",
+      customerCode: null,
+      unitPrice: 5,
+      discountPct: 0,
+    });
+    // P002: no invoice history anywhere -> stays unpriced (0), order flagged partial.
+
+    const cookie = await app.loginCookie();
+
+    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [
+          { code: "P001", qty: 3 },
+          { code: "P002", qty: 1 },
+          { code: "P003", qty: 2 },
+        ],
+      }),
+    });
+    assert.equal(submitResponse.status, 200);
+
+    const response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: cookie },
+    });
+    const { items } = await response.json();
+    assert.equal(items.length, 1);
+
+    const order = items[0];
+    // 3 * 10 * (1 - 0.20) = 24 (customer's own last price/discount)
+    // 1 *  0 * ...        =  0 (no history anywhere)
+    // 2 *  5 * (1 - 0)    = 10 (any-customer fallback price)
+    assert.equal(order.total_net_value, 34);
+    assert.equal(order.value_is_partial, true);
+
+    const byCode = Object.fromEntries(order.lines.map((line) => [line.code, line]));
+    assert.equal(byCode.P001.unit_price, 10);
+    assert.equal(byCode.P001.discount_pct, 20);
+    assert.equal(byCode.P001.line_net_value, 24);
+    assert.equal(byCode.P002.line_net_value, 0);
+    assert.equal(byCode.P003.unit_price, 5);
+    assert.equal(byCode.P003.line_net_value, 10);
+  } finally {
+    await app.close();
+  }
+});
+
 test("order-submission routes are forbidden for a non-owner admin (salesman) login", async () => {
   const app = await startTestApp();
 
   try {
-    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customerName: "Gamma Store",
-        items: [{ code: "P001", qty: 1 }],
-      }),
-    });
-    const { order_id: orderId } = await submitResponse.json();
-
     const salespersonCookie = await app.loginCookie(
       "salesperson1",
       "secret2",
     );
+
+    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: salespersonCookie },
+      body: JSON.stringify({
+        customerCode: "C003",
+        items: [{ code: "P001", qty: 1 }],
+      }),
+    });
+    const { order_id: orderId } = await submitResponse.json();
 
     let response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
       headers: { Cookie: salespersonCookie },

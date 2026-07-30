@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { searchImportedCustomers } from "../lib/admin-customer-search.js";
+import {
+  getImportedCustomerByCode,
+  searchImportedCustomers,
+} from "../lib/admin-customer-search.js";
 
 test("searchImportedCustomers returns empty results without filters", async () => {
   let called = false;
@@ -78,4 +81,52 @@ test("searchImportedCustomers queries imported_customer_branches and formats gro
       },
     ],
   });
+});
+
+test("getImportedCustomerByCode returns the matching record", async () => {
+  const db = {
+    async get(sql, params) {
+      assert.match(sql, /FROM imported_customers/);
+      assert.deepEqual(params, ["C001"]);
+      return { code: "C001", name: "Alpha Store", is_inactive: 0 };
+    },
+  };
+
+  const record = await getImportedCustomerByCode(db, "C001");
+  assert.deepEqual(record, {
+    code: "C001",
+    name: "Alpha Store",
+    is_inactive: false,
+  });
+});
+
+test("getImportedCustomerByCode returns null for an unknown code", async () => {
+  const db = { async get() { return undefined; } };
+  const record = await getImportedCustomerByCode(db, "UNKNOWN");
+  assert.equal(record, null);
+});
+
+test("getImportedCustomerByCode returns null for a blank code without querying", async () => {
+  let called = false;
+  const db = {
+    async get() {
+      called = true;
+      return undefined;
+    },
+  };
+
+  const record = await getImportedCustomerByCode(db, "  ");
+  assert.equal(record, null);
+  assert.equal(called, false);
+});
+
+test("getImportedCustomerByCode reports is_inactive as a boolean", async () => {
+  const db = {
+    async get() {
+      return { code: "C999", name: "Inactive Store", is_inactive: 1 };
+    },
+  };
+
+  const record = await getImportedCustomerByCode(db, "C999");
+  assert.equal(record.is_inactive, true);
 });

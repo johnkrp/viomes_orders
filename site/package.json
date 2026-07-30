@@ -10,6 +10,7 @@
     "import:entersoft": "node scripts/run-entersoft-import.js",
     "preflight:import": "node scripts/preflight-entersoft-import.js",
     "admin:create-user": "node scripts/create-admin-user.js",
+    "customer:create-user": "node scripts/create-customer-user.js",
     "check:import-integrity": "node scripts/check-import-integrity.js",
     "dedupe:sales": "node scripts/dedupe-imported-sales.js",
     "reset:business-data": "node scripts/reset-business-data.js",
@@ -18,6 +19,7 @@
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "mysql2": "^3.14.5",

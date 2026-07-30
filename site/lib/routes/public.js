@@ -10,8 +10,11 @@ export function registerPublicRoutes(app, context) {
     IMPORTED_SALES_ARCHITECTURE,
     LATEST_IMPORT_RUN_SQL,
     logRouteError,
+    requireStaffOrCustomer,
     validateOrderSubmission,
     createOrderSubmission,
+    resolveOrderSubmissionIdentity,
+    getImportedCustomerByCode,
   } = context;
 
   app.get("/", (req, res) => res.sendFile(path.join(settings.publicDir, "index.html")));
@@ -40,7 +43,7 @@ export function registerPublicRoutes(app, context) {
     });
   });
 
-  app.get("/api/catalog", async (req, res) => {
+  app.get("/api/catalog", requireStaffOrCustomer, async (req, res) => {
     try {
       const page = Math.max(parseInt(req.query.page || "1", 10), 1);
       const pageSize = Math.min(Math.max(parseInt(req.query.page_size || "10", 10), 1), 200);
@@ -109,10 +112,18 @@ export function registerPublicRoutes(app, context) {
     }
   });
 
-  app.post("/api/orders/submit", async (req, res) => {
+  app.post("/api/orders/submit", requireStaffOrCustomer, async (req, res) => {
     try {
       const submission = validateOrderSubmission(req.body);
-      const { orderId } = await createOrderSubmission(db, submission);
+      const identity = await resolveOrderSubmissionIdentity(db, {
+        actor: req.actor,
+        submission,
+        getImportedCustomerByCode,
+      });
+      const { orderId } = await createOrderSubmission(db, {
+        ...submission,
+        ...identity,
+      });
       res.json({ ok: true, order_id: orderId });
     } catch (error) {
       logRouteError(error);

@@ -6,7 +6,7 @@
     <meta name="screen-orientation" content="landscape" />
     <title>VIOMES Admin</title>
     <link rel="icon" href="/images/favicon.ico" />
-    <link rel="stylesheet" href="styles.css?v=20260409f" />
+    <link rel="stylesheet" href="styles.css?v=20260729-viomes2" />
   </head>
 
   <body class="admin-body">
@@ -124,13 +124,14 @@
             </div>
 
             <div class="admin-table-wrap">
-              <table class="admin-table">
+              <table class="admin-table admin-order-submissions-table">
                 <thead>
                   <tr>
                     <th>Πελάτης</th>
                     <th>Υποκατάστημα</th>
                     <th>Είδη</th>
-                    <th>Τεμάχια</th>
+                    <th class="admin-table-number">Τεμάχια</th>
+                    <th class="admin-table-number">Εκτ. Αξία</th>
                     <th>Σχόλια</th>
                     <th>Υποβλήθηκε</th>
                     <th>Ενέργειες</th>
@@ -138,7 +139,7 @@
                 </thead>
                 <tbody id="orderSubmissionsBody">
                   <tr>
-                    <td colspan="7" class="admin-table-empty">
+                    <td colspan="8" class="admin-table-empty">
                       Δεν υπάρχουν εκκρεμείς παραγγελίες.
                     </td>
                   </tr>

@@ -112,3 +112,25 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
     })),
   };
 }
+
+export async function getImportedCustomerByCode(db, customerCode) {
+  const code = String(customerCode || "").trim();
+  if (!code) return null;
+
+  const row = await db.get(
+    `
+      SELECT customer_code AS code, customer_name AS name, is_inactive
+      FROM imported_customers
+      WHERE customer_code = ?
+    `,
+    [code],
+  );
+
+  if (!row) return null;
+
+  return {
+    code: row.code,
+    name: row.name,
+    is_inactive: Boolean(row.is_inactive),
+  };
+}

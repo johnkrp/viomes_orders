@@ -10,7 +10,10 @@ import {
   newSessionToken,
   verifyPassword,
 } from "./lib/admin-auth.js";
-import { searchImportedCustomers } from "./lib/admin-customer-search.js";
+import {
+  getImportedCustomerByCode,
+  searchImportedCustomers,
+} from "./lib/admin-customer-search.js";
 import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
 import { openDatabase } from "./lib/db/client.js";
 import { initDatabaseSchema } from "./lib/db/init-schema.js";
@@ -29,6 +32,7 @@ import {
   createOrderSubmission,
   listPendingOrderSubmissions,
   rejectOrderSubmission,
+  resolveOrderSubmissionIdentity,
   validateOrderSubmission,
 } from "./lib/order-submissions.js";
 import {
@@ -37,6 +41,7 @@ import {
   registerAdminImportRoutes,
   registerAdminOrderSubmissionRoutes,
 } from "./lib/routes/admin.js";
+import { registerCustomerAuthRoutes } from "./lib/routes/customer.js";
 import { registerPublicRoutes } from "./lib/routes/public.js";
 import { validateRuntimeConfig } from "./lib/runtime-config.js";
 
@@ -299,6 +304,8 @@ export function buildRuntimeSettings({
     adminPassword: adminPasswordEnv || defaultAdminPassword,
     defaultAdminPassword,
     sessionCookieName: env.SESSION_COOKIE_NAME || "viomes_admin_session",
+    customerSessionCookieName:
+      env.CUSTOMER_SESSION_COOKIE_NAME || "viomes_customer_session",
     sessionMaxAgeSeconds: Number(env.SESSION_MAX_AGE_SECONDS || 28800),
     syncAdminPasswordOnStartup: String(
       env.SYNC_ADMIN_PASSWORD_ON_STARTUP || "0",
@@ -444,6 +451,9 @@ export function createApp({
   );
   app.use(express.json());
   app.use(cookieParser());
+  app.get("/catalog.json", requireStaffOrCustomer, (req, res) => {
+    res.sendFile(path.join(settings.publicDir, "catalog.json"));
+  });
   app.use("/images", express.static(settings.imagesDir));
   app.use(express.static(settings.publicDir));
 
@@ -506,6 +516,73 @@ export function createApp({
 
       req.admin = admin;
       next();
+    } catch (error) {
+      logRouteError(error);
+      res.status(500).json({ error: String(error) });
+    }
+  }
+
+  async function getAuthenticatedCustomer(req) {
+    const token = req.cookies?.[settings.customerSessionCookieName];
+    if (!token) return null;
+
+    const now = new Date().toISOString();
+    return db.get(
+      `
+        SELECT u.id, u.username, u.customer_code
+        FROM customer_sessions s
+        JOIN customer_users u ON u.id = s.customer_user_id
+        WHERE s.token = ?
+          AND s.expires_at > ?
+          AND u.is_active = 1
+      `,
+      [token, now],
+    );
+  }
+
+  async function requireCustomer(req, res, next) {
+    try {
+      const customer = await getAuthenticatedCustomer(req);
+      if (!customer) {
+        res.status(401).json({ detail: "Unauthorized" });
+        return;
+      }
+
+      req.customer = customer;
+      next();
+    } catch (error) {
+      logRouteError(error);
+      res.status(500).json({ error: String(error) });
+    }
+  }
+
+  async function requireStaffOrCustomer(req, res, next) {
+    try {
+      const admin = await getAuthenticatedAdmin(req);
+      if (admin) {
+        req.actor = {
+          role: "staff",
+          adminId: admin.id,
+          username: admin.username,
+          isOwner: Boolean(admin.is_owner),
+        };
+        next();
+        return;
+      }
+
+      const customer = await getAuthenticatedCustomer(req);
+      if (customer) {
+        req.actor = {
+          role: "customer",
+          customerUserId: customer.id,
+          username: customer.username,
+          customerCode: customer.customer_code,
+        };
+        next();
+        return;
+      }
+
+      res.status(401).json({ detail: "Unauthorized" });
     } catch (error) {
       logRouteError(error);
       res.status(500).json({ error: String(error) });
@@ -586,8 +663,11 @@ export function createApp({
     IMPORTED_SALES_ARCHITECTURE,
     LATEST_IMPORT_RUN_SQL,
     logRouteError,
+    requireStaffOrCustomer,
     validateOrderSubmission,
     createOrderSubmission,
+    resolveOrderSubmissionIdentity,
+    getImportedCustomerByCode,
   });
 
   registerAdminImportRoutes(app, {
@@ -635,7 +715,18 @@ export function createApp({
     logRouteError,
   });
 
-  app.post("/api/order/export-xlsx", async (req, res) => {
+  registerCustomerAuthRoutes(app, {
+    db,
+    settings,
+    verifyPassword,
+    newSessionToken,
+    buildSessionCookieOptions,
+    shouldUseSecureCookie,
+    getImportedCustomerByCode,
+    logRouteError,
+  });
+
+  app.post("/api/order/export-xlsx", requireStaffOrCustomer, async (req, res) => {
     try {
       const { customerName, customerEmail, comment, items } =
         validateOrderExportRequest(req.body);

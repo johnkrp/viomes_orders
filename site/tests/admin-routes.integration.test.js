@@ -303,6 +303,17 @@ test("admin auth routes support login, me, logout, and protected admin endpoints
       is_owner: true,
     });
 
+    response = await fetch(`${app.baseUrl}/api/customer/me`, {
+      headers: { Cookie: cookie },
+    });
+    assert.equal(response.status, 200);
+    const crossSessionPayload = await response.json();
+    assert.equal(
+      crossSessionPayload.authenticated,
+      false,
+      "an admin session cookie must not authenticate /api/customer/me",
+    );
+
     response = await fetch(
       `${app.baseUrl}/api/admin/customers/search?customer_name=Alpha`,
       {
@@ -381,9 +392,27 @@ test("order export endpoint validates payloads and returns an xlsx file for vali
   const app = await startTestApp();
 
   try {
+    const loginResponse = await fetch(`${app.baseUrl}/api/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "admin", password: "secret" }),
+    });
+    assert.equal(loginResponse.status, 200);
+    const cookie = loginResponse.headers.get("set-cookie");
+
     let response = await fetch(`${app.baseUrl}/api/order/export-xlsx`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerName: "Alpha Store",
+        items: [{ code: "P001", qty: 1 }],
+      }),
+    });
+    assert.equal(response.status, 401);
+
+    response = await fetch(`${app.baseUrl}/api/order/export-xlsx`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({
         customerName: "Alpha Store",
         customerEmail: "not-an-email",
@@ -405,7 +434,7 @@ test("order export endpoint validates payloads and returns an xlsx file for vali
 
     response = await fetch(`${app.baseUrl}/api/order/export-xlsx`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({
         customerName: "Alpha Store",
         customerEmail: "buyer@example.com",

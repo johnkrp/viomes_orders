@@ -1,3 +1,5 @@
+import { estimateOrderValue } from "./order-value-estimate.js";
+
 const MAX_ITEMS = 200;
 const MAX_TEXT_LENGTH = 500;
 const MAX_NOTES_LENGTH = 4000;
@@ -15,6 +17,7 @@ function validateEmailAddress(value) {
 
 export function validateOrderSubmission(body) {
   const customerName = sanitizeText(body?.customerName, MAX_TEXT_LENGTH);
+  const customerCode = sanitizeText(body?.customerCode, 128);
   const customerSubstore = sanitizeText(
     body?.customerSubstore,
     MAX_TEXT_LENGTH,
@@ -22,12 +25,6 @@ export function validateOrderSubmission(body) {
   const customerEmail = sanitizeText(body?.customerEmail, MAX_TEXT_LENGTH);
   const notes = sanitizeText(body?.notes, MAX_NOTES_LENGTH);
   const items = Array.isArray(body?.items) ? body.items : null;
-
-  if (!customerName) {
-    const error = new Error("Order submission requires a customer name.");
-    error.status = 400;
-    throw error;
-  }
 
   if (!validateEmailAddress(customerEmail)) {
     const error = new Error("Customer email address is invalid.");
@@ -70,10 +67,57 @@ export function validateOrderSubmission(body) {
 
   return {
     customerName,
+    customerCode,
     customerSubstore,
     customerEmail,
     notes,
     items: normalizedItems,
+  };
+}
+
+export async function resolveOrderSubmissionIdentity(
+  db,
+  { actor, submission, getImportedCustomerByCode },
+) {
+  if (actor?.role === "customer") {
+    const customer = await getImportedCustomerByCode(db, actor.customerCode);
+    if (!customer || customer.is_inactive) {
+      const error = new Error(
+        "Customer account is not linked to an active customer record.",
+      );
+      error.status = 403;
+      throw error;
+    }
+    return {
+      customerCode: customer.code,
+      customerName: customer.name,
+      customerSubstore: submission.customerSubstore || null,
+      submittedBy: actor.username || null,
+      submittedByRole: "customer",
+    };
+  }
+
+  if (!submission.customerCode) {
+    const error = new Error("Select a customer before submitting the order.");
+    error.status = 400;
+    throw error;
+  }
+
+  const customer = await getImportedCustomerByCode(db, submission.customerCode);
+  if (!customer || customer.is_inactive) {
+    const error = new Error(
+      `Unknown or inactive customer code: ${submission.customerCode}`,
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  return {
+    customerCode: customer.code,
+    customerName: customer.name,
+    customerSubstore: submission.customerSubstore || null,
+    submittedBy: actor?.username || null,
+    submittedByRole: actor?.role || null,
   };
 }
 
@@ -95,6 +139,14 @@ export async function createOrderSubmission(db, submission) {
     throw error;
   }
 
+  const valueEstimate = await estimateOrderValue(db, {
+    customerCode: submission.customerCode || null,
+    items: submission.items,
+  });
+  const valueByCode = new Map(
+    valueEstimate.lines.map((line) => [line.code, line]),
+  );
+
   const totalQtyPieces = submission.items.reduce(
     (sum, item) => sum + item.qty,
     0,
@@ -104,39 +156,53 @@ export async function createOrderSubmission(db, submission) {
   const { lastID: orderId } = await db.run(
     `
       INSERT INTO orders(
-        customer_name, customer_email, customer_substore, notes,
-        total_qty_pieces, total_net_value, status, submitted_at, created_at
+        customer_name, customer_email, customer_code, customer_substore, notes,
+        total_qty_pieces, total_net_value, status, submitted_by, submitted_by_role,
+        submitted_at, created_at
       )
-      VALUES (?, ?, ?, ?, ?, 0, 'pending', ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
     `,
     [
       submission.customerName,
       submission.customerEmail || null,
+      submission.customerCode || null,
       submission.customerSubstore || null,
       submission.notes || null,
       totalQtyPieces,
+      valueEstimate.totalNetValue,
+      submission.submittedBy || null,
+      submission.submittedByRole || null,
       submittedAt,
       submittedAt,
     ],
   );
 
   for (const item of submission.items) {
+    const priced = valueByCode.get(item.code);
     await db.run(
       `
         INSERT INTO order_lines(order_id, product_id, qty_pieces, unit_price, discount_pct, line_net_value)
-        VALUES (?, ?, ?, 0, 0, 0)
+        VALUES (?, ?, ?, ?, ?, ?)
       `,
-      [orderId, productIdByCode.get(item.code), item.qty],
+      [
+        orderId,
+        productIdByCode.get(item.code),
+        item.qty,
+        priced?.unitPrice || 0,
+        priced?.discountPct || 0,
+        priced?.lineNetValue || 0,
+      ],
     );
   }
 
-  return { orderId };
+  return { orderId, valueEstimate };
 }
 
 export async function listPendingOrderSubmissions(db) {
   const orders = await db.all(`
-    SELECT id, customer_name, customer_email, customer_substore, notes,
-           total_qty_pieces, status, submitted_at, warehouse_code
+    SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
+           total_qty_pieces, total_net_value, status, submitted_by, submitted_by_role,
+           submitted_at, warehouse_code
     FROM orders
     WHERE status = 'pending'
     ORDER BY submitted_at DESC
@@ -148,7 +214,8 @@ export async function listPendingOrderSubmissions(db) {
   const placeholders = orderIds.map(() => "?").join(", ");
   const lines = await db.all(
     `
-      SELECT ol.order_id, ol.qty_pieces, p.code, p.description
+      SELECT ol.order_id, ol.qty_pieces, ol.unit_price, ol.discount_pct, ol.line_net_value,
+             p.code, p.description
       FROM order_lines ol
       JOIN products p ON p.id = ol.product_id
       WHERE ol.order_id IN (${placeholders})
@@ -166,13 +233,20 @@ export async function listPendingOrderSubmissions(db) {
       code: line.code,
       description: line.description,
       qty: line.qty_pieces,
+      unit_price: line.unit_price,
+      discount_pct: line.discount_pct,
+      line_net_value: line.line_net_value,
     });
   }
 
-  return orders.map((order) => ({
-    ...order,
-    lines: linesByOrderId.get(order.id) || [],
-  }));
+  return orders.map((order) => {
+    const orderLines = linesByOrderId.get(order.id) || [];
+    return {
+      ...order,
+      lines: orderLines,
+      value_is_partial: orderLines.some((line) => Number(line.unit_price) === 0),
+    };
+  });
 }
 
 async function setOrderSubmissionStatus(

@@ -1,19 +1,58 @@
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap");
+
+/* ============================================================
+   VIOMES brand tokens
+   Source of truth: homepage/variables.css + homepage/DESIGN.md.
+   Keep in sync if the brand palette changes there.
+   ============================================================ */
 :root {
-  --bg: #f6f7fb;
-  --card: #fff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --line: #e6eaf2;
+  --viomes-bg: #dcd8cf; /* warm canvas — page background */
+  --viomes-surface: #b7b69c; /* muted sage — secondary panels */
+  --viomes-panel: #cbc7c1; /* warm neutral — borders, panel shells */
+  --viomes-frame: #d2cec8; /* light warm neutral — media/table header fills */
+  --viomes-primary: #807244; /* warm olive — primary action */
+  --viomes-dark: #4c4326; /* deep olive brown — ink */
+  --viomes-accent: #56393e; /* plum brown — CTA contrast */
+  --viomes-light: #f5f0ea; /* soft light text on dark surfaces */
 
-  --primary: #2a69b8;
-  --primary-hover: #245fa8;
-  --primary-active: #1b4a82;
+  /* ---- Semantic aliases (existing var() usages inherit the brand) ---- */
+  --bg: var(--viomes-bg);
 
-  --focus: rgba(42, 105, 184, 0.12);
-  --shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
-  --shadow-sm: 0 6px 18px rgba(17, 24, 39, 0.1);
+  /* Panels stay near-white rather than cream: this is a dense data tool and
+     rows need to stay scannable. The warm canvas shows through around them,
+     which is how the homepage uses --viomes-bg too. */
+  --card: #fdfcfa;
+  --text: var(--viomes-dark);
 
-  --radius: 12px;
+  /* Deliberately NOT --viomes-muted (#887B6D). DESIGN.md:45-51 flags that token
+     as a known unresolved WCAG AA failure (2.92:1). This value is the same warm
+     family but measures 6.27:1 on --card and 4.52:1 on --bg. */
+  --muted: #665e4a;
+  --line: #c5bfb1;
+
+  --primary: var(--viomes-primary);
+  --primary-hover: #6e6239;
+  --primary-active: #5c5230;
+
+  /* "Υποβολή" — the app's highest-emphasis action. Mapped to the brand accent,
+     which DESIGN.md:36 designates for "CTA contrast", so it stays distinct from
+     the ordinary olive buttons. Replaces the old non-brand green. */
+  --success: var(--viomes-accent);
+  --success-hover: #67464c;
+  --success-active: #452e32;
+
+  --focus: rgba(128, 114, 68, 0.18);
+  --shadow: 0 10px 30px -10px rgba(76, 67, 38, 0.22);
+  --shadow-sm: 0 6px 18px rgba(76, 67, 38, 0.16);
+
+  /* Shape language (DESIGN.md:377-388): panels/cards sharp, buttons/badges
+     full pill, inputs a small radius. */
+  --radius: 0;
+  --radius-input: 6px;
+  --radius-pill: 999px;
+
+  /* Shared motion curve — `ease-artevasi` in the homepage Tailwind config. */
+  --ease-viomes: cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 html {
@@ -27,13 +66,32 @@ html {
 body {
   margin: 0;
   font-family:
+    "Ubuntu",
     system-ui,
     -apple-system,
     Segoe UI,
     Roboto,
-    Arial;
+    Arial,
+    sans-serif;
+  /* The brand sets body at 300, but that is too thin for 13px table cells in a
+     dense data tool. Body runs 400; headings and lead copy keep the brand's
+     lighter editorial weight below. */
+  font-weight: 400;
+  line-height: 1.35;
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Ubuntu", system-ui, sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.02em;
 }
 
 .wrap {
@@ -50,7 +108,7 @@ body.tablet-portrait-lock {
   position: fixed;
   inset: 0;
   z-index: 12000;
-  background: radial-gradient(circle at 20% 20%, #1f4f8a, #0f172a);
+  background: radial-gradient(circle at 20% 20%, #6e6239, var(--viomes-dark));
   align-items: center;
   justify-content: center;
   padding: 24px;
@@ -62,12 +120,12 @@ body.tablet-portrait-lock .rotate-overlay {
 
 .rotate-card {
   width: min(520px, 100%);
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 18px;
+  background: var(--viomes-light);
+  border: 1px solid rgba(245, 240, 234, 0.5);
+  border-radius: var(--radius);
   text-align: center;
   padding: 24px 20px;
-  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.45);
+  box-shadow: 0 16px 40px rgba(32, 27, 14, 0.45);
 }
 
 .rotate-icon {
@@ -79,12 +137,12 @@ body.tablet-portrait-lock .rotate-overlay {
 .rotate-card h2 {
   margin: 0 0 8px;
   font-size: 25px;
-  color: #0f172a;
+  color: var(--viomes-dark);
 }
 
 .rotate-card p {
   margin: 0;
-  color: #334155;
+  color: var(--muted);
   font-size: 16px;
   line-height: 1.4;
 }
@@ -94,11 +152,13 @@ body.tablet-portrait-lock .rotate-overlay {
   }
 }
 
-/* Header */
+/* Header — warm canvas with a hairline rule, matching the homepage Navbar
+   (bg-background/95 + border-b border-border), not a dark bar. */
 header {
   padding: 18px 16px;
-  background: #fff;
-  border-bottom: 1px solid var(--line);
+  background: rgba(220, 216, 207, 0.95);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--viomes-panel);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -147,12 +207,21 @@ header {
 }
 .hero-title {
   margin: 10px 0 6px;
+  font-size: clamp(1.75rem, 2.4vw, 2.5rem);
+  line-height: 1.05;
+  color: var(--viomes-dark);
 }
 .hero-sub {
   margin: 0 auto;
   max-width: 920px;
   color: var(--muted);
   padding: 4px;
+  font-weight: 300;
+  line-height: 1.5;
+}
+.hero-sub strong {
+  font-weight: 500;
+  color: var(--viomes-dark);
 }
 
 main {
@@ -172,7 +241,11 @@ main {
   margin: 0;
   padding: 14px 14px;
   border-bottom: 1px solid var(--line);
-  font-size: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--viomes-dark);
   text-align: center;
 }
 
@@ -189,24 +262,32 @@ main {
   white-space: nowrap;
 }
 
+/* The search field is the flexible item in the toolbar: everything after it is
+   fixed-width, so it has to absorb the slack. The basis (not just min-width) has
+   to stay small — with flex-wrap:wrap the browser wraps on the hypothetical
+   basis size before it ever shrinks an item, so a 320px basis pushed the count
+   pill onto a second row. flex-grow still lets it fill whatever space is left. */
 input[type="search"] {
-  flex: 1;
-  min-width: 320px;
+  flex: 1 1 180px;
+  min-width: 180px;
   padding: 11px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: var(--radius-input);
+  background: var(--card);
+  font: inherit;
 }
 
 input[type="text"],
 input[type="email"],
 input[type="tel"],
 input[type="number"],
+select,
 textarea {
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: var(--radius-input);
+  background: var(--card);
+  font: inherit;
 }
 
 /* Hide number arrows (optional) */
@@ -227,6 +308,7 @@ textarea {
 }
 
 input,
+select,
 textarea {
   outline: none;
   transition:
@@ -235,29 +317,34 @@ textarea {
   touch-action: manipulation;
 }
 input:hover,
+select:hover,
 textarea:hover {
-  border-color: #cfd5df;
+  border-color: var(--viomes-surface);
 }
 input:focus,
+select:focus,
 textarea:focus {
-  border-color: rgba(42, 105, 184, 0.55);
+  border-color: rgba(128, 114, 68, 0.7);
   box-shadow: 0 0 0 3px var(--focus);
 }
 
 /* Buttons */
+/* Primary Action Button (DESIGN.md:365) — olive fill, light text, full pill. */
 button,
 .btn {
-  padding: 10px 12px;
+  padding: 10px 16px;
   border: 1px solid var(--primary);
-  border-radius: 12px;
+  border-radius: var(--radius-pill);
   background: var(--primary);
-  color: #fff;
+  color: var(--viomes-light);
+  font: inherit;
+  font-weight: 500;
   cursor: pointer;
   transition:
     transform 0.08s ease,
-    box-shadow 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+    box-shadow 0.15s var(--ease-viomes),
+    background-color 0.15s var(--ease-viomes),
+    border-color 0.15s var(--ease-viomes);
   touch-action: manipulation;
 }
 
@@ -283,16 +370,35 @@ button:disabled,
   transform: none;
 }
 
+/* Ghost Button (DESIGN.md:373) — transparent, deep-olive text and 1px border. */
 button.secondary,
 .btn.ghost {
-  background: #fff;
-  color: var(--primary);
-  border-color: rgba(42, 105, 184, 0.35);
+  background: transparent;
+  color: var(--viomes-dark);
+  border-color: var(--viomes-dark);
 }
 button.secondary:hover,
 .btn.ghost:hover {
-  background: rgba(42, 105, 184, 0.06);
-  border-color: rgba(42, 105, 184, 0.55);
+  background: rgba(76, 67, 38, 0.08);
+  border-color: var(--viomes-dark);
+}
+
+/* Secondary Action Button (DESIGN.md:369) — plum fill, light text, full pill.
+   Carries "Υποβολή", the app's highest-emphasis action. */
+button.success,
+.btn.success {
+  background: var(--success);
+  border-color: var(--success);
+}
+button.success:hover,
+.btn.success:hover {
+  background: var(--success-hover);
+  border-color: var(--success-hover);
+}
+button.success:active,
+.btn.success:active {
+  background: var(--success-active);
+  border-color: var(--success-active);
 }
 
 /* Small / pill */
@@ -302,12 +408,13 @@ button.secondary:hover,
 }
 .pill {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
+  letter-spacing: 0.04em;
   color: var(--muted);
-  background: #fff;
+  background: var(--card);
 }
 
 .sr-only {
@@ -355,15 +462,18 @@ button.secondary:hover,
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  background: #fff;
+  background: var(--card);
 }
 
+/* Header cells use the brand's eyebrow treatment (DESIGN.md --type-page-eyebrow:
+   uppercase, 0.15em tracking) on the warm frame fill. */
 .catalog-table thead th {
   border-bottom: 1px solid var(--line);
-  background: #dbe7f7;
-  color: #0f172a;
+  background: var(--viomes-frame);
+  color: var(--viomes-dark);
   font-size: 12px;
-  letter-spacing: 0.4px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   padding: 10px 12px;
 }
@@ -376,10 +486,10 @@ button.secondary:hover,
 }
 
 .catalog-table tbody tr:nth-child(even) {
-  background: #fafafa;
+  background: #f7f5f0;
 }
 .catalog-table tbody tr:hover {
-  background: rgba(42, 105, 184, 0.06);
+  background: rgba(128, 114, 68, 0.08);
 }
 
 .th-code {
@@ -419,17 +529,20 @@ button.secondary:hover,
   vertical-align: middle;
 }
 
+/* Order-history signals stay semantically distinct (grey / amber / green) but
+   are warmed into the brand family. Hue separation is preserved on purpose —
+   salesmen read these at a glance. */
 .history-badge.never-ordered {
-  color: #d1d5db;
+  color: #c2bcae;
   opacity: 0.5;
 }
 
 .history-badge.once-ordered {
-  color: #f59e0b;
+  color: #c9922f;
 }
 
 .history-badge.many-times-ordered {
-  color: #10b981;
+  color: #5c7a4a;
   font-weight: 600;
 }
 
@@ -463,12 +576,13 @@ button.secondary:hover,
   white-space: nowrap;
 }
 
+/* Media frames use the brand's frame fill and stay sharp-cornered. */
 .packshot {
   width: 56px;
   height: 56px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: var(--radius);
+  background: var(--viomes-frame);
   object-fit: contain;
 }
 
@@ -476,10 +590,10 @@ button.secondary:hover,
   display: inline-block;
   padding: 4px 10px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
+  border-radius: var(--radius-pill);
+  background: var(--card);
   font-size: 12px;
-  color: #334155;
+  color: var(--muted);
 }
 
 .qty-inline {
@@ -497,12 +611,12 @@ button.secondary:hover,
 }
 
 .stepBtn {
-  width: 20px;
-  height: 16px;
-  min-width: 20px;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
   padding: 0;
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
   display: inline-flex;
@@ -511,9 +625,19 @@ button.secondary:hover,
   box-shadow: none;
 }
 
+/* Discreet treatment so the steppers support the row rather than compete with
+   "Προσθήκη". Sizing is left as authored. */
+.stepBtn {
+  background: transparent;
+  color: var(--viomes-dark);
+  border-color: var(--viomes-surface);
+}
+
 .stepBtn:hover {
   transform: none;
   box-shadow: none;
+  background: rgba(76, 67, 38, 0.1);
+  border-color: var(--viomes-dark);
 }
 
 /* Desktop-only: make +/- controls more discreet */
@@ -526,12 +650,15 @@ button.secondary:hover,
     width: 130px;
   }
 
+  /* Discreet, but not below a usable click target — 26px clears WCAG 2.5.8's
+     24px minimum. The old 12px here never actually applied (it was overridden
+     by `.qty-inline button`), so this is not a size regression in practice. */
   .stepBtn {
-    width: 12px;
-    height: 12px;
-    min-width: 12px;
-    font-size: 8px;
-    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    font-size: 13px;
+    border-radius: var(--radius-pill);
   }
 
   .qty-stepper {
@@ -544,14 +671,18 @@ button.secondary:hover,
   width: 84px;
   height: 36px;
   padding: 6px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-input);
   text-align: center;
 }
 
-.qty-inline button {
+/* Scoped to .addBtn on purpose. This used to be `.qty-inline button`, which
+   outranked the `.stepBtn` sizing below (and the "more discreet" desktop rule)
+   on specificity, so the +/- controls rendered as 80px-wide filled pills and
+   out-shouted the actual action in every row. */
+.qty-inline .addBtn {
   height: 36px;
-  padding: 6px 10px;
-  border-radius: 12px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   min-width: 80px;
   white-space: nowrap;
@@ -583,7 +714,7 @@ button.secondary:hover,
   padding-bottom: 14px;
 }
 .actions .customerName input,
-.actions .customerSubstore input,
+.actions .customerSubstore select,
 .actions .customerEmail input {
   width: 100%;
 }
@@ -594,6 +725,32 @@ button.secondary:hover,
   font-size: 13px;
   font-weight: 700;
   color: var(--text);
+}
+
+.customerSubstoreLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid rgba(128, 114, 68, 0.25);
+  border-top-color: var(--primary);
+  animation: adminSpin 0.8s linear infinite;
+  flex: 0 0 auto;
+}
+
+.mini-spinner[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-spinner {
+    animation-duration: 2.4s;
+  }
 }
 
 .actions .cartLabel,
@@ -689,7 +846,7 @@ button.secondary:hover,
   gap: 10px;
   padding: 12px 14px;
   border-top: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
 }
 .pager .meta {
   font-size: 12px;
@@ -705,16 +862,16 @@ button.secondary:hover,
 .toast {
   margin: 10px 0 0;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid transparent;
-  background: #f6f7fb;
-  color: #1f2937;
+  background: var(--viomes-frame);
+  color: var(--viomes-dark);
   font-size: 14px;
   line-height: 1.35;
   display: none;
   align-items: flex-start;
   gap: 10px;
-  box-shadow: 0 6px 18px rgba(17, 24, 39, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .toast.show {
@@ -735,22 +892,25 @@ button.secondary:hover,
   word-break: break-word;
 }
 
+/* Status hues stay distinguishable but are pulled into the warm palette.
+   Error tracks the brand's --destructive (hsl 7 49% 40%); info drops blue for a
+   warm neutral, since blue is not in the VIOMES palette. */
 .toast.is-error {
-  background: #fff5f5;
-  border-color: #fecaca;
-  color: #7f1d1d;
+  background: #f9ece8;
+  border-color: #dfb9ac;
+  color: #7a3324;
 }
 
 .toast.is-ok {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #14532d;
+  background: #eef2e8;
+  border-color: #c6d3b6;
+  color: #3f5730;
 }
 
 .toast.is-info {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1e3a8a;
+  background: #f2efe6;
+  border-color: #d5cdb6;
+  color: var(--primary-active);
 }
 
 @keyframes toastIn {
@@ -777,17 +937,17 @@ button.secondary:hover,
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(32, 27, 14, 0.55);
 }
 .modal-card {
   position: relative;
   max-width: min(920px, 92vw);
   max-height: 86vh;
   margin: 6vh auto 0;
-  background: #fff;
-  border-radius: 16px;
+  background: var(--card);
+  border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 20px 60px rgba(32, 27, 14, 0.35);
 }
 .modal-card img {
   display: block;
@@ -795,12 +955,12 @@ button.secondary:hover,
   height: auto;
   max-height: 76vh;
   object-fit: contain;
-  background: #fff;
+  background: var(--viomes-frame);
 }
 .modal-cap {
   padding: 10px 14px;
   font-size: 13px;
-  color: #334155;
+  color: var(--muted);
   border-top: 1px solid var(--line);
 }
 .modal-close {
@@ -809,16 +969,17 @@ button.secondary:hover,
   right: 10px;
   width: 38px;
   height: 38px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #fff;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--viomes-dark);
   cursor: pointer;
   font-size: 22px;
   line-height: 1;
 }
 
 .modal-close:hover {
-  background: #f7f9fc;
+  background: var(--viomes-frame);
 }
 
 /* Submit modal tweaks */
@@ -837,7 +998,7 @@ button.secondary:hover,
 
 .modal-body {
   padding: 14px 16px;
-  color: #334155;
+  color: var(--muted);
   font-size: 14px;
   text-align: left;
 }
@@ -855,13 +1016,13 @@ button.secondary:hover,
   right: 12px;
   width: 36px;
   height: 36px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: grid;
   place-items: center;
-  background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: var(--card);
+  border: 1px solid var(--line);
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.1);
+  box-shadow: 0 6px 16px rgba(76, 67, 38, 0.12);
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease,
@@ -875,7 +1036,7 @@ button.secondary:hover,
   position: absolute;
   width: 14px;
   height: 2px;
-  background: #334155;
+  background: var(--viomes-dark);
   border-radius: 2px;
 }
 
@@ -888,23 +1049,24 @@ button.secondary:hover,
 
 .modal-x:hover {
   transform: translateY(-1px);
-  background: rgba(42, 105, 184, 0.06);
-  border-color: rgba(42, 105, 184, 0.35);
-  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.14);
+  background: rgba(76, 67, 38, 0.08);
+  border-color: var(--viomes-surface);
+  box-shadow: 0 10px 22px rgba(76, 67, 38, 0.16);
 }
 
 .modal-x:focus {
   outline: none;
   box-shadow:
     0 0 0 3px var(--focus),
-    0 10px 22px rgba(17, 24, 39, 0.12);
+    0 10px 22px rgba(76, 67, 38, 0.14);
 }
 
-/* Footer */
+/* Footer — cream canvas with olive text and a full-bleed top rule, matching
+   the homepage Footer (bg-background + text-footer + footer-divider). */
 .site-footer {
   margin-top: 18px;
-  border-top: 1px solid var(--line);
-  background: #fff;
+  border-top: 1px solid var(--viomes-panel);
+  background: transparent;
 }
 
 .footer-inner {
@@ -978,7 +1140,7 @@ button.secondary:hover,
   }
 
   input[type="search"] {
-    min-width: 16rem;
+    min-width: 11rem;
     padding: 0.55rem 0.65rem;
     font-size: 0.88rem;
   }
@@ -1093,7 +1255,7 @@ button.secondary:hover,
     padding: 0.15rem;
   }
 
-  .qty-inline button {
+  .qty-inline .addBtn {
     height: 1.95rem;
     min-width: 3.2rem;
     font-size: 0.62rem;
@@ -1182,39 +1344,49 @@ button.secondary:hover,
 
 /* Σκοτείνιασε μόνο το panel του καταλόγου (αριστερά) */
 .grid > section.panel {
-  background: #f1f4f9; /* πιο σκούρο από το λευκό */
+  background: #efece5; /* πιο σκούρο από το λευκό */
 }
 
 /* Λίγο πιο σκούρα zebra rows για contrast */
 .catalog-table tbody tr:nth-child(even) {
-  background: #eaf0f9;
+  background: #e8e4da;
 }
 
 /* Hover να ξεχωρίζει */
 .catalog-table tbody tr:hover {
-  background: rgba(42, 105, 184, 0.12);
+  background: rgba(128, 114, 68, 0.16);
 }
 
 /* Inputs μέσα στον κατάλογο: να “φαίνονται” */
 .td-packs input,
 .qty-inline input {
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.22);
-  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.08);
+  background: #fdfcfa;
+  border: 1px solid rgba(76, 67, 38, 0.28);
+  box-shadow: 0 2px 10px rgba(76, 67, 38, 0.1);
 }
 
 /* Όταν κάνουν focus, πιο έντονο highlight */
 .td-packs input:focus,
 .qty-inline input:focus {
-  border-color: rgba(42, 105, 184, 0.75);
+  border-color: rgba(128, 114, 68, 0.85);
   box-shadow:
     0 0 0 3px var(--focus),
-    0 4px 14px rgba(17, 24, 39, 0.12);
+    0 4px 14px rgba(76, 67, 38, 0.14);
 }
 
-/* Κουμπί “Προσθήκη” στο table να φαίνεται λίγο πιο “flat” δίπλα στα inputs */
-.qty-inline .addBtn {
+/* Κουμπί “Προσθήκη” στο table να φαίνεται λίγο πιο “flat” δίπλα στα inputs.
+   Markup gives it .btn.ghost, but it is the row's primary action, so it takes
+   the olive fill and the now-discreet steppers sit behind it in the hierarchy. */
+.qty-inline .addBtn.ghost {
   box-shadow: none;
+  background: var(--primary);
+  color: var(--viomes-light);
+  border-color: var(--primary);
+}
+
+.qty-inline .addBtn.ghost:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 /* Image modal close button να φαίνεται πάντα */
@@ -1226,25 +1398,25 @@ button.secondary:hover,
 
   width: 42px;
   height: 42px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 
   display: grid;
   place-items: center;
 
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  color: #0f172a;
+  background: rgba(253, 252, 250, 0.95);
+  border: 1px solid rgba(76, 67, 38, 0.18);
+  color: var(--viomes-dark);
 
   font-size: 26px;
   line-height: 1;
   cursor: pointer;
 
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 10px 26px rgba(32, 27, 14, 0.18);
 }
 
 #imgModal .modal-close:hover {
   transform: translateY(-1px);
-  background: #fff;
+  background: var(--card);
 }
 
 /* Admin */
@@ -1252,10 +1424,10 @@ button.secondary:hover,
   background:
     radial-gradient(
       circle at top left,
-      rgba(42, 105, 184, 0.12),
+      rgba(128, 114, 68, 0.14),
       transparent 24%
     ),
-    linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+    linear-gradient(180deg, #e4e0d8 0%, var(--viomes-bg) 100%);
 }
 
 .admin-body .wrap {
@@ -1271,12 +1443,13 @@ button.secondary:hover,
   padding-top: 8px;
 }
 
+/* Matches the brand's --type-page-eyebrow: 0.75rem, 0.15em tracking, uppercase. */
 .admin-eyebrow {
   margin: 0;
   color: var(--primary);
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 1.6px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -1295,29 +1468,29 @@ button.secondary:hover,
 }
 
 .admin-customer-hero {
-  border-color: rgba(42, 105, 184, 0.18);
+  border-color: rgba(128, 114, 68, 0.22);
   background:
     radial-gradient(
       circle at top right,
-      rgba(42, 105, 184, 0.08),
+      rgba(128, 114, 68, 0.09),
       transparent 32%
     ),
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.99),
-      rgba(243, 247, 252, 0.99)
+      rgba(253, 252, 250, 0.99),
+      rgba(242, 239, 231, 0.99)
     );
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 16px 40px rgba(76, 67, 38, 0.12);
 }
 
 .admin-customer-hero .panel-head {
   padding-bottom: 14px;
   background: linear-gradient(
     180deg,
-    rgba(233, 242, 254, 0.95),
-    rgba(248, 251, 255, 0.7)
+    rgba(210, 206, 200, 0.95),
+    rgba(250, 248, 243, 0.7)
   );
-  border-bottom: 1px solid rgba(42, 105, 184, 0.12);
+  border-bottom: 1px solid rgba(128, 114, 68, 0.16);
   border-top-left-radius: var(--radius);
   border-top-right-radius: var(--radius);
 }
@@ -1361,12 +1534,12 @@ button.secondary:hover,
 
 .admin-customer-meta {
   font-size: 14px;
-  color: #334155 !important;
-  font-weight: 600;
+  color: var(--muted) !important;
+  font-weight: 500;
 }
 
 .admin-panel-subtle {
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 20px rgba(76, 67, 38, 0.07);
 }
 
 .admin-panel-subtle .panel-head {
@@ -1377,7 +1550,7 @@ button.secondary:hover,
   max-width: 52ch;
   font-size: 12px;
   line-height: 1.45;
-  color: #64748b !important;
+  color: var(--muted) !important;
 }
 
 .admin-toast {
@@ -1402,8 +1575,8 @@ button.secondary:hover,
 
 .field span {
   font-size: 13px;
-  font-weight: 700;
-  color: #334155;
+  font-weight: 500;
+  color: var(--viomes-dark);
 }
 
 .field-grow {
@@ -1489,15 +1662,15 @@ button.secondary:hover,
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border: 1px solid rgba(42, 105, 184, 0.2);
-  border-radius: 14px;
+  border: 1px solid rgba(128, 114, 68, 0.24);
+  border-radius: var(--radius);
   background: linear-gradient(
     180deg,
-    rgba(239, 246, 255, 0.98),
-    rgba(247, 250, 255, 0.98)
+    rgba(242, 239, 230, 0.98),
+    rgba(250, 248, 243, 0.98)
   );
-  color: #1e3a8a;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  color: var(--primary-active);
+  box-shadow: 0 10px 24px rgba(76, 67, 38, 0.08);
 }
 
 .admin-loading-indicator[hidden] {
@@ -1515,7 +1688,7 @@ button.secondary:hover,
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  border: 2px solid rgba(42, 105, 184, 0.2);
+  border: 2px solid rgba(128, 114, 68, 0.25);
   border-top-color: var(--primary);
   animation: adminSpin 0.8s linear infinite;
   flex: 0 0 auto;
@@ -1538,7 +1711,7 @@ button.secondary:hover,
 }
 
 .admin-panel.is-collapsed {
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 18px rgba(76, 67, 38, 0.08);
 }
 
 .admin-search-suggestions {
@@ -1556,20 +1729,20 @@ button.secondary:hover,
   display: grid;
   gap: 4px;
   padding: 10px 12px;
-  border: 1px solid rgba(42, 105, 184, 0.14);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(128, 114, 68, 0.18);
+  border-radius: var(--radius);
+  background: rgba(253, 252, 250, 0.98);
   text-align: left;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 24px rgba(76, 67, 38, 0.08);
 }
 
 .admin-search-suggestion.is-active {
-  border-color: rgba(42, 105, 184, 0.4);
-  background: rgba(231, 240, 255, 0.9);
+  border-color: rgba(128, 114, 68, 0.45);
+  background: rgba(232, 228, 218, 0.9);
 }
 
 .admin-search-suggestion strong {
-  color: #0f172a;
+  color: var(--viomes-dark);
   font-size: 14px;
 }
 
@@ -1603,14 +1776,14 @@ button.secondary:hover,
 
 .admin-stat-card {
   padding: 16px 18px;
-  border: 1px solid rgba(42, 105, 184, 0.14);
-  border-radius: 16px;
+  border: 1px solid rgba(128, 114, 68, 0.18);
+  border-radius: var(--radius);
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.98),
-    rgba(244, 247, 252, 0.98)
+    rgba(253, 252, 250, 0.98),
+    rgba(243, 240, 233, 0.98)
   );
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 28px rgba(76, 67, 38, 0.1);
 }
 
 .admin-stat-card-head {
@@ -1630,21 +1803,21 @@ button.secondary:hover,
 .admin-stat-range select {
   padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: var(--radius-input);
+  background: var(--card);
   color: var(--text);
   font-size: 12px;
   line-height: 1.1;
 }
 
 .admin-customer-hero .admin-stat-card {
-  border-color: rgba(42, 105, 184, 0.16);
+  border-color: rgba(128, 114, 68, 0.2);
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 1),
-    rgba(239, 245, 252, 1)
+    rgba(253, 252, 250, 1),
+    rgba(240, 236, 227, 1)
   );
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 30px rgba(76, 67, 38, 0.1);
 }
 
 .admin-stat-label {
@@ -1652,15 +1825,16 @@ button.secondary:hover,
   font-size: 12px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.15em;
 }
 
 .admin-stat-card strong {
   display: block;
   margin-top: 10px;
   font-size: 28px;
+  font-weight: 300;
   line-height: 1.1;
-  color: #0f172a;
+  color: var(--viomes-dark);
 }
 
 .admin-results-grid {
@@ -1729,8 +1903,8 @@ button.secondary:hover,
 .admin-compact-field select {
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: var(--radius-input);
+  background: var(--card);
   color: var(--text);
   font: inherit;
 }
@@ -1751,18 +1925,18 @@ button.secondary:hover,
 
 .admin-monthly-table .admin-monthly-total-heading,
 .admin-monthly-table .admin-monthly-total-cell {
-  background: #e7f0ea;
-  font-weight: 800;
+  background: #e6e2d6;
+  font-weight: 700;
 }
 
 .admin-monthly-table tbody tr:nth-child(even) .admin-monthly-total-cell {
-  background: #deebe2;
+  background: #ddd8ca;
 }
 
 .admin-monthly-table tfoot td {
-  background: #edf4ef;
-  font-weight: 800;
-  border-top: 1px solid #cfddd2;
+  background: #ece8dd;
+  font-weight: 700;
+  border-top: 1px solid var(--line);
 }
 
 .admin-table-number {
@@ -1835,15 +2009,16 @@ button.secondary:hover,
 }
 
 .admin-table th {
-  background: #e7edf7;
-  color: #0f172a;
+  background: var(--viomes-frame);
+  color: var(--viomes-dark);
   font-size: 12px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.15em;
 }
 
 .admin-panel-subtle .admin-table th {
-  background: #edf2f8;
+  background: #e2ded5;
 }
 
 .admin-sort-btn {
@@ -1898,7 +2073,7 @@ button.secondary:hover,
 .admin-table-filter-row th {
   padding-top: 8px;
   padding-bottom: 8px;
-  background: #f5f8fc;
+  background: #f0ede5;
   text-transform: none;
   letter-spacing: 0;
 }
@@ -1910,9 +2085,9 @@ button.secondary:hover,
   min-width: 0;
   box-sizing: border-box;
   padding: 7px 8px;
-  border: 1px solid #cdd8e5;
-  border-radius: 10px;
-  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--card);
   color: var(--text);
   font: inherit;
   font-size: 12px;
@@ -2079,7 +2254,7 @@ button.secondary:hover,
 }
 
 .admin-table tbody tr:nth-child(even) {
-  background: #f8fafc;
+  background: #f7f5f0;
 }
 
 .admin-table-empty {
@@ -2094,11 +2269,161 @@ button.secondary:hover,
   flex-wrap: wrap;
 }
 
+/* Detail rows sit between summary rows, so nth-child striping would band the
+   wrong rows. Stripe explicitly from the order index instead. */
+.admin-order-submissions-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+
+.admin-order-summary-row.is-alt {
+  background: #f7f5f0;
+}
+
+.admin-order-summary-row.is-expanded {
+  background: var(--viomes-frame);
+}
+
+.admin-order-summary-row.is-expanded > td {
+  border-bottom-color: transparent;
+}
+
+/* Notes run up to 4000 chars; keep the summary row short and defer the full
+   text to the detail panel. */
+.admin-order-notes-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-order-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-order-toggle:hover {
+  background: rgba(76, 67, 38, 0.06);
+}
+
+.admin-order-toggle:focus-visible {
+  outline: 2px solid var(--viomes-dark);
+  outline-offset: 1px;
+}
+
+.admin-order-toggle-caret {
+  width: 0;
+  height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 120ms ease;
+}
+
+.admin-order-toggle[aria-expanded="true"] .admin-order-toggle-caret {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-order-toggle-caret {
+    transition: none;
+  }
+}
+
+.admin-order-detail-row > td {
+  padding: 0 12px 14px;
+  background: var(--viomes-frame);
+}
+
+.admin-order-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-order-detail-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-order-detail-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-order-lines-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+}
+
+.admin-order-lines-table th,
+.admin-order-lines-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-size: 12px;
+  vertical-align: top;
+}
+
+.admin-order-lines-table thead th {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.admin-order-lines-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-order-lines-table tbody tr.is-unpriced {
+  background: #fbf6ee;
+}
+
+.admin-order-lines-table tfoot td {
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  font-weight: 700;
+}
+
+.admin-order-line-missing {
+  color: #98402f;
+  font-size: 11px;
+}
+
+.admin-order-detail-notes h4 {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.admin-order-detail-notes p {
+  margin: 0;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
 .order-submission-warehouse {
   width: 110px;
   padding: 6px 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
   font-size: 12px;
 }
 
@@ -2108,9 +2433,10 @@ button.secondary:hover,
   }
 }
 
+/* Tracks the brand's --destructive (hsl 7 49% 40%). */
 .admin-number-negative {
-  color: #d92d20;
-  font-weight: 800;
+  color: #98402f;
+  font-weight: 700;
 }
 
 .admin-order-select {
@@ -2121,7 +2447,7 @@ button.secondary:hover,
 
 .admin-order-select.is-active {
   background: var(--primary);
-  color: #fff;
+  color: var(--viomes-light);
   border-color: var(--primary);
 }
 
@@ -2132,16 +2458,16 @@ button.secondary:hover,
 }
 
 .admin-order-card {
-  border: 1px solid rgba(42, 105, 184, 0.14);
-  border-radius: 16px;
-  background: #fbfdff;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(128, 114, 68, 0.18);
+  border-radius: var(--radius);
+  background: #fdfcfa;
+  box-shadow: 0 10px 28px rgba(76, 67, 38, 0.08);
   overflow: hidden;
 }
 
 .admin-order-card-active {
-  border-color: rgba(42, 105, 184, 0.4);
-  box-shadow: 0 14px 34px rgba(42, 105, 184, 0.12);
+  border-color: rgba(128, 114, 68, 0.45);
+  box-shadow: 0 14px 34px rgba(128, 114, 68, 0.16);
 }
 
 .admin-order-empty {
@@ -2174,7 +2500,7 @@ button.secondary:hover,
   align-items: flex-end;
   gap: 6px;
   font-size: 13px;
-  color: #475569;
+  color: var(--muted);
 }
 
 .admin-order-kpi-meta {
@@ -2187,7 +2513,7 @@ button.secondary:hover,
 
 .admin-order-kpis strong {
   font-size: 18px;
-  color: #0f172a;
+  color: var(--viomes-dark);
 }
 
 .admin-order-open-link {
@@ -2200,7 +2526,7 @@ button.secondary:hover,
 .admin-order-note,
 .admin-order-meta {
   padding: 0 18px 10px;
-  color: #475569;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -2303,7 +2629,7 @@ button.secondary:hover,
 
   .admin-stat-card {
     padding: 0.85rem 0.9rem;
-    border-radius: 0.95rem;
+    border-radius: var(--radius);
   }
 
   .admin-stat-card strong {
@@ -2330,7 +2656,7 @@ button.secondary:hover,
   }
 
   .admin-order-card {
-    border-radius: 0.95rem;
+    border-radius: var(--radius);
   }
 
   .admin-order-head {
@@ -2344,4 +2670,42 @@ button.secondary:hover,
     padding-bottom: 0.5rem;
     font-size: 0.76rem;
   }
+}
+
+.customer-picker-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.customer-picker-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.customer-picker-result:hover {
+  background: var(--focus);
+  border-color: var(--primary);
+}
+
+.customer-picker-result-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.customer-picker-result-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
 }

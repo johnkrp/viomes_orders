@@ -366,6 +366,26 @@ async function initSqliteSchema(db) {
         FOREIGN KEY(admin_user_id) REFERENCES admin_users(id) ON DELETE CASCADE
       )
     `,
+    `
+      CREATE TABLE IF NOT EXISTS customer_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        customer_code TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS customer_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_user_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(customer_user_id) REFERENCES customer_users(id) ON DELETE CASCADE
+      )
+    `,
   ];
 
   for (const sql of statements) {
@@ -464,6 +484,28 @@ async function initMysqlSchema(db) {
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_admin_sessions_user_id(admin_user_id),
         CONSTRAINT fk_admin_session_user FOREIGN KEY(admin_user_id) REFERENCES admin_users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS customer_users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(191) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        customer_code VARCHAR(128) NOT NULL,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_customer_users_customer_code(customer_code)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS customer_sessions (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        customer_user_id INT NOT NULL,
+        token VARCHAR(255) NOT NULL UNIQUE,
+        expires_at VARCHAR(64) NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_customer_sessions_user_id(customer_user_id),
+        CONSTRAINT fk_customer_session_user FOREIGN KEY(customer_user_id) REFERENCES customer_users(id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `,
   ];
@@ -773,6 +815,20 @@ export async function initDatabaseSchema({ db, kind }) {
     "orders",
     "es1_document_code",
     `es1_document_code ${typeText}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "submitted_by",
+    `submitted_by ${typeText}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "submitted_by_role",
+    `submitted_by_role ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"}`,
   );
   await ensureIndex(
     db,

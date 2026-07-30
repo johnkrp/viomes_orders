@@ -6,7 +6,7 @@
     <meta name="screen-orientation" content="landscape" />
     <title>Φόρμα Παραγγελίας</title>
     <link rel="icon" href="/images/favicon.ico" />
-    <link rel="stylesheet" href="styles.css?v=20260409" />
+    <link rel="stylesheet" href="styles.css?v=20260729-viomes2" />
   </head>
 
   <body>
@@ -34,7 +34,16 @@
             />
           </div>
           <div class="header-actions">
-            <a class="btn ghost admin-link-btn" href="admin.html">Admin</a>
+            <a
+              id="adminLinkBtn"
+              class="btn ghost admin-link-btn"
+              href="admin.html"
+              hidden
+              >Admin</a
+            >
+            <button id="logoutBtn" type="button" class="btn ghost" hidden>
+              Αποσύνδεση
+            </button>
           </div>
         </div>
       </div>
@@ -42,6 +51,50 @@
 
     <main>
       <div class="wrap">
+        <section
+          id="loginPanel"
+          class="panel admin-panel admin-login-panel"
+          hidden
+        >
+          <div class="panel-head">
+            <div>
+              <h2>Σύνδεση</h2>
+              <p>Απαιτείται σύνδεση για την πρόσβαση στη φόρμα παραγγελίας.</p>
+            </div>
+          </div>
+
+          <form id="loginForm" class="admin-form-grid">
+            <label class="field">
+              <span>Όνομα χρήστη</span>
+              <input
+                id="loginUsername"
+                type="text"
+                autocomplete="username"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span>Κωδικός πρόσβασης</span>
+              <input
+                id="loginPassword"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+
+            <div class="admin-login-actions">
+              <button id="loginBtn" type="submit">Σύνδεση</button>
+            </div>
+            <div id="loginStatus" class="status" role="status" aria-live="polite"></div>
+          </form>
+        </section>
+
+        <div id="appMain" hidden>
         <div class="page-head hero-inner">
           <h1 class="hero-title">Φόρμα Παραγγελίας</h1>
           <p class="hero-sub">
@@ -61,7 +114,7 @@
               <input
                 id="q"
                 type="search"
-                placeholder="Αναζήτηση με κωδικό/περιγραφή/χρώμα..."
+                placeholder="Αναζήτηση"
                 list="codesList"
                 autocomplete="off"
                 autocapitalize="off"
@@ -84,7 +137,7 @@
                 autocorrect="off"
                 spellcheck="false"
                 enterkeyhint="done"
-                style="max-width: 140px"
+                style="max-width: 96px"
               />
 
               <!-- ✅ ΝΕΟ: κουμπί προσθήκης -->
@@ -138,22 +191,48 @@
             <h3>Στοιχεία & Παραγγελία</h3>
 
             <div class="actions">
-              <div class="customerName">
+              <div id="customerPickerPanel" hidden>
+                <label class="small" for="customerPickerQuery"
+                  >Αναζήτηση πελάτη (όνομα ή κωδικός):</label
+                >
+                <input
+                  id="customerPickerQuery"
+                  type="search"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  placeholder="π.χ. ABC Market ή 12345"
+                />
+                <div id="customerPickerResults" class="customer-picker-results"></div>
+                <div id="customerPickerSelected" class="small"></div>
+              </div>
+
+              <div id="customerIdentityDisplay" class="small" hidden></div>
+
+              <div id="customerNameField" class="customerName">
                 <label for="customerName">Όνομα πελάτη:</label>
                 <input
                   id="customerName"
                   type="text"
                   placeholder="π.χ. ABC Market"
+                  readonly
                 />
               </div>
 
-              <div class="customerSubstore">
-                <label for="customerSubstore">Υποκατάστημα:</label>
-                <input
-                  id="customerSubstore"
-                  type="text"
-                  placeholder="π.χ. Υποκατάστημα Θήβα"
-                />
+              <div id="customerSubstoreField" class="customerSubstore">
+                <div class="customerSubstoreLabelRow">
+                  <label for="customerSubstore">Υποκατάστημα:</label>
+                  <span
+                    id="customerSubstoreSpinner"
+                    class="mini-spinner"
+                    hidden
+                    aria-hidden="true"
+                  ></span>
+                </div>
+                <select id="customerSubstore">
+                  <option value="">— Χωρίς υποκατάστημα —</option>
+                </select>
               </div>
 
               <div class="cartLabel">Επιλεγμένα προϊόντα</div>
@@ -174,12 +253,18 @@
                 <button id="downloadExcelBtn" type="button" class="btn ghost">
                   Λήψη Excel
                 </button>
-                <button id="submitBtn" type="button">Υποβολή</button>
+                <button id="submitBtn" type="button" class="btn ghost">
+                  Αποστολή με Mail
+                </button>
+                <button id="submitToAdminBtn" type="button" class="btn success">
+                  Υποβολή
+                </button>
               </div>
 
               <div id="submitStatus" class="status"></div>
             </div>
           </aside>
+        </div>
         </div>
       </div>
 

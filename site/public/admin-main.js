@@ -36,6 +36,7 @@ import {
 import {
   decideOrderSubmission as decideOrderSubmissionModule,
   fetchOrderSubmissions as fetchOrderSubmissionsModule,
+  toggleOrderSubmissionDetails as toggleOrderSubmissionDetailsModule,
 } from "./admin-orders.js";
 import {
   getBranchOptionLabel as getBranchOptionLabelModule,
@@ -76,6 +77,8 @@ import {
 import {
   escapeHtml,
   formatDate,
+  formatDateTime,
+  formatMoney,
   matchesBranchSearch,
   normalizeSalesTimeRange,
   parseIsoDate,
@@ -87,6 +90,7 @@ assertAdminDomContract(elements);
 
 const state = {
   currentOrderSubmissions: [],
+  expandedOrderSubmissionIds: new Set(),
   currentDetailedOrders: [],
   currentDetailedOpenOrders: [],
   currentDetailedPreApprovalOrders: [],
@@ -885,6 +889,10 @@ function decideOrderSubmission(orderId, action) {
   return decideOrderSubmissionModule(moduleContext, orderId, action);
 }
 
+function toggleOrderSubmissionDetails(orderId) {
+  return toggleOrderSubmissionDetailsModule(moduleContext, orderId);
+}
+
 const moduleContext = {
   apiBase: API_BASE,
   counters,
@@ -892,6 +900,8 @@ const moduleContext = {
   escapeHtml,
   fetchOrderSubmissions,
   formatDate,
+  formatDateTime,
+  formatMoney,
   getBranchOptionLabel,
   importDatasetLabels: IMPORT_DATASET_LABELS,
   state,
@@ -985,7 +995,12 @@ elements.orderSubmissionsBody?.addEventListener("click", (event) => {
   if (!button) return;
   const orderId = button.getAttribute("data-order-id");
   const action = button.getAttribute("data-action");
-  if (!orderId || !["approve", "reject"].includes(action)) return;
+  if (!orderId) return;
+  if (action === "toggle") {
+    toggleOrderSubmissionDetails(orderId);
+    return;
+  }
+  if (!["approve", "reject"].includes(action)) return;
   void decideOrderSubmission(orderId, action);
 });
 
