@@ -1,3 +1,6 @@
+import { loadImportedCustomerBranches } from "../customer-stats/stats-imported-helpers.js";
+import { availableBranchRow } from "../customer-stats/shared.js";
+
 export function registerPublicRoutes(app, context) {
   const {
     db,
@@ -111,6 +114,42 @@ export function registerPublicRoutes(app, context) {
       res.status(500).json({ error: String(error) });
     }
   });
+
+  // Branch list for the order form's Υποκατάστημα dropdown.
+  //
+  // The form used to read this from /api/admin/customers/:code/stats, which computes the
+  // ENTIRE customer-stats payload — ledger, monthly sales, per-order values — purely to
+  // reach available_branches. For Σκλαβενίτης that took ~53 seconds with the dropdown
+  // disabled throughout. The branch list itself is one cheap aggregate.
+  //
+  // It also has to live outside /api/admin, which is staff-only: a logged-in customer
+  // could never load their own branches through the admin route.
+  app.get(
+    "/api/order-form/customers/:code/branches",
+    requireStaffOrCustomer,
+    async (req, res) => {
+      try {
+        // A customer session may only ever read its own branches, whatever the URL says.
+        const requested = String(req.params.code || "").trim();
+        const code =
+          req.actor?.role === "customer" ? req.actor.customerCode : requested;
+
+        if (!code) {
+          res.status(400).json({ error: "Customer code is required." });
+          return;
+        }
+
+        const rows = await loadImportedCustomerBranches(db, code);
+        res.json({
+          customer_code: code,
+          available_branches: rows.map(availableBranchRow),
+        });
+      } catch (error) {
+        logRouteError(error);
+        res.status(500).json({ error: String(error) });
+      }
+    },
+  );
 
   app.post("/api/orders/submit", requireStaffOrCustomer, async (req, res) => {
     try {

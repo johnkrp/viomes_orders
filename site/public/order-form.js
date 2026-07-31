@@ -143,7 +143,9 @@ function applyRoleUi(actor) {
   if (els.adminLinkBtn) els.adminLinkBtn.hidden = !isStaff;
   if (els.customerPickerPanel) els.customerPickerPanel.hidden = !isStaff;
   if (els.customerNameField) els.customerNameField.hidden = !isStaff;
-  if (els.customerSubstoreField) els.customerSubstoreField.hidden = !isStaff;
+  // Branch selection matters most for customers, not least: a chain ordering for itself
+  // still has to say which store the delivery is for. It stays visible for both roles.
+  if (els.customerSubstoreField) els.customerSubstoreField.hidden = false;
 
   if (els.customerIdentityDisplay) {
     els.customerIdentityDisplay.hidden = isStaff;
@@ -156,6 +158,13 @@ function applyRoleUi(actor) {
 
   if (!isStaff && els.customerName) {
     els.customerName.value = actor.customerName || "";
+  }
+
+  // A customer has no picker to trigger the load, so fetch their own branches directly.
+  if (!isStaff && actor.customerCode) {
+    loadBranchesInto(actor.customerCode).catch(() => {
+      populateCustomerSubstoreOptions([]);
+    });
   }
 }
 
@@ -231,19 +240,18 @@ function populateCustomerSubstoreOptions(branches) {
 
 async function loadCustomerBranches(code) {
   customerBranches = [];
+  // Dedicated branches endpoint. The admin stats route computes an entire analytics
+  // payload just to expose this list (~53s for Σκλαβενίτης) and is staff-only besides,
+  // so a customer session could never load its own branches through it.
   const response = await fetchJson(
-    `/api/admin/customers/${encodeURIComponent(code)}/stats`,
+    `/api/order-form/customers/${encodeURIComponent(code)}/branches`,
   );
   customerBranches = Array.isArray(response.payload?.available_branches)
     ? response.payload.available_branches
     : [];
 }
 
-async function selectStaffCustomer(code, name) {
-  selectedStaffCustomer = { code, name };
-  if (els.customerName) els.customerName.value = name;
-  if (els.customerPickerResults) els.customerPickerResults.innerHTML = "";
-  if (els.customerPickerQuery) els.customerPickerQuery.value = "";
+async function loadBranchesInto(code) {
   populateCustomerSubstoreOptions([]);
   if (els.customerSubstore) els.customerSubstore.disabled = true;
   if (els.customerSubstoreSpinner) els.customerSubstoreSpinner.hidden = false;
@@ -254,6 +262,14 @@ async function selectStaffCustomer(code, name) {
     if (els.customerSubstore) els.customerSubstore.disabled = false;
     if (els.customerSubstoreSpinner) els.customerSubstoreSpinner.hidden = true;
   }
+}
+
+async function selectStaffCustomer(code, name) {
+  selectedStaffCustomer = { code, name };
+  if (els.customerName) els.customerName.value = name;
+  if (els.customerPickerResults) els.customerPickerResults.innerHTML = "";
+  if (els.customerPickerQuery) els.customerPickerQuery.value = "";
+  await loadBranchesInto(code);
 }
 
 async function handleLoginSubmit(event) {

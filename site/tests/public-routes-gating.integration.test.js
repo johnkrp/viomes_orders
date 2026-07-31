@@ -105,9 +105,34 @@ function createDbFixture() {
       }
       throw new Error(`Unexpected db.get SQL: ${sql}`);
     },
-    async all(sql) {
+    async all(sql, params = []) {
       if (sql.includes("FROM products")) {
         return [];
+      }
+      if (sql.includes("FROM imported_customer_branches")) {
+        const [customerCode] = params;
+        // Distinct branch sets per customer, so a leak between them would be visible.
+        const byCustomer = {
+          C001: [
+            {
+              branch_code: "B1",
+              branch_description: "Branch One",
+              orders: 3,
+              revenue: 10,
+              last_order_date: null,
+            },
+          ],
+          C002: [
+            {
+              branch_code: "B9",
+              branch_description: "Other Customer Branch",
+              orders: 1,
+              revenue: 5,
+              last_order_date: null,
+            },
+          ],
+        };
+        return byCustomer[customerCode] || [];
       }
       throw new Error(`Unexpected db.all SQL: ${sql}`);
     },
@@ -219,6 +244,11 @@ for (const routeCase of [
   { label: "GET /catalog.json", method: "GET", url: "/catalog.json" },
   { label: "GET /api/catalog", method: "GET", url: "/api/catalog" },
   {
+    label: "GET /api/order-form/customers/:code/branches",
+    method: "GET",
+    url: "/api/order-form/customers/C001/branches",
+  },
+  {
     label: "POST /api/order/export-xlsx",
     method: "POST",
     url: "/api/order/export-xlsx",
@@ -262,3 +292,39 @@ for (const routeCase of [
     }
   });
 }
+
+test("the branches endpoint gives a customer only its own branches, whatever code the URL asks for", async () => {
+  const app = await startTestApp();
+
+  try {
+    // Staff may look up any customer.
+    const adminCookie = await app.adminCookie();
+    let response = await fetch(
+      `${app.baseUrl}/api/order-form/customers/C002/branches`,
+      { headers: { Cookie: adminCookie } },
+    );
+    assert.equal(response.status, 200);
+    let payload = await response.json();
+    assert.equal(payload.customer_code, "C002");
+    assert.deepEqual(
+      payload.available_branches.map((b) => b.branch_code),
+      ["B9"],
+    );
+
+    // The customer session is bound to C001, so asking for C002 must still return C001.
+    const customerCookie = await app.customerCookie();
+    response = await fetch(
+      `${app.baseUrl}/api/order-form/customers/C002/branches`,
+      { headers: { Cookie: customerCookie } },
+    );
+    assert.equal(response.status, 200);
+    payload = await response.json();
+    assert.equal(payload.customer_code, "C001");
+    assert.deepEqual(
+      payload.available_branches.map((b) => b.branch_code),
+      ["B1"],
+    );
+  } finally {
+    await app.close();
+  }
+});
