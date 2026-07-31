@@ -984,6 +984,18 @@ export async function initDatabaseSchema({ db, kind }) {
     "idx_imported_sales_customer_item",
     "(customer_code, item_code)",
   );
+  // The order-value estimator's any-customer price fallback looks up the newest invoiced
+  // line for ONE item. Without an item-leading index it walks
+  // idx_imported_sales_line_lookup (order_date first) backwards until the item turns up,
+  // so the rarer the item the slower it gets: ~75ms at 20-29 invoiced lines, but
+  // 1.4s at 3-4. One 76-line order of rare items took 112 seconds to price.
+  await ensureIndex(
+    db,
+    kind,
+    "imported_sales_lines",
+    "idx_imported_sales_item_date_doc",
+    "(item_code, order_date, document_no)",
+  );
   await ensureColumn(
     db,
     kind,

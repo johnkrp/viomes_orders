@@ -59,6 +59,16 @@ function createDbFixture() {
     ["P001", { id: 101, code: "P001", description: "First Product" }],
     ["P002", { id: 102, code: "P002", description: "Second Product" }],
     ["P003", { id: 103, code: "P003", description: "Third Product" }],
+    // Sold only in packs of 42 - the others have no recorded pack size.
+    [
+      "P042",
+      {
+        id: 142,
+        code: "P042",
+        description: "Packaged Product",
+        pieces_per_package: 42,
+      },
+    ],
   ]);
   const orders = new Map();
   const orderLines = [];
@@ -166,11 +176,15 @@ function createDbFixture() {
       throw new Error(`Unexpected db.get SQL: ${sql}`);
     },
     async all(sql, params = []) {
-      if (sql.includes("SELECT id, code FROM products WHERE code IN")) {
+      if (sql.includes("FROM products WHERE code IN")) {
         return params
           .map((code) => products.get(code))
           .filter(Boolean)
-          .map((product) => ({ id: product.id, code: product.code }));
+          .map((product) => ({
+            id: product.id,
+            code: product.code,
+            pieces_per_package: product.pieces_per_package ?? 0,
+          }));
       }
       if (
         sql.includes("FROM orders") &&
@@ -639,6 +653,86 @@ test("order value estimate uses last-invoiced customer price, falls back to any-
     assert.equal(byCode.P003.discount_pct, 20);
     assert.equal(byCode.P003.line_net_value, 8);
     assert.equal(byCode.P003.price_source, "last_invoice_any_customer");
+  } finally {
+    await app.close();
+  }
+});
+
+test("the API enforces package multiples, not just the browser form", async () => {
+  const app = await startTestApp();
+
+  try {
+    const cookie = await app.loginCookie();
+
+    // The salesman form blocks this client-side; posting straight to the API used to
+    // sail through, which matters once customers submit their own orders.
+    let response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P042", qty: 7 }],
+      }),
+    });
+    assert.equal(response.status, 400);
+    let payload = await response.json();
+    assert.match(payload.error, /συσκευασία/i);
+    assert.match(payload.error, /42/);
+
+    // A whole number of packages is fine.
+    response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P042", qty: 84 }],
+      }),
+    });
+    assert.equal(response.status, 200);
+
+    // Products with no recorded pack size must not be blocked.
+    response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P001", qty: 7 }],
+      }),
+    });
+    assert.equal(response.status, 200);
+  } finally {
+    await app.close();
+  }
+});
+
+test("an implausible quantity is rejected, but real-world large quantities are not", async () => {
+  const app = await startTestApp();
+
+  try {
+    const cookie = await app.loginCookie();
+
+    let response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P001", qty: 1000000000 }],
+      }),
+    });
+    assert.equal(response.status, 400);
+    const payload = await response.json();
+    assert.match(payload.error, /implausible quantity/i);
+
+    // The largest single ΠΑΡ line on record is 384,000 pieces - that must still pass.
+    response = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P001", qty: 384000 }],
+      }),
+    });
+    assert.equal(response.status, 200);
   } finally {
     await app.close();
   }

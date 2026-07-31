@@ -1,6 +1,11 @@
 import { estimateOrderValue } from "./order-value-estimate.js";
 
-const MAX_ITEMS = 200;
+// Sized from real ES1 history, not guessed: the largest ΠΑΡ ever recorded is 390 lines
+// (the old limit of 200 would have bounced it) and the largest single line is 384,000
+// pieces. MAX_QTY_PER_LINE is therefore only a typo guard - it has to stay well clear of
+// quantities the business genuinely places.
+const MAX_ITEMS = 500;
+const MAX_QTY_PER_LINE = 1000000;
 const MAX_TEXT_LENGTH = 500;
 const MAX_NOTES_LENGTH = 4000;
 
@@ -58,6 +63,14 @@ export function validateOrderSubmission(body) {
 
     if (!Number.isInteger(qty) || qty <= 0) {
       const error = new Error(`Item ${index + 1} has an invalid quantity.`);
+      error.status = 400;
+      throw error;
+    }
+
+    if (qty > MAX_QTY_PER_LINE) {
+      const error = new Error(
+        `Item ${code} has an implausible quantity (${qty}). Maximum is ${MAX_QTY_PER_LINE}.`,
+      );
       error.status = 400;
       throw error;
     }
@@ -125,15 +138,38 @@ export async function createOrderSubmission(db, submission) {
   const codes = submission.items.map((item) => item.code);
   const placeholders = codes.map(() => "?").join(", ");
   const products = await db.all(
-    `SELECT id, code FROM products WHERE code IN (${placeholders})`,
+    `SELECT id, code, pieces_per_package FROM products WHERE code IN (${placeholders})`,
     codes,
   );
   const productIdByCode = new Map(products.map((row) => [row.code, row.id]));
+  const packSizeByCode = new Map(
+    products.map((row) => [row.code, Number(row.pieces_per_package) || 0]),
+  );
 
   const missingCodes = codes.filter((code) => !productIdByCode.has(code));
   if (missingCodes.length) {
     const error = new Error(
       `Unknown product code(s): ${missingCodes.join(", ")}. Reload the catalog and try again.`,
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  // Quantities must be whole packages. The salesman form already enforces this
+  // ("Λάθος ποσότητα. Το προϊόν X έχει N τεμ./συσκ."), but that is client-side only —
+  // anything posting straight to the API skipped it entirely, which matters more once
+  // customers submit their own orders. Products with no recorded pack size are skipped
+  // rather than assumed to be 1.
+  const packErrors = [];
+  for (const item of submission.items) {
+    const packSize = packSizeByCode.get(item.code);
+    if (packSize > 0 && item.qty % packSize !== 0) {
+      packErrors.push(`${item.code} (${item.qty} δεν είναι πολλαπλάσιο του ${packSize})`);
+    }
+  }
+  if (packErrors.length) {
+    const error = new Error(
+      `Λάθος ποσότητα ανά συσκευασία: ${packErrors.join(", ")}.`,
     );
     error.status = 400;
     throw error;
