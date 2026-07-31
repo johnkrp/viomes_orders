@@ -31,33 +31,54 @@ async function findLastInvoicedLine(db, { customerCode, itemCode }) {
   return db.get(sql, params);
 }
 
-const CUSTOMER_AVG_DISCOUNT_SQL = `
-  SELECT AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}) AS avg_discount_pct
+// Rounded to WHOLE PERCENT before grouping. Two decimals is not coarse enough: the
+// computed percentage carries rounding noise from net_value/qty/price, so one real 35%
+// rate arrives as 34.97 / 34.99 / 35.00 / 35.04. Grouping at 2dp splits it into rival
+// buckets and lets a smaller, older rate win the mode — for THE MART that produced 32%
+// (a rate that stopped in May 2026) instead of the current 35%.
+const CUSTOMER_MODAL_DISCOUNT_SQL = `
+  SELECT ROUND(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}, 0) AS discount_pct,
+         COUNT(*) AS line_count
   FROM imported_sales_lines
   WHERE customer_code = ?
     AND document_type IN (${EXECUTED_PLACEHOLDERS})
     AND unit_price > 0
+  GROUP BY ROUND(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}, 0)
+  ORDER BY line_count DESC, discount_pct DESC
+  LIMIT 1
 `;
 
 /**
- * The ordering customer's own effective discount, averaged over everything they have
- * actually been invoiced for.
+ * The ordering customer's own commercial discount rate — the single value they are most
+ * often actually invoiced at.
  *
  * Needed because the any-customer price fallback would otherwise import the DONOR
  * customer's commercial terms along with the unit price. That is not a rounding error:
  * a 0%-discount account (e.g. DEDEMAN) donating a price to a 35%-discount account
  * (e.g. THE MART) overstates the line by more than half.
  *
- * This is an average of real invoiced lines, not a reconstruction of the pricelist
- * engine — it deliberately stays on the "what was actually charged" side of the line.
+ * The MODE, not the mean. Discount at Viomes is a per-customer rate rather than a
+ * per-product-family one: across 179 customers with 50+ invoiced lines in 2026, 42% use
+ * exactly one discount value and the modal rate covers 90% of lines on average. The
+ * spread that does exist is mostly 0% promo/free lines, which drag a mean below the real
+ * rate. Tested over 107,947 real lines, the mode predicted a line's discount with 0.662pp
+ * mean absolute error against the mean's 0.884pp, and was closer on 68,316 lines versus
+ * 16,771. For THE MART the mode gives 35% — matching their ES1 TradeDiscount exactly —
+ * where the mean gave 33.56%. Checked against 9 customers, the whole-percent mode agrees
+ * with the ES1 master TradeDiscount everywhere the master is current, and beats it for
+ * ΑΝΑΝΙΑΔΗΣ, whose master (37%) is stale against the 40% actually invoiced.
+ *
+ * This still reads only what was actually charged; it does not reconstruct the pricelist
+ * engine. Ties break toward the higher discount, which understates rather than overstates
+ * order value — the safer direction for an approver's sanity check.
  */
-async function findCustomerAverageDiscount(db, customerCode) {
+async function findCustomerModalDiscount(db, customerCode) {
   if (!customerCode) return null;
-  const row = await db.get(CUSTOMER_AVG_DISCOUNT_SQL, [
+  const row = await db.get(CUSTOMER_MODAL_DISCOUNT_SQL, [
     customerCode,
     ...EXECUTED_TYPES,
   ]);
-  const value = Number(row?.avg_discount_pct);
+  const value = Number(row?.discount_pct);
   if (!Number.isFinite(value) || value <= 0) return null;
   return value;
 }
@@ -70,7 +91,7 @@ async function findCustomerAverageDiscount(db, customerCode) {
  */
 export async function estimateOrderValue(db, { customerCode, items }) {
   const lines = [];
-  let customerAverageDiscount;
+  let customerModalDiscount;
 
   for (const item of items) {
     let row = null;
@@ -93,14 +114,11 @@ export async function estimateOrderValue(db, { customerCode, items }) {
     // discount reflects THEIR terms. Substitute this customer's own average discount
     // when we have one; keep the donor's only if this customer has no history at all.
     if (source === "last_invoice_any_customer") {
-      if (customerAverageDiscount === undefined) {
-        customerAverageDiscount = await findCustomerAverageDiscount(
-          db,
-          customerCode,
-        );
+      if (customerModalDiscount === undefined) {
+        customerModalDiscount = await findCustomerModalDiscount(db, customerCode);
       }
-      if (customerAverageDiscount !== null && customerAverageDiscount !== undefined) {
-        discountPct = customerAverageDiscount;
+      if (customerModalDiscount !== null && customerModalDiscount !== undefined) {
+        discountPct = customerModalDiscount;
       }
     }
 

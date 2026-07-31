@@ -84,23 +84,28 @@ function createDbFixture() {
     orders,
     importedSalesLines,
     async get(sql, params = []) {
-      // The ordering customer's own average discount, used when a price has to be
-      // borrowed from another customer's invoice. Must be matched BEFORE the
-      // last-invoiced-line branch below, which also reads imported_sales_lines.
+      // The ordering customer's own MODAL discount, used when a price has to be borrowed
+      // from another customer's invoice. Must be matched BEFORE the last-invoiced-line
+      // branch below, which also reads imported_sales_lines.
       if (
         sql.includes("FROM imported_sales_lines") &&
-        sql.includes("avg_discount_pct")
+        sql.includes("line_count")
       ) {
         const [customerCode] = params;
         const own = importedSalesLines.filter(
           (row) => row.customerCode === customerCode,
         );
-        if (!own.length) return { avg_discount_pct: null };
-        return {
-          avg_discount_pct:
-            own.reduce((sum, row) => sum + Number(row.discountPct || 0), 0) /
-            own.length,
-        };
+        if (!own.length) return undefined;
+        const counts = new Map();
+        for (const row of own) {
+          const d = Number(row.discountPct || 0);
+          counts.set(d, (counts.get(d) || 0) + 1);
+        }
+        // Most frequent wins; ties break toward the higher discount, as the SQL does.
+        const [discount] = [...counts.entries()].sort(
+          (a, b) => b[1] - a[1] || b[0] - a[0],
+        )[0];
+        return { discount_pct: discount, line_count: counts.get(discount) };
       }
       if (sql.includes("FROM imported_sales_lines")) {
         const hasCustomerFilter = sql.includes("AND customer_code = ?");
@@ -733,6 +738,55 @@ test("an implausible quantity is rejected, but real-world large quantities are n
       }),
     });
     assert.equal(response.status, 200);
+  } finally {
+    await app.close();
+  }
+});
+
+test("the borrowed-price discount is the customer's MODAL rate, not their mean", async () => {
+  const app = await startTestApp();
+
+  try {
+    // C001's real commercial rate is 35%. The 0% line is a promo/free-goods line, of the
+    // kind that drags a mean below the rate the customer is actually invoiced at:
+    // mean = (35+35+35+0)/4 = 26.25, mode = 35.
+    for (const discountPct of [35, 35, 35, 0]) {
+      app.db.importedSalesLines.push({
+        itemCode: "P001",
+        customerCode: "C001",
+        unitPrice: 10,
+        discountPct,
+      });
+    }
+    // P003 was last invoiced to a different customer at full price.
+    app.db.importedSalesLines.push({
+      itemCode: "P003",
+      customerCode: null,
+      unitPrice: 4,
+      discountPct: 0,
+    });
+
+    const cookie = await app.loginCookie();
+    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P003", qty: 10 }],
+      }),
+    });
+    assert.equal(submitResponse.status, 200);
+
+    const response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: cookie },
+    });
+    const { items } = await response.json();
+    const line = items[0].lines[0];
+
+    // mode 35% -> 10 * 4 * 0.65 = 26.00.  mean 26.25% would have given 29.50.
+    assert.equal(line.discount_pct, 35);
+    assert.equal(line.line_net_value, 26);
+    assert.equal(line.price_source, "last_invoice_any_customer");
   } finally {
     await app.close();
   }
