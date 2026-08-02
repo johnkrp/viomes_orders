@@ -1,4 +1,4 @@
-const ORDER_SUBMISSION_COLUMNS = 8;
+const ORDER_SUBMISSION_COLUMNS = 9;
 const NOTES_PREVIEW_LENGTH = 60;
 
 function getExpandedIds(state) {
@@ -19,6 +19,16 @@ function buildNotesPreview(notes, escapeHtml) {
   if (!text) return "-";
   if (text.length <= NOTES_PREVIEW_LENGTH) return escapeHtml(text);
   return `${escapeHtml(text.slice(0, NOTES_PREVIEW_LENGTH))}…`;
+}
+
+// Date-only value (no time component) — MySQL DATE columns can arrive as a Date object
+// or a plain YYYY-MM-DD string depending on driver settings, so handle both.
+function formatOrderDate(value) {
+  if (!value) return "-";
+  const text = typeof value === "string" ? value.slice(0, 10) : null;
+  const parsed = text ? new Date(`${text}T00:00:00`) : new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "-";
+  return parsed.toLocaleDateString("el-GR");
 }
 
 function buildSubmittedByHtml(order, escapeHtml) {
@@ -256,9 +266,16 @@ export function renderOrderSubmissions(context) {
           <td class="admin-table-number">${Number(order.total_qty_pieces || 0)}</td>
           <td class="admin-table-number">${valueHtml}</td>
           <td><div class="admin-order-notes-preview">${buildNotesPreview(order.notes, escapeHtml)}</div></td>
+          <td>${formatOrderDate(order.desired_delivery_date)}</td>
           <td>${formatTimestamp(order.submitted_at)}${submittedByHtml}</td>
           <td>
             <div class="admin-order-submission-actions">
+              <input
+                type="date"
+                class="order-submission-dispatch"
+                title="Ημ/νία παράδοσης από έδρα — καταχωρείται με την έγκριση"
+                data-dispatch-input
+              />
               <button type="button" class="btn" data-action="approve" data-order-id="${order.id}">
                 Έγκριση
               </button>
@@ -276,9 +293,18 @@ export function renderOrderSubmissions(context) {
 }
 
 export async function decideOrderSubmission(context, orderId, action) {
+  const row = context.elements.orderSubmissionsBody?.querySelector(
+    `tr[data-order-id="${orderId}"]`,
+  );
+  const dispatchDate =
+    row?.querySelector("[data-dispatch-input]")?.value?.trim() || "";
+
   try {
     await context.apiFetch(`/api/admin/order-submissions/${orderId}/${action}`, {
       method: "POST",
+      ...(action === "approve" && dispatchDate
+        ? { body: JSON.stringify({ dispatch_date: dispatchDate }) }
+        : {}),
     });
     context.setStatus(
       action === "approve"

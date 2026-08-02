@@ -42,6 +42,7 @@ const els = {
   countPill: document.getElementById("countPill"),
   catalogStatus: document.getElementById("catalogStatus"),
   notes: document.getElementById("notes"),
+  desiredDeliveryDate: document.getElementById("desiredDeliveryDate"),
   customerName: document.getElementById("customerName"),
   customerSubstore: document.getElementById("customerSubstore"),
   customerEmail: document.getElementById("customerEmail"),
@@ -1588,6 +1589,9 @@ function buildEmailBodyNice(payload, totals, filename = "") {
     separator,
     rows,
     "",
+    payload.desired_delivery_date
+      ? `Επιθυμητή ημ/νία παραλαβής: ${payload.desired_delivery_date}`
+      : "",
     `Σχόλια: ${payload.notes || ""}`,
     "",
     filename ? `ΣΗΜΕΙΩΣΗ: Επισυνάψτε παρακαλώ το αρχείο: ${filename}` : "",
@@ -1631,6 +1635,7 @@ async function submitOrderToBackend(meta) {
         customerSubstore: meta.payload.customer_substore,
         customerEmail: meta.payload.customer_email,
         notes: meta.payload.notes,
+        desiredDeliveryDate: meta.payload.desired_delivery_date,
         items: meta.payload.lines.map((line) => ({
           code: line.itemCode,
           qty: line.qty,
@@ -1678,6 +1683,8 @@ function prepareOrderMeta() {
   const customerEmail =
     document.getElementById("customerEmail")?.value?.trim() || "";
   const notes = els.notes?.value?.trim() || "";
+  const desiredDeliveryDate =
+    document.getElementById("desiredDeliveryDate")?.value || "";
 
   // Reuse the same normalized payload for both Gmail and Outlook draft flows.
   return {
@@ -1687,6 +1694,7 @@ function prepareOrderMeta() {
       customer_substore: customerSubstore,
       customer_email: customerEmail,
       notes,
+      desired_delivery_date: desiredDeliveryDate,
       token,
       lines: Array.from(cart.values()).map((item) => ({
         itemCode: item.code,
@@ -1862,6 +1870,7 @@ els.clearBtn?.addEventListener("click", () => {
   }
   if (els.customerEmail) els.customerEmail.value = "";
   if (els.notes) els.notes.value = "";
+  if (els.desiredDeliveryDate) els.desiredDeliveryDate.value = "";
   setToolbarMsg("");
   saveOrderFormState();
 });

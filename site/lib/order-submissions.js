@@ -20,6 +20,57 @@ function validateEmailAddress(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+const MAX_DATE_DAYS_AHEAD = 365;
+const MAX_DATE_DAYS_BEHIND = 30;
+
+/**
+ * Validates an optional ISO date (YYYY-MM-DD) and returns it, or null when blank.
+ *
+ * The window is a typo guard, not a business rule: real desired-pickup dates cluster at
+ * +1/+2 days but genuinely run past +12, so the bounds stay wide. A little slack in the
+ * past is allowed because an order can be entered after the date the customer asked for.
+ */
+export function validateOptionalOrderDate(value, label) {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const error = new Error(`${label} must be a date in YYYY-MM-DD format.`);
+    error.status = 400;
+    throw error;
+  }
+
+  const parsed = new Date(`${text}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    const error = new Error(`${label} is not a real date.`);
+    error.status = 400;
+    throw error;
+  }
+  // Rejects things like 2026-02-31, which Date would otherwise roll forward silently.
+  if (parsed.toISOString().slice(0, 10) !== text) {
+    const error = new Error(`${label} is not a real date.`);
+    error.status = 400;
+    throw error;
+  }
+
+  const today = new Date();
+  const todayUtc = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+  );
+  const diffDays = Math.round((parsed.getTime() - todayUtc) / 86400000);
+  if (diffDays > MAX_DATE_DAYS_AHEAD || diffDays < -MAX_DATE_DAYS_BEHIND) {
+    const error = new Error(
+      `${label} (${text}) is outside the accepted range of ${MAX_DATE_DAYS_BEHIND} days back to ${MAX_DATE_DAYS_AHEAD} days ahead.`,
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  return text;
+}
+
 export function validateOrderSubmission(body) {
   const customerName = sanitizeText(body?.customerName, MAX_TEXT_LENGTH);
   const customerCode = sanitizeText(body?.customerCode, 128);
@@ -29,6 +80,10 @@ export function validateOrderSubmission(body) {
   );
   const customerEmail = sanitizeText(body?.customerEmail, MAX_TEXT_LENGTH);
   const notes = sanitizeText(body?.notes, MAX_NOTES_LENGTH);
+  const desiredDeliveryDate = validateOptionalOrderDate(
+    body?.desiredDeliveryDate,
+    "Επιθυμητή ημερομηνία παραλαβής",
+  );
   const items = Array.isArray(body?.items) ? body.items : null;
 
   if (!validateEmailAddress(customerEmail)) {
@@ -84,6 +139,7 @@ export function validateOrderSubmission(body) {
     customerSubstore,
     customerEmail,
     notes,
+    desiredDeliveryDate,
     items: normalizedItems,
   };
 }
@@ -193,10 +249,10 @@ export async function createOrderSubmission(db, submission) {
     `
       INSERT INTO orders(
         customer_name, customer_email, customer_code, customer_substore, notes,
-        total_qty_pieces, total_net_value, status, submitted_by, submitted_by_role,
-        submitted_at, created_at
+        desired_delivery_date, total_qty_pieces, total_net_value, status,
+        submitted_by, submitted_by_role, submitted_at, created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
     `,
     [
       submission.customerName,
@@ -204,6 +260,7 @@ export async function createOrderSubmission(db, submission) {
       submission.customerCode || null,
       submission.customerSubstore || null,
       submission.notes || null,
+      submission.desiredDeliveryDate || null,
       totalQtyPieces,
       valueEstimate.totalNetValue,
       submission.submittedBy || null,
@@ -238,6 +295,7 @@ export async function createOrderSubmission(db, submission) {
 export async function listPendingOrderSubmissions(db) {
   const orders = await db.all(`
     SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
+           desired_delivery_date, dispatch_date,
            total_qty_pieces, total_net_value, status, submitted_by, submitted_by_role,
            submitted_at
     FROM orders
@@ -292,7 +350,13 @@ export async function listPendingOrderSubmissions(db) {
   });
 }
 
-async function setOrderSubmissionStatus(db, orderId, status, adminUsername) {
+async function setOrderSubmissionStatus(
+  db,
+  orderId,
+  status,
+  adminUsername,
+  { dispatchDate } = {},
+) {
   const order = await db.get(`SELECT id, status FROM orders WHERE id = ?`, [
     orderId,
   ]);
@@ -312,15 +376,28 @@ async function setOrderSubmissionStatus(db, orderId, status, adminUsername) {
   await db.run(
     `
       UPDATE orders
-      SET status = ?, approved_by = ?, approved_at = ?
+      SET status = ?, approved_by = ?, approved_at = ?, dispatch_date = ?
       WHERE id = ?
     `,
-    [status, adminUsername, new Date().toISOString(), orderId],
+    [
+      status,
+      adminUsername,
+      new Date().toISOString(),
+      dispatchDate || null,
+      orderId,
+    ],
   );
 }
 
-export async function approveOrderSubmission(db, orderId, adminUsername) {
-  await setOrderSubmissionStatus(db, orderId, "approved", adminUsername);
+export async function approveOrderSubmission(
+  db,
+  orderId,
+  adminUsername,
+  { dispatchDate } = {},
+) {
+  await setOrderSubmissionStatus(db, orderId, "approved", adminUsername, {
+    dispatchDate,
+  });
 }
 
 export async function rejectOrderSubmission(db, orderId, adminUsername) {

@@ -166,6 +166,7 @@ test("empty queue renders the placeholder across all columns", () => {
   const context = buildContext([]);
   renderOrderSubmissions(context);
 
-  assert.match(context.body.innerHTML, /colspan="8"/);
+  // 9 since the queue gained an "Επιθυμητή παραλαβή" column.
+  assert.match(context.body.innerHTML, /colspan="9"/);
   assert.match(context.body.innerHTML, /Δεν υπάρχουν εκκρεμείς παραγγελίες/);
 });

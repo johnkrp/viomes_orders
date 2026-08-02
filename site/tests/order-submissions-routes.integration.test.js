@@ -252,6 +252,7 @@ function createDbFixture() {
           customerCode,
           customerSubstore,
           notes,
+          desiredDeliveryDate,
           totalQtyPieces,
           totalNetValue,
           submittedBy,
@@ -267,6 +268,8 @@ function createDbFixture() {
           customer_code: customerCode,
           customer_substore: customerSubstore,
           notes,
+          desired_delivery_date: desiredDeliveryDate,
+          dispatch_date: null,
           total_qty_pieces: totalQtyPieces,
           total_net_value: totalNetValue,
           status: "pending",
@@ -302,12 +305,13 @@ function createDbFixture() {
         return { changes: 1, lastID: nextOrderLineId - 1 };
       }
       if (sql.includes("UPDATE orders") && sql.includes("SET status = ?")) {
-        const [status, approvedBy, approvedAt, orderId] = params;
+        const [status, approvedBy, approvedAt, dispatchDate, orderId] = params;
         const order = orders.get(Number(orderId));
         if (order) {
           order.status = status;
           order.approved_by = approvedBy;
           order.approved_at = approvedAt;
+          order.dispatch_date = dispatchDate;
         }
         return { changes: order ? 1 : 0, lastID: 0 };
       }
@@ -658,6 +662,97 @@ test("order value estimate uses last-invoiced customer price, falls back to any-
     assert.equal(byCode.P003.discount_pct, 20);
     assert.equal(byCode.P003.line_net_value, 8);
     assert.equal(byCode.P003.price_source, "last_invoice_any_customer");
+  } finally {
+    await app.close();
+  }
+});
+
+test("the desired delivery date round-trips, and the dispatch date is set at approval", async () => {
+  const app = await startTestApp();
+
+  try {
+    const cookie = await app.loginCookie();
+    const inTenDays = new Date(Date.now() + 10 * 86400000)
+      .toISOString()
+      .slice(0, 10);
+
+    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        desiredDeliveryDate: inTenDays,
+        items: [{ code: "P001", qty: 2 }],
+      }),
+    });
+    assert.equal(submitResponse.status, 200);
+    const { order_id: orderId } = await submitResponse.json();
+
+    let response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: cookie },
+    });
+    let { items } = await response.json();
+    assert.equal(items[0].desired_delivery_date, inTenDays);
+    // Nobody has scheduled dispatch yet.
+    assert.equal(items[0].dispatch_date, null);
+
+    const dispatchOn = new Date(Date.now() + 3 * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    response = await fetch(
+      `${app.baseUrl}/api/admin/order-submissions/${orderId}/approve`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify({ dispatch_date: dispatchOn }),
+      },
+    );
+    assert.equal(response.status, 200);
+
+    const approved = app.db.orders.get(orderId);
+    assert.equal(approved.status, "approved");
+    assert.equal(approved.dispatch_date, dispatchOn);
+    // The customer's requested date must survive approval untouched.
+    assert.equal(approved.desired_delivery_date, inTenDays);
+  } finally {
+    await app.close();
+  }
+});
+
+test("bad order dates are rejected, and an absent date is fine", async () => {
+  const app = await startTestApp();
+
+  try {
+    const cookie = await app.loginCookie();
+    const post = (body) =>
+      fetch(`${app.baseUrl}/api/orders/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify({
+          customerCode: "C001",
+          items: [{ code: "P001", qty: 1 }],
+          ...body,
+        }),
+      });
+
+    for (const bad of [
+      "31/12/2026", // Greek display format, not ISO
+      "2026-02-31", // looks well-formed but is not a real day
+      "tomorrow",
+      "2031-01-01", // far beyond the accepted window
+      "2000-01-01", // far behind it
+    ]) {
+      const response = await post({ desiredDeliveryDate: bad });
+      assert.equal(response.status, 400, `expected 400 for ${bad}`);
+      await response.arrayBuffer();
+    }
+
+    // Omitted and blank are both legitimate - most accounts never state a date.
+    for (const ok of [undefined, ""]) {
+      const response = await post({ desiredDeliveryDate: ok });
+      assert.equal(response.status, 200);
+      await response.arrayBuffer();
+    }
   } finally {
     await app.close();
   }

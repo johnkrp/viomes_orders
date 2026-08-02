@@ -1,3 +1,5 @@
+import { validateOptionalOrderDate } from "../order-submissions.js";
+
 export function registerAdminImportRoutes(app, context) {
   const {
     express,
@@ -303,10 +305,17 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
           return;
         }
 
+        // Ημ/νία Παράδοσης από Έδρα — our own dispatch scheduling, decided here rather
+        // than by the customer at order entry.
+        const dispatchDate = validateOptionalOrderDate(
+          req.body?.dispatch_date,
+          "Ημερομηνία παράδοσης από έδρα",
+        );
         await approveOrderSubmission(
           db,
           orderId,
           req.admin?.username || "unknown",
+          { dispatchDate },
         );
         res.json({ ok: true });
       } catch (error) {

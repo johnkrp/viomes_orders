@@ -2412,6 +2412,14 @@ button.success:active,
   cursor: help;
 }
 
+.order-submission-dispatch {
+  width: 140px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  font-size: 12px;
+}
+
 .admin-order-detail-notes h4 {
   margin: 0 0 2px;
   font-size: 12px;

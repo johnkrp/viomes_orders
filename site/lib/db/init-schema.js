@@ -816,6 +816,28 @@ export async function initDatabaseSchema({ db, kind }) {
     "price_source",
     `price_source ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"}`,
   );
+  // ES1's Πληροφορίες tab carries three manual per-order dates. Ημ/νία Λήψης Παραγγελίας
+  // (order received) needs no column — submitted_at is exactly that for a form order.
+  // The other two are captured by different people at different moments:
+  //   desired_delivery_date — Ημ/νία Επιθυμητής Παραλαβής, stated by the CUSTOMER at
+  //     order entry. Populated on 100% of THE MART's orders, 99.6% of DEDEMAN's and
+  //     79.5% of Σκλαβενίτης's, so it matters most on exactly the accounts that matter.
+  //   dispatch_date — Ημ/νία Παράδοσης από Έδρα, a scheduling decision made by US at
+  //     approval. Not derivable: only 25% land on the order date itself.
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "desired_delivery_date",
+    `desired_delivery_date ${kind === "mysql" ? "DATE" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "dispatch_date",
+    `dispatch_date ${kind === "mysql" ? "DATE" : "TEXT"}`,
+  );
   await ensureColumn(
     db,
     kind,
