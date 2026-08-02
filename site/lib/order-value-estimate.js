@@ -111,8 +111,24 @@ export async function estimateOrderValue(db, { customerCode, items }) {
     let discountPct = row ? Number(row.discount_pct) || 0 : 0;
 
     // On the fallback path the price came from another customer's invoice, so its
-    // discount reflects THEIR terms. Substitute this customer's own average discount
+    // discount reflects THEIR terms. Substitute this customer's own modal discount
     // when we have one; keep the donor's only if this customer has no history at all.
+    //
+    // DO NOT "fix" the no-history branch by assuming a new customer gets 0% discount.
+    // It reads as common sense and the master data appears to agree — 163 of the 285
+    // thin-history customers (57%) carry ESFITradeAccount.TradeDiscount = 0 — but what
+    // they are actually invoiced is another matter: only 63 of those 285 really paid
+    // list, while 93 sat at 19%, apparently via a different pricelist rather than a
+    // trade discount. Forcing 0% would overstate their orders by about that much, which
+    // is the same failure as the original THE MART bug in the opposite direction.
+    // Verified on 9 real orders from this segment: the four customers whose master says
+    // 0% all priced EXACTLY off their own observed history, and RED CHEESE
+    // (ΠΑΡ-Μ-34280), whose 18 lines were every one of them borrowed, came out exact too.
+    //
+    // In any case the null branch is unreachable through the order form: all 888
+    // customers in imported_customers have at least one invoiced line. It is only
+    // reachable by calling this function with a code absent from the customer master
+    // (34 such codes exist in imported_sales_lines and none of them are selectable).
     if (source === "last_invoice_any_customer") {
       if (customerModalDiscount === undefined) {
         customerModalDiscount = await findCustomerModalDiscount(db, customerCode);
