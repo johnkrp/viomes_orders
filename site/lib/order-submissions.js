@@ -24,6 +24,23 @@ const MAX_DATE_DAYS_AHEAD = 365;
 const MAX_DATE_DAYS_BEHIND = 30;
 
 /**
+ * ES1's ΤΡΟΠΟΣ ΛΗΨΗΣ ΠΑΡΑΓΓΕΛΙΑΣ code for "ΜΕΣΩ ΠΛΑΤΦΟΡΜΑΣ" — an order received through
+ * a B2B portal rather than by email, phone or in person. It is stamped on every order
+ * this form captures, so the eventual ΠΑΡ writer has the value ready instead of guessing.
+ *
+ * The field is filled on 97.8% of 2026 ΠΑΡ documents, so leaving it blank would make
+ * form-created orders visibly odd in ES1's own reporting. 9070 is already in real use
+ * (2.7% of 2026 orders, e.g. DEDEMAN's portal traffic).
+ *
+ * Caveat for later: this is exactly right for a customer submitting their own order. For
+ * a salesman keying in an order that reached them by email, ES1's own reading of the
+ * field would arguably be 9020 (EMAIL) — the code describes how the CUSTOMER's order
+ * arrived, not which screen typed it. submitted_by_role already distinguishes the two if
+ * that refinement is ever wanted.
+ */
+export const ES1_ORDER_CHANNEL_PLATFORM = "9070";
+
+/**
  * Validates an optional ISO date (YYYY-MM-DD) and returns it, or null when blank.
  *
  * The window is a typo guard, not a business rule: real desired-pickup dates cluster at
@@ -249,10 +266,10 @@ export async function createOrderSubmission(db, submission) {
     `
       INSERT INTO orders(
         customer_name, customer_email, customer_code, customer_substore, notes,
-        desired_delivery_date, total_qty_pieces, total_net_value, status,
-        submitted_by, submitted_by_role, submitted_at, created_at
+        desired_delivery_date, es1_order_channel_code, total_qty_pieces,
+        total_net_value, status, submitted_by, submitted_by_role, submitted_at, created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
     `,
     [
       submission.customerName,
@@ -261,6 +278,7 @@ export async function createOrderSubmission(db, submission) {
       submission.customerSubstore || null,
       submission.notes || null,
       submission.desiredDeliveryDate || null,
+      ES1_ORDER_CHANNEL_PLATFORM,
       totalQtyPieces,
       valueEstimate.totalNetValue,
       submission.submittedBy || null,
@@ -295,7 +313,7 @@ export async function createOrderSubmission(db, submission) {
 export async function listPendingOrderSubmissions(db) {
   const orders = await db.all(`
     SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
-           desired_delivery_date, dispatch_date,
+           desired_delivery_date, dispatch_date, es1_order_channel_code,
            total_qty_pieces, total_net_value, status, submitted_by, submitted_by_role,
            submitted_at
     FROM orders

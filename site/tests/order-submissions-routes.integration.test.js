@@ -253,6 +253,7 @@ function createDbFixture() {
           customerSubstore,
           notes,
           desiredDeliveryDate,
+          es1OrderChannelCode,
           totalQtyPieces,
           totalNetValue,
           submittedBy,
@@ -270,6 +271,7 @@ function createDbFixture() {
           notes,
           desired_delivery_date: desiredDeliveryDate,
           dispatch_date: null,
+          es1_order_channel_code: es1OrderChannelCode,
           total_qty_pieces: totalQtyPieces,
           total_net_value: totalNetValue,
           status: "pending",
@@ -460,6 +462,8 @@ test("order submission endpoint validates and persists a pending order", async (
     assert.equal(order.total_qty_pieces, 5);
     assert.equal(order.submitted_by, "admin");
     assert.equal(order.submitted_by_role, "staff");
+    // ΤΡΟΠΟΣ ΛΗΨΗΣ ΠΑΡΑΓΓΕΛΙΑΣ = ΜΕΣΩ ΠΛΑΤΦΟΡΜΑΣ, ready for the eventual ΠΑΡ writer.
+    assert.equal(order.es1_order_channel_code, "9070");
   } finally {
     await app.close();
   }

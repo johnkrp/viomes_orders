@@ -838,6 +838,15 @@ export async function initDatabaseSchema({ db, kind }) {
     "dispatch_date",
     `dispatch_date ${kind === "mysql" ? "DATE" : "TEXT"}`,
   );
+  // ΤΡΟΠΟΣ ΛΗΨΗΣ ΠΑΡΑΓΓΕΛΙΑΣ — ES1's order-receipt channel, stored so the eventual
+  // ΠΑΡ writer knows which code to stamp on the document rather than re-deriving it.
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "es1_order_channel_code",
+    `es1_order_channel_code ${kind === "mysql" ? "VARCHAR(16)" : "TEXT"}`,
+  );
   await ensureColumn(
     db,
     kind,
