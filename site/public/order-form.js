@@ -487,7 +487,20 @@ function buildFallbackCartItem(line) {
   };
 }
 
-function applyImportedOrderDraft(draft) {
+// The substore <select> only carries options for the customer whose branches were
+// last loaded. Without re-selecting the customer from an imported/ranked draft, its
+// substore value has nothing to match and setCustomerSubstoreValue clears it to "".
+async function applyDraftCustomerContext(draft) {
+  if (els.customerName) els.customerName.value = draft.customerName || "";
+  if (actorState?.role === "staff" && draft.customerCode) {
+    await selectStaffCustomer(draft.customerCode, draft.customerName || "");
+  }
+  setCustomerSubstoreValue(
+    draft.customerSubstore || draft.branchDescription || draft.branchCode || "",
+  );
+}
+
+async function applyImportedOrderDraft(draft) {
   if (!draft) return;
 
   cart.clear();
@@ -496,10 +509,7 @@ function applyImportedOrderDraft(draft) {
   rankedCatalogCodes = [];
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
-  if (els.customerName) els.customerName.value = draft.customerName || "";
-  setCustomerSubstoreValue(
-    draft.customerSubstore || draft.branchDescription || draft.branchCode || "",
-  );
+  await applyDraftCustomerContext(draft);
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = draft.notes || "";
   currentPage = 1;
@@ -540,7 +550,7 @@ function applyImportedOrderDraft(draft) {
   saveOrderFormState();
 }
 
-function applyCustomerRankingDraft(draft) {
+async function applyCustomerRankingDraft(draft) {
   if (!draft) return;
 
   cart.clear();
@@ -558,10 +568,7 @@ function applyCustomerRankingDraft(draft) {
 
   if (els.q) els.q.value = "";
   if (els.toolbarQty) els.toolbarQty.value = "";
-  if (els.customerName) els.customerName.value = draft.customerName || "";
-  setCustomerSubstoreValue(
-    draft.customerSubstore || draft.branchDescription || draft.branchCode || "",
-  );
+  await applyDraftCustomerContext(draft);
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
   if (els.notes) els.notes.value = "";
   currentPage = 1;
@@ -860,14 +867,14 @@ async function loadCatalog(page = 1, query = "") {
     allCatalog = Array.isArray(data.items) ? data.items : [];
     if (importedOrderDraft) {
       updateCodesDatalist(allCatalog);
-      applyImportedOrderDraft(importedOrderDraft);
+      await applyImportedOrderDraft(importedOrderDraft);
       return;
     }
 
     const rankingDraft = loadOrderFormRankingDraft();
     if (rankingDraft) {
       updateCodesDatalist(allCatalog);
-      applyCustomerRankingDraft(rankingDraft);
+      await applyCustomerRankingDraft(rankingDraft);
       return;
     }
 
@@ -1004,19 +1011,20 @@ function addFromUnifiedBar() {
 }
 
 function getPreparedCatalogRows() {
-  if (!els.catalog) return [];
-
-  return Array.from(els.catalog.querySelectorAll("tr[data-id]"))
-    .map((row) => {
-      const productId = parseInt(row.getAttribute("data-id"), 10);
-      const product = allCatalog.find((item) => item.id === productId);
+  // Sourced from draftCatalogInputs, not the DOM: the catalog is paginated, so a
+  // product typed into on an earlier page has no row on the currently rendered page.
+  return Array.from(draftCatalogInputs.entries())
+    .map(([code, draft]) => {
+      const product = findProductByCode(code);
       if (!product) return null;
 
-      const piecesInput = row.querySelector(".qty-inline input");
-      const packsInput = row.querySelector(".packsInput");
+      const row =
+        els.catalog?.querySelector(`tr[data-id="${product.id}"]`) || null;
+      const piecesInput = row?.querySelector(".qty-inline input") || null;
+      const packsInput = row?.querySelector(".packsInput") || null;
       const piecesPerPack = parseInt(product.pieces_per_package, 10) || 1;
-      const packs = parseInt(packsInput?.value || "", 10);
-      const qtyPieces = parseInt(piecesInput?.value || "", 10);
+      const packs = parseInt(draft.packs || "", 10);
+      const qtyPieces = parseInt(draft.pieces || "", 10);
 
       let finalPieces = 0;
       if (Number.isFinite(packs) && packs > 0)
@@ -1060,11 +1068,20 @@ function addPreparedCatalogRowsToCart() {
 
   for (const entry of preparedRows) {
     if (entry.finalPieces % entry.piecesPerPack !== 0) {
-      entry.piecesInput?.setCustomValidity(
-        `Πρέπει να είναι πολλαπλάσιο των ${entry.piecesPerPack}.`,
-      );
-      entry.piecesInput?.reportValidity();
-      entry.piecesInput?.focus();
+      if (entry.piecesInput) {
+        entry.piecesInput.setCustomValidity(
+          `Πρέπει να είναι πολλαπλάσιο των ${entry.piecesPerPack}.`,
+        );
+        entry.piecesInput.reportValidity();
+        entry.piecesInput.focus();
+      } else {
+        // The offending row is on a different catalog page, so there is no input to
+        // focus — name the product instead of failing silently.
+        setToolbarMsg(
+          `${entry.product.code}: πρέπει να είναι πολλαπλάσιο των ${entry.piecesPerPack}.`,
+          "error",
+        );
+      }
       return true;
     }
   }

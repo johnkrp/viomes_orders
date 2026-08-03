@@ -7,21 +7,22 @@ export function buildOrderFormDraftFromSelectedOrder(order, customer) {
   const customerName = String(
     order?.customer_name || customer?.name || customer?.textContent || "",
   ).trim();
+  const customerCode = String(customer?.code || "").trim();
+  // The order's own branch wins over the currently-loaded customer context: the admin
+  // may be viewing an all-branches aggregate, or a different branch than this order.
   const branchCode = String(
     order?.branch_code || customer?.branch_code || "",
   ).trim();
   const branchDescription = String(
     order?.branch_description || customer?.branch_description || "",
   ).trim();
-  const branchLabel =
-    customer?.branch_code || customer?.branch_description
-      ? [customer.branch_code, customer.branch_description]
-          .filter(Boolean)
-          .join(" | ")
-      : "";
   return {
     customerName,
-    customerSubstore: branchLabel || branchDescription || branchCode,
+    customerCode,
+    // Must match the option value populateCustomerSubstoreOptions() writes on the
+    // order form (branch_description, falling back to branch_code) — a "code | desc"
+    // composite here would never match a real <option> and silently clear on import.
+    customerSubstore: branchDescription || branchCode,
     branchCode,
     branchDescription,
     customerEmail: String(order?.customer_email || "").trim(),
@@ -71,12 +72,6 @@ export function openSelectedOrderInOrderForm(context, orderId) {
 
 export function openRankedOrderForm(context) {
   const customer = context.state.lastRenderedStatsPayload?.customer || {};
-  const branchLabel =
-    customer.branch_code || customer.branch_description
-      ? [customer.branch_code, customer.branch_description]
-          .filter(Boolean)
-          .join(" | ")
-      : "";
   const productSales = context.getSortedProductSales();
   const rankedCodes = productSales
     .map((item) => String(item?.code || "").trim())
@@ -101,9 +96,10 @@ export function openRankedOrderForm(context) {
 
   const draft = {
     customerName: customer.name || "",
-    customerSubstore:
-      branchLabel || customer.branch_description || customer.branch_code || "",
-    branchCode: customer.branch_code || "",
+    // Must match the option value populateCustomerSubstoreOptions() writes on the
+    // order form (branch_description, falling back to branch_code) — a "code | desc"
+    // composite here would never match a real <option> and silently clear on import.
+    customerSubstore: customer.branch_description || customer.branch_code || "",
     branchDescription: customer.branch_description || "",
     customerEmail: customer.email || "",
     customerCode: context.state.currentCustomerCode,
