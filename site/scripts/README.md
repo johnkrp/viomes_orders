@@ -33,16 +33,21 @@ Operational scripts used by Plesk/local maintenance.
   - Removes historical duplicate logical sales lines from `imported_sales_lines`.
   - Rebuilds imported aggregates and mirrored customers afterwards.
 
-- `generate-catalog-from-xlsx.py`
-  - Generates `site/public/catalog.json` from an Excel source (default: `backend/archive/legacy-inputs/products.xlsx`).
-  - Supports `--input`, `--output`, and `--dry-run`.
+- `generate-catalog-from-db.js`
+  - Generates `site/public/catalog.json` directly from the live `products` table — the same source the server validates order quantities against, so the browser and the server can no longer disagree on pack sizes.
+  - Supports `--output`, `--dry-run`, and the same non-secret `--mysql-*` CLI overrides as the importer scripts.
+  - Run this after any change to `products.pieces_per_package` (e.g. an Entersoft re-import or manual catalog correction) so the order form stays in sync.
 
-Example (Windows, project root):
+Example (project root, production DB):
 
-```powershell
-backend\.venv\Scripts\python.exe site\scripts\generate-catalog-from-xlsx.py --dry-run
-backend\.venv\Scripts\python.exe site\scripts\generate-catalog-from-xlsx.py
+```bash
+cd site
+MYSQL_PASSWORD='YOUR_DB_PASSWORD' npm run generate:catalog -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
 ```
+
+- `generate-catalog-from-xlsx.py` (legacy, superseded)
+  - Generated `site/public/catalog.json` from an Excel source (default: `backend/archive/legacy-inputs/products.xlsx`), decoupled from the `products` table.
+  - This is what caused a large drift between catalog.json and the database (1,187 pack-size mismatches, 381 products missing from the catalog entirely) before `generate-catalog-from-db.js` replaced it. Kept only for reference; do not use it to regenerate catalog.json going forward.
 
 ## Import mode
 
