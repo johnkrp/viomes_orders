@@ -900,6 +900,7 @@ function clearTopFilters(event) {
   // This clears only the catalog toolbar state, not the cart or customer form.
   if (els.q) els.q.value = "";
   clearToolbarQty();
+  draftCatalogInputs.clear();
   importedCatalogCodes.clear();
   rankedCatalogCodes = [];
   productHistoryMap = {};
