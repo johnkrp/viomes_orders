@@ -17,6 +17,10 @@ site/node_modules/
 site/*.log
 site/logs/
 .tmp/
+# Browser-automation scratch output: console logs, page snapshots and screenshots
+# written during manual Playwright/MCP QA runs.
+.playwright-mcp/
+test-results/
 automation/
 automation/windows/*.txt
 automation/windows/*.bat
