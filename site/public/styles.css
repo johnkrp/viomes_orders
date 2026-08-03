@@ -2265,8 +2265,25 @@ button.success:active,
 .admin-order-submission-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
+}
+
+/* Date input takes the full row on its own so the two buttons underneath
+   have the whole column width to sit side by side instead of stacking. */
+.admin-order-submission-actions .order-submission-dispatch {
+  flex: 1 1 100%;
+}
+
+.admin-order-submission-actions .btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.admin-order-submissions-table th:last-child,
+.admin-order-submissions-table td:last-child {
+  width: 190px;
 }
 
 /* Detail rows sit between summary rows, so nth-child striping would band the
