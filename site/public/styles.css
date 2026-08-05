@@ -2432,6 +2432,17 @@ button.success:active,
   cursor: help;
 }
 
+.admin-order-needs-review {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-input);
+  background: #fde3df;
+  color: #7a1f10;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: help;
+}
+
 .order-submission-dispatch {
   width: 140px;
   padding: 6px 8px;
