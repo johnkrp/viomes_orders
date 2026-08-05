@@ -110,6 +110,23 @@ test("lines without price history are marked instead of showing a zero price", (
   assert.match(context.body.innerHTML, /χωρίς ιστορικό/);
 });
 
+test("an order needing manual price review shows the warning badge instead of an estimate, even over other value flags", () => {
+  const order = {
+    ...sampleOrder,
+    total_net_value: 0,
+    needs_manual_price_review: true,
+    value_is_partial: true,
+    value_has_fallback: true,
+  };
+  const context = buildContext([order], { expandedIds: ["7"] });
+  renderOrderSubmissions(context);
+
+  assert.match(context.body.innerHTML, /admin-order-needs-review/);
+  assert.match(context.body.innerHTML, /Χειροκίνητος έλεγχος τιμής/);
+  // The plain partial-estimate badge must not also render for the same order.
+  assert.doesNotMatch(context.body.innerHTML, /εκτ\.\*/);
+});
+
 test("long notes are truncated in the summary but kept whole in the detail row", () => {
   const notes = "Α".repeat(200);
   const context = buildContext([{ ...sampleOrder, notes }], {
