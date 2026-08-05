@@ -131,6 +131,9 @@ function createDbFixture() {
           },
         ];
       }
+      if (sql.includes("FROM customers")) {
+        return [];
+      }
       if (sql.includes("FROM products")) {
         return [];
       }

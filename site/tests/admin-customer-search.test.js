@@ -83,6 +83,54 @@ test("searchImportedCustomers queries imported_customer_branches and formats gro
   });
 });
 
+test("searchImportedCustomers includes mirrored customers with no branch rows", async () => {
+  const calls = [];
+  const db = {
+    async all(sql, params) {
+      calls.push({ sql, params });
+      if (sql.includes("FROM imported_customer_branches")) {
+        return [
+          {
+            code: "C001",
+            name: "Alpha Store",
+            branch_count: 1,
+            branch_code: "1",
+            branch_description: "Athens",
+          },
+        ];
+      }
+      if (sql.includes("FROM customers")) {
+        return [
+          { code: "C001", name: "Alpha Store" },
+          { code: "C004", name: "Alpha Ledger Only" },
+        ];
+      }
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+
+  const payload = await searchImportedCustomers(
+    db,
+    { customer_name: "Alpha" },
+    { limit: "10" },
+  );
+
+  assert.match(calls[0].sql, /FROM imported_customer_branches/);
+  assert.match(calls[1].sql, /FROM customers/);
+  assert.deepEqual(payload.items, [
+    {
+      code: "C001",
+      name: "Alpha Store",
+      branch_description: "Athens",
+    },
+    {
+      code: "C004",
+      name: "Alpha Ledger Only",
+      branch_description: "",
+    },
+  ]);
+});
+
 test("getImportedCustomerByCode returns the matching record", async () => {
   const db = {
     async get(sql, params) {
@@ -104,6 +152,28 @@ test("getImportedCustomerByCode returns null for an unknown code", async () => {
   const db = { async get() { return undefined; } };
   const record = await getImportedCustomerByCode(db, "UNKNOWN");
   assert.equal(record, null);
+});
+
+test("getImportedCustomerByCode falls back to ledger-only customers", async () => {
+  const calls = [];
+  const db = {
+    async get(sql, params) {
+      calls.push({ sql, params });
+      if (sql.includes("FROM imported_customers")) return undefined;
+      if (sql.includes("FROM imported_customer_ledgers")) {
+        return { code: "C004", name: "Ledger Only", is_inactive: 0 };
+      }
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+
+  const record = await getImportedCustomerByCode(db, "C004");
+  assert.equal(calls.length, 2);
+  assert.deepEqual(record, {
+    code: "C004",
+    name: "Ledger Only",
+    is_inactive: false,
+  });
 });
 
 test("getImportedCustomerByCode returns null for a blank code without querying", async () => {

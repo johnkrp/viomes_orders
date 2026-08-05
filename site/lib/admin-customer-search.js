@@ -72,7 +72,7 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
     prefixScoreParams.push(`${normalizedFilters.branch_description}%`);
   }
 
-  const rows = await db.all(
+  const branchRows = await db.all(
     `
       SELECT
         customer_code AS code,
@@ -99,6 +99,74 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
     [...whereParams, ...exactScoreParams, ...prefixScoreParams, limit],
   );
 
+  const rows = [...branchRows];
+
+  if (
+    rows.length < limit &&
+    !normalizedFilters.branch_code &&
+    !normalizedFilters.branch_description
+  ) {
+    const customerWhereParts = [];
+    const customerWhereParams = [];
+    const customerExactScoreParts = [];
+    const customerExactScoreParams = [];
+    const customerPrefixScoreParts = [];
+    const customerPrefixScoreParams = [];
+
+    if (normalizedFilters.customer_name) {
+      customerWhereParts.push("name LIKE ?");
+      customerWhereParams.push(`%${normalizedFilters.customer_name}%`);
+      customerExactScoreParts.push("CASE WHEN name = ? THEN 1 ELSE 0 END");
+      customerExactScoreParams.push(normalizedFilters.customer_name);
+      customerPrefixScoreParts.push("CASE WHEN name LIKE ? THEN 1 ELSE 0 END");
+      customerPrefixScoreParams.push(`${normalizedFilters.customer_name}%`);
+    }
+
+    if (normalizedFilters.customer_code) {
+      customerWhereParts.push("code LIKE ?");
+      customerWhereParams.push(`%${normalizedFilters.customer_code}%`);
+      customerExactScoreParts.push("CASE WHEN code = ? THEN 1 ELSE 0 END");
+      customerExactScoreParams.push(normalizedFilters.customer_code);
+      customerPrefixScoreParts.push("CASE WHEN code LIKE ? THEN 1 ELSE 0 END");
+      customerPrefixScoreParams.push(`${normalizedFilters.customer_code}%`);
+    }
+
+    const seenCodes = new Set(rows.map((row) => String(row.code || "")));
+    const fallbackRows = await db.all(
+      `
+        SELECT code, COALESCE(NULLIF(name, ''), code) AS name
+        FROM customers
+        WHERE source = 'entersoft_import'
+          AND (${customerWhereParts.join(" AND ")})
+        ORDER BY
+          (${customerExactScoreParts.join(" + ") || "0"}) DESC,
+          (${customerPrefixScoreParts.join(" + ") || "0"}) DESC,
+          name,
+          code
+        LIMIT ?
+      `,
+      [
+        ...customerWhereParams,
+        ...customerExactScoreParams,
+        ...customerPrefixScoreParams,
+        limit,
+      ],
+    );
+
+    for (const row of fallbackRows) {
+      if (seenCodes.has(String(row.code || ""))) continue;
+      rows.push({
+        code: row.code,
+        name: row.name,
+        branch_count: 0,
+        branch_code: "",
+        branch_description: "",
+      });
+      seenCodes.add(String(row.code || ""));
+      if (rows.length >= limit) break;
+    }
+  }
+
   return {
     filters: normalizedFilters,
     total: rows.length,
@@ -106,7 +174,9 @@ export async function searchImportedCustomers(db, filters = {}, options = {}) {
       code: row.code,
       name: row.name,
       branch_description:
-        Number(row.branch_count || 0) === 1
+        Number(row.branch_count || 0) === 0
+          ? ""
+          : Number(row.branch_count || 0) === 1
           ? row.branch_description || ""
           : `${Number(row.branch_count || 0)} υποκαταστήματα`,
     })),
@@ -117,7 +187,7 @@ export async function getImportedCustomerByCode(db, customerCode) {
   const code = String(customerCode || "").trim();
   if (!code) return null;
 
-  const row = await db.get(
+  let row = await db.get(
     `
       SELECT customer_code AS code, customer_name AS name, is_inactive
       FROM imported_customers
@@ -125,6 +195,29 @@ export async function getImportedCustomerByCode(db, customerCode) {
     `,
     [code],
   );
+
+  if (!row) {
+    row = await db.get(
+      `
+        SELECT customer_code AS code, customer_name AS name, is_inactive
+        FROM imported_customer_ledgers
+        WHERE customer_code = ?
+      `,
+      [code],
+    );
+  }
+
+  if (!row) {
+    row = await db.get(
+      `
+        SELECT code, name, 0 AS is_inactive
+        FROM customers
+        WHERE code = ?
+          AND source = 'entersoft_import'
+      `,
+      [code],
+    );
+  }
 
   if (!row) return null;
 
