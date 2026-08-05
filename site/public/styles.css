@@ -707,21 +707,24 @@ button.success:active,
 
 .actions .customerName,
 .actions .customerSubstore,
-.actions .customerEmail {
+.actions .customerEmail,
+.actions #customerPickerPanel {
   display: grid;
   grid-template-columns: 1fr;
   gap: 6px;
   padding-bottom: 14px;
 }
 .actions .customerName input,
-.actions .customerSubstore select,
-.actions .customerEmail input {
+.actions .customerSubstore input,
+.actions .customerEmail input,
+.actions #customerPickerPanel input {
   width: 100%;
 }
 
 .actions .customerName label,
 .actions .customerSubstore label,
-.actions .customerEmail label {
+.actions .customerEmail label,
+.actions #customerPickerPanel label {
   font-size: 13px;
   font-weight: 700;
   color: var(--text);

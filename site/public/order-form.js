@@ -30,6 +30,12 @@ let actorState = { role: null, customerCode: null, customerName: null };
 let selectedStaffCustomer = null;
 let customerPickerSearchToken = 0;
 let customerBranches = [];
+const NO_SUBSTORE_OPTION = {
+  value: "",
+  label: "— Χωρίς υποκατάστημα —",
+  text: "— Χωρίς υποκατάστημα —",
+};
+let customerSubstoreOptions = [NO_SUBSTORE_OPTION];
 
 const els = {
   q: document.getElementById("q"),
@@ -61,12 +67,12 @@ const els = {
   appMain: document.getElementById("appMain"),
   adminLinkBtn: document.getElementById("adminLinkBtn"),
   logoutBtn: document.getElementById("logoutBtn"),
-  customerNameField: document.getElementById("customerNameField"),
   customerSubstoreField: document.getElementById("customerSubstoreField"),
   customerPickerPanel: document.getElementById("customerPickerPanel"),
   customerPickerQuery: document.getElementById("customerPickerQuery"),
   customerPickerResults: document.getElementById("customerPickerResults"),
-  customerPickerSelected: document.getElementById("customerPickerSelected"),
+  customerSubstoreQuery: document.getElementById("customerSubstoreQuery"),
+  customerSubstoreResults: document.getElementById("customerSubstoreResults"),
   customerSubstoreSpinner: document.getElementById("customerSubstoreSpinner"),
   customerIdentityDisplay: document.getElementById("customerIdentityDisplay"),
 };
@@ -143,7 +149,6 @@ function applyRoleUi(actor) {
   const isStaff = actor.role === "staff";
   if (els.adminLinkBtn) els.adminLinkBtn.hidden = !isStaff;
   if (els.customerPickerPanel) els.customerPickerPanel.hidden = !isStaff;
-  if (els.customerNameField) els.customerNameField.hidden = !isStaff;
   // Branch selection matters most for customers, not least: a chain ordering for itself
   // still has to say which store the delivery is for. It stays visible for both roles.
   if (els.customerSubstoreField) els.customerSubstoreField.hidden = false;
@@ -187,6 +192,20 @@ function renderCustomerPickerResults(items) {
     .join("");
 }
 
+function customerPickerLabel(code, name) {
+  const cleanCode = String(code || "").trim();
+  const cleanName = String(name || "").trim();
+  if (cleanName && cleanCode) return `${cleanName} (${cleanCode})`;
+  return cleanName || cleanCode;
+}
+
+function clearSelectedStaffCustomer() {
+  selectedStaffCustomer = null;
+  customerBranches = [];
+  if (els.customerName) els.customerName.value = "";
+  populateCustomerSubstoreOptions([]);
+}
+
 async function performCustomerPickerSearch(query) {
   const trimmed = query.trim();
   const searchToken = ++customerPickerSearchToken;
@@ -216,27 +235,68 @@ async function performCustomerPickerSearch(query) {
 function setCustomerSubstoreValue(value) {
   if (!els.customerSubstore) return;
   const trimmed = value || "";
-  const hasOption = Array.from(els.customerSubstore.options).some(
-    (opt) => opt.value === trimmed,
-  );
-  els.customerSubstore.value = hasOption ? trimmed : "";
+  const match = customerSubstoreOptions.find((opt) => opt.value === trimmed);
+  els.customerSubstore.value = match ? match.value : "";
+  if (els.customerSubstoreQuery) {
+    els.customerSubstoreQuery.value = match && match.value ? match.label : "";
+  }
+  renderCustomerSubstoreResults([]);
 }
 
-function populateCustomerSubstoreOptions(branches) {
-  if (!els.customerSubstore) return;
-  const options = ['<option value="">— Χωρίς υποκατάστημα —</option>'];
+function buildCustomerSubstoreOptions(branches) {
+  const options = [NO_SUBSTORE_OPTION];
   for (const branch of branches) {
     const label = branch.branch_description || branch.branch_code || "";
     if (!label) continue;
     const text = branch.branch_code && branch.branch_code !== label
       ? `${label} · ${branch.branch_code}`
       : label;
-    options.push(
-      `<option value="${escapeHtml(label)}">${escapeHtml(text)}</option>`,
-    );
+    options.push({ value: label, label, text });
   }
-  els.customerSubstore.innerHTML = options.join("");
+  return options;
+}
+
+function populateCustomerSubstoreOptions(branches) {
+  if (!els.customerSubstore) return;
+  customerSubstoreOptions = buildCustomerSubstoreOptions(branches);
   els.customerSubstore.value = "";
+  if (els.customerSubstoreQuery) els.customerSubstoreQuery.value = "";
+  renderCustomerSubstoreResults([]);
+}
+
+function renderCustomerSubstoreResults(options) {
+  if (!els.customerSubstoreResults) return;
+  if (!options.length) {
+    els.customerSubstoreResults.innerHTML = "";
+    return;
+  }
+  els.customerSubstoreResults.innerHTML = options
+    .map(
+      (opt) => `
+        <button type="button" class="customer-picker-result" data-value="${escapeHtml(opt.value)}">
+          <span class="customer-picker-result-name">${escapeHtml(opt.label)}</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+function filterCustomerSubstoreOptions(query) {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) return customerSubstoreOptions;
+  return customerSubstoreOptions.filter((opt) =>
+    opt.text.toLowerCase().includes(trimmed),
+  );
+}
+
+function selectCustomerSubstoreOption(value) {
+  const match = customerSubstoreOptions.find((opt) => opt.value === value);
+  if (els.customerSubstore) els.customerSubstore.value = match?.value || "";
+  if (els.customerSubstoreQuery) {
+    els.customerSubstoreQuery.value = match?.value ? match.label : "";
+  }
+  renderCustomerSubstoreResults([]);
+  saveOrderFormState();
 }
 
 async function loadCustomerBranches(code) {
@@ -254,13 +314,13 @@ async function loadCustomerBranches(code) {
 
 async function loadBranchesInto(code) {
   populateCustomerSubstoreOptions([]);
-  if (els.customerSubstore) els.customerSubstore.disabled = true;
+  if (els.customerSubstoreQuery) els.customerSubstoreQuery.disabled = true;
   if (els.customerSubstoreSpinner) els.customerSubstoreSpinner.hidden = false;
   try {
     await loadCustomerBranches(code);
     populateCustomerSubstoreOptions(customerBranches);
   } finally {
-    if (els.customerSubstore) els.customerSubstore.disabled = false;
+    if (els.customerSubstoreQuery) els.customerSubstoreQuery.disabled = false;
     if (els.customerSubstoreSpinner) els.customerSubstoreSpinner.hidden = true;
   }
 }
@@ -269,8 +329,11 @@ async function selectStaffCustomer(code, name) {
   selectedStaffCustomer = { code, name };
   if (els.customerName) els.customerName.value = name;
   if (els.customerPickerResults) els.customerPickerResults.innerHTML = "";
-  if (els.customerPickerQuery) els.customerPickerQuery.value = "";
+  if (els.customerPickerQuery) {
+    els.customerPickerQuery.value = customerPickerLabel(code, name);
+  }
   await loadBranchesInto(code);
+  saveOrderFormState();
 }
 
 async function handleLoginSubmit(event) {
@@ -307,6 +370,9 @@ async function handleLoginSubmit(event) {
 
 let customerPickerDebounceTimer = null;
 els.customerPickerQuery?.addEventListener("input", () => {
+  if (selectedStaffCustomer) {
+    clearSelectedStaffCustomer();
+  }
   clearTimeout(customerPickerDebounceTimer);
   customerPickerDebounceTimer = setTimeout(() => {
     performCustomerPickerSearch(els.customerPickerQuery.value || "");
@@ -394,6 +460,7 @@ function saveOrderFormState() {
     const state = {
       q: els.q?.value || "",
       toolbarQty: els.toolbarQty?.value || "",
+      customerCode: isStaff ? selectedStaffCustomer?.code || "" : "",
       customerName: isStaff ? els.customerName?.value || "" : "",
       customerSubstore: isStaff ? els.customerSubstore?.value || "" : "",
       customerEmail: els.customerEmail?.value || "",
@@ -424,8 +491,21 @@ function restoreOrderFormFields(state) {
   if (els.q) els.q.value = state?.q || "";
   if (els.toolbarQty) els.toolbarQty.value = state?.toolbarQty || "";
   if (actorState.role === "staff") {
-    if (els.customerName) els.customerName.value = state?.customerName || "";
-    setCustomerSubstoreValue(state?.customerSubstore || "");
+    const customerCode = String(state?.customerCode || "").trim();
+    const customerName = String(state?.customerName || "").trim();
+    if (customerCode) {
+      selectedStaffCustomer = { code: customerCode, name: customerName };
+      if (els.customerName) els.customerName.value = customerName;
+      if (els.customerPickerQuery) {
+        els.customerPickerQuery.value = customerPickerLabel(customerCode, customerName);
+      }
+      loadBranchesInto(customerCode)
+        .then(() => setCustomerSubstoreValue(state?.customerSubstore || ""))
+        .catch(() => populateCustomerSubstoreOptions([]));
+    } else {
+      clearSelectedStaffCustomer();
+      if (els.customerPickerQuery) els.customerPickerQuery.value = "";
+    }
   }
   if (els.customerEmail) els.customerEmail.value = state?.customerEmail || "";
   if (els.notes) els.notes.value = state?.notes || "";
@@ -1868,7 +1948,21 @@ els.toolbarQty?.addEventListener("paste", () =>
   setTimeout(sanitizeToolbarQty, 0),
 );
 els.customerName?.addEventListener("input", saveOrderFormState);
-els.customerSubstore?.addEventListener("change", saveOrderFormState);
+els.customerSubstoreQuery?.addEventListener("input", () => {
+  renderCustomerSubstoreResults(
+    filterCustomerSubstoreOptions(els.customerSubstoreQuery.value || ""),
+  );
+});
+els.customerSubstoreQuery?.addEventListener("focus", () => {
+  renderCustomerSubstoreResults(
+    filterCustomerSubstoreOptions(els.customerSubstoreQuery.value || ""),
+  );
+});
+els.customerSubstoreResults?.addEventListener("click", (event) => {
+  const button = event.target.closest(".customer-picker-result");
+  if (!button) return;
+  selectCustomerSubstoreOption(button.dataset.value || "");
+});
 els.customerEmail?.addEventListener("input", saveOrderFormState);
 els.notes?.addEventListener("input", saveOrderFormState);
 
@@ -1880,11 +1974,9 @@ els.clearBtn?.addEventListener("click", () => {
   cart.clear();
   renderCart();
   if (actorState.role === "staff") {
-    selectedStaffCustomer = null;
-    customerBranches = [];
-    if (els.customerName) els.customerName.value = "";
-    if (els.customerPickerSelected) els.customerPickerSelected.textContent = "";
-    populateCustomerSubstoreOptions([]);
+    clearSelectedStaffCustomer();
+    if (els.customerPickerQuery) els.customerPickerQuery.value = "";
+    if (els.customerPickerResults) els.customerPickerResults.innerHTML = "";
   }
   if (els.customerEmail) els.customerEmail.value = "";
   if (els.notes) els.notes.value = "";

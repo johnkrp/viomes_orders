@@ -193,7 +193,7 @@
             <div class="actions">
               <div id="customerPickerPanel" hidden>
                 <label class="small" for="customerPickerQuery"
-                  >Αναζήτηση πελάτη (όνομα ή κωδικός):</label
+                  >Πελάτης:</label
                 >
                 <input
                   id="customerPickerQuery"
@@ -205,24 +205,14 @@
                   placeholder="π.χ. ABC Market ή 12345"
                 />
                 <div id="customerPickerResults" class="customer-picker-results"></div>
-                <div id="customerPickerSelected" class="small"></div>
+                <input type="hidden" id="customerName" value="" />
               </div>
 
               <div id="customerIdentityDisplay" class="small" hidden></div>
 
-              <div id="customerNameField" class="customerName">
-                <label for="customerName">Όνομα πελάτη:</label>
-                <input
-                  id="customerName"
-                  type="text"
-                  placeholder="π.χ. ABC Market"
-                  readonly
-                />
-              </div>
-
               <div id="customerSubstoreField" class="customerSubstore">
                 <div class="customerSubstoreLabelRow">
-                  <label for="customerSubstore">Υποκατάστημα:</label>
+                  <label for="customerSubstoreQuery">Υποκατάστημα:</label>
                   <span
                     id="customerSubstoreSpinner"
                     class="mini-spinner"
@@ -230,9 +220,20 @@
                     aria-hidden="true"
                   ></span>
                 </div>
-                <select id="customerSubstore">
-                  <option value="">— Χωρίς υποκατάστημα —</option>
-                </select>
+                <input
+                  id="customerSubstoreQuery"
+                  type="search"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  placeholder="Αναζήτηση υποκαταστήματος..."
+                />
+                <div
+                  id="customerSubstoreResults"
+                  class="customer-picker-results"
+                ></div>
+                <input type="hidden" id="customerSubstore" value="" />
               </div>
 
               <div class="cartLabel">Επιλεγμένα προϊόντα</div>
