@@ -991,15 +991,6 @@
       "color": "ΠΕΤΡΑ"
     },
     {
-      "id": 633,
-      "code": "1070.6-98",
-      "description": "CUBO MOSAIC ΚΑΔΟΣ ΑΝ.ΚΑΠΑΚΙ 70lt-30x30x70h-ΑΧΑΤΗΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_1070_6-98.jpg",
-      "pieces_per_package": 1,
-      "volume_liters": 0.027648,
-      "color": "ΑΧΑΤΗΣ"
-    },
-    {
       "id": 635,
       "code": "1071-02",
       "description": "CUBO PLUS ΚΑΔΟΣ ΔΙΠΛΗΣ ΟΠΗΣ 70lt-30x30x85h cm-ΜΑΥΡΟ",
@@ -1072,15 +1063,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 81,
-      "code": "111-32-00011",
-      "description": "ΛΕΚΑΝΗ ΤΕΤΡΑΓΩΝΗ 5,5l-29x29x12h cm-ΛΑΧΑΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_111-32-00011.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.002273,
-      "color": "ΛΑΧΑΝΙ"
-    },
-    {
       "id": 82,
       "code": "112-199",
       "description": "ΛΕΚΑΝΗ ΤΕΤΡΑΓΩΝΗ 9lt-34x34x14h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
@@ -1094,15 +1076,6 @@
       "code": "112-32",
       "description": "ΛΕΚΑΝΗ ΤΕΤΡΑΓΩΝΗ 9lt-34x34x14h cm-ΛΑΧΑΝΙ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_112-32.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.002857,
-      "color": "ΛΑΧΑΝΙ"
-    },
-    {
-      "id": 85,
-      "code": "112-32-00011",
-      "description": "ΛΕΚΑΝΗ ΤΕΤΡΑΓΩΝΗ 9lt-34x34x14h cm-ΛΑΧΑΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_112-32-00011.jpg",
       "pieces_per_package": 20,
       "volume_liters": 0.002857,
       "color": "ΛΑΧΑΝΙ"
@@ -1133,15 +1106,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.003704,
       "color": "ΛΑΧΑΝΙ"
-    },
-    {
-      "id": 86,
-      "code": "113-99",
-      "description": "ΛΕΚΑΝΗ ΤΕΤΡΑΓΩΝΗ 14,5lt-37,5x37,5x15h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_113-99.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003704,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
       "id": 90,
@@ -1387,15 +1351,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 446,
-      "code": "122-99",
-      "description": "ΚΟΥΒΑΣ NEPOY 9lt-d28,5x25h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_122-99.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003571,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
       "id": 448,
       "code": "123-199",
       "description": "ΚΟΥΒΑΣ NEPOY 12lt-d31x28,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
@@ -1540,24 +1495,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 290,
-      "code": "131-37",
-      "description": "KONTAPI 1,20M-ΑΣΗΜΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_131-37.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.00108,
-      "color": "ΑΣΗΜΙ"
-    },
-    {
-      "id": 291,
-      "code": "131-52",
-      "description": "KONTAPI 1,20M-ΜΠΛΕ ΜΑΡΙΝ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_131-52.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.00108,
-      "color": "ΜΠΛΕ ΜΑΡΙΝ"
-    },
-    {
       "id": 278,
       "code": "136-05+37",
       "description": "ΦΑΡΑΣΙ ΟΡΘ/KO ΛΑΣΤΙΧΟ 28x26,5x85,5h cm-ΚΟΚΚΙΝΟ+ΑΣΗΜΙ",
@@ -1598,15 +1535,6 @@
       "code": "137-05+37",
       "description": "ΦΑΡΑΣΙ ΟΡΘ/KO & ΣΚΟΥΠΑΚΙ 28x26,5x87,5h cm-ΚΟΚΚΙΝΟ+ΑΣΗΜΙ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_137-05_37.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.00274,
-      "color": "ΚΟΚΚΙΝΟ+ΑΣΗΜΙ"
-    },
-    {
-      "id": 282,
-      "code": "137-05+37-00100",
-      "description": "ΦΑΡΑΣΙ ΟΡΘ/KO & ΣΚΟΥΠΑΚΙ 28x26,5x87,5h cm-ΚΟΚΚΙΝΟ+ΑΣΗΜΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_137-05_37-00100.jpg",
       "pieces_per_package": 10,
       "volume_liters": 0.00274,
       "color": "ΚΟΚΚΙΝΟ+ΑΣΗΜΙ"
@@ -1850,7 +1778,7 @@
       "code": "151-04",
       "description": "ΚΑΛΑΘΙ ΠΟΛΛΩΝ ΧΡΗΣΕΩΝ 38x27x15h cm-ΜΠΕΖ ΙΒΟΥΑΡ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_151-04.jpg",
-      "pieces_per_package": 1,
+      "pieces_per_package": 20,
       "volume_liters": 0.001667,
       "color": "ΜΠΕΖ ΙΒΟΥΑΡ"
     },
@@ -2060,195 +1988,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.000694,
       "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 261,
-      "code": "157-04",
-      "description": "ΔΙΣΚΟΣ ΣΤΕΓΝΩΤΗΡΙΟΥ 45x36,5x2,5h cm-ΜΠΕΖ ΙΒΟΥΑΡ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_157-04.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.000694,
-      "color": "ΜΠΕΖ ΙΒΟΥΑΡ"
-    },
-    {
-      "id": 841,
-      "code": "160-09",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d19x18h cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_160-09.jpg",
-      "pieces_per_package": 50,
-      "volume_liters": 0.001176,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 842,
-      "code": "161-01",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d21x20h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_161-01.jpg",
-      "pieces_per_package": 50,
-      "volume_liters": 0.001538,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 843,
-      "code": "162-01",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d25x23h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_162-01.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.001724,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 844,
-      "code": "162-09",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d25x23h cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_162-09.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.001724,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 845,
-      "code": "163-01",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d27x25h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_163-01.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.0025,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 846,
-      "code": "163-09",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d27x25h cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_163-09.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.0025,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 847,
-      "code": "164-01",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d30x28h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_164-01.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.002564,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 848,
-      "code": "165-01",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d33x31h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_165-01.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.003448,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 849,
-      "code": "166-01",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d37x35h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_166-01.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.005,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 850,
-      "code": "166-09",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d37x35h cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_166-09.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.005,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 851,
-      "code": "168-01",
-      "description": "ΓΛΑΣΤΡΑ ΚΛΑΣΣΙΚΗ d43x42h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_168-01.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.007143,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 852,
-      "code": "170-01",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d16 cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_170-01.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000192,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 853,
-      "code": "170-09",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d16 cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_170-09.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000192,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 854,
-      "code": "171-01",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d20 cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_171-01.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000385,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 855,
-      "code": "171-09",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d20 cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_171-09.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000385,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 856,
-      "code": "172-01",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d22 cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_172-01.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000571,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 857,
-      "code": "172-09",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d22 cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_172-09.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000571,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 858,
-      "code": "173-01",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d25 cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_173-01.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000741,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 859,
-      "code": "173-09",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d25 cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_173-09.jpg",
-      "pieces_per_package": 120,
-      "volume_liters": 0.000741,
-      "color": "ΚΕΡΑΜΙΔΙ"
-    },
-    {
-      "id": 860,
-      "code": "174-09",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ ΚΛΑΣΣΙΚΗΣ d31 cm-ΚΕΡΑΜΙΔΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_174-09.jpg",
-      "pieces_per_package": 40,
-      "volume_liters": 0.0008,
-      "color": "ΚΕΡΑΜΙΔΙ"
     },
     {
       "id": 254,
@@ -2464,7 +2203,7 @@
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_1950-99.jpg",
       "pieces_per_package": 20,
       "volume_liters": 0.002083,
-      "color": "N/A"
+      "color": ""
     },
     {
       "id": 139,
@@ -2473,16 +2212,7 @@
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_1951-99.jpg",
       "pieces_per_package": 16,
       "volume_liters": 0.002604,
-      "color": "N/A"
-    },
-    {
-      "id": 140,
-      "code": "1980-01",
-      "description": "DISPLAY BOX FRESCO 01",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_1980-01.jpg",
-      "pieces_per_package": 16,
-      "volume_liters": 0.002604,
-      "color": "N/A"
+      "color": ""
     },
     {
       "id": 276,
@@ -2525,8 +2255,8 @@
       "code": "204.1-01",
       "description": "ΕΞΑΡΤΗΜΑΤΑ ΓΙΑ ΚΑΠΑΚΙ ΤΟΥΑΛΕΤΑΣ-ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_204_1-01.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0,
+      "pieces_per_package": 1000,
+      "volume_liters": 0.0141,
       "color": "ΛΕΥΚΟ"
     },
     {
@@ -2548,15 +2278,6 @@
       "color": "ΜΠΕΖ ΙΒΟΥΑΡ"
     },
     {
-      "id": 386,
-      "code": "205-28",
-      "description": "ΠΙΓΚΑΛ ΤΟΥΑΛΕΤΑΣ 12x12x37h cm-ΓΑΛΑΖΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_205-28.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003636,
-      "color": "ΓΑΛΑΖΙΟ"
-    },
-    {
       "id": 388,
       "code": "210-01",
       "description": "ΠΙΓΚΑΛ ΤΟΥΑΛΕΤΑΣ 16x14x37h cm-ΛΕΥΚΟ",
@@ -2573,15 +2294,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.004545,
       "color": "ΜΠΕΖ ΙΒΟΥΑΡ"
-    },
-    {
-      "id": 387,
-      "code": "210-60",
-      "description": "ΠΙΓΚΑΛ ΤΟΥΑΛΕΤΑΣ 16x14x37h cm-ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_210-60.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.004545,
-      "color": "ΓΡΑΝΙΤΗ"
     },
     {
       "id": 391,
@@ -2852,87 +2564,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.001493,
       "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 861,
-      "code": "230-03",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d25x25x23h cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_230-03.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.00303,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 862,
-      "code": "231-03",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d29x29x27h cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_231-03.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.004167,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 863,
-      "code": "231-90",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d29x29x27h cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_231-90.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.004167,
-      "color": "MAPMAPI"
-    },
-    {
-      "id": 864,
-      "code": "232-03",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d33x33x29h cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_232-03.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.005882,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 865,
-      "code": "232-90",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d33x33x29h cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_232-90.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.005882,
-      "color": "MAPMAPI"
-    },
-    {
-      "id": 866,
-      "code": "233-03",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d36x36x33h cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_233-03.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.00625,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 867,
-      "code": "233-90",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d36x36x33h cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_233-90.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.00625,
-      "color": "MAPMAPI"
-    },
-    {
-      "id": 868,
-      "code": "234-03",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d40x40x38h cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_234-03.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.008333,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 869,
-      "code": "234-90",
-      "description": "ΓΛΑΣΤΡΑ ΠΟΛΥΓΩΝΗ d40x40x38h cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_234-90.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.008333,
-      "color": "MAPMAPI"
     },
     {
       "id": 879,
@@ -3579,89 +3210,8 @@
       "description": "ΓΛΑΣΤΡΑΚΙ ΣΠΟΡΑΣ  Νο 25-ΔΙΑΦΟΡΑ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_25-00.jpg",
       "pieces_per_package": 4800,
-      "volume_liters": 0,
+      "volume_liters": 0.00279,
       "color": "ΔΙΑΦΟΡΑ"
-    },
-    {
-      "id": 870,
-      "code": "250-03",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 19x19 cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_250-03.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000294,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 871,
-      "code": "250-90",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 19x19 cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_250-90.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000294,
-      "color": "MAPMAPI"
-    },
-    {
-      "id": 872,
-      "code": "251-03",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 22x22 cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_251-03.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000426,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 873,
-      "code": "251-90",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 22x22 cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_251-90.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000426,
-      "color": "MAPMAPI"
-    },
-    {
-      "id": 874,
-      "code": "252-03",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 24x24 cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_252-03.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000465,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 875,
-      "code": "252-90",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 24x24 cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_252-90.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000465,
-      "color": "MAPMAPI"
-    },
-    {
-      "id": 876,
-      "code": "253-03",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 26x26 cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_253-03.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000606,
-      "color": "ΤΕΡΑΚΟΤΑ"
-    },
-    {
-      "id": 877,
-      "code": "253-90",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 26x26 cm-MAPMAPI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_253-90.jpg",
-      "pieces_per_package": 100,
-      "volume_liters": 0.000606,
-      "color": "MAPMAPI"
-    },
-    {
-      "id": 878,
-      "code": "254-03",
-      "description": "ΠΙΑΤΟ ΠΟΛΥΓΩΝΟ 29x29 cm-ΤΕΡΑΚΟΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_254-03.jpg",
-      "pieces_per_package": 50,
-      "volume_liters": 0.000833,
-      "color": "ΤΕΡΑΚΟΤΑ"
     },
     {
       "id": 949,
@@ -4393,24 +3943,6 @@
       "color": "MAYPO"
     },
     {
-      "id": 413,
-      "code": "285-18",
-      "description": "ΠΙΓΚΑΛ ΤΟΥΑΛΕΤΑΣ ΝΕΟ 11,5x9,5x36h cm-ΓΚΡΙ ΜΠΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_285-18.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0039,
-      "color": "ΓΚΡΙ ΜΠΛΕ"
-    },
-    {
-      "id": 414,
-      "code": "285-26",
-      "description": "ΠΙΓΚΑΛ ΤΟΥΑΛΕΤΑΣ ΝΕΟ 11,5x9,5x36h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_285-26.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0039,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
       "id": 420,
       "code": "285-30",
       "description": "ΠΙΓΚΑΛ ΤΟΥΑΛΕΤΑΣ ΝΕΟ 11,5x9,5x36h cm-ΓΚΡΕΪΖ",
@@ -4418,15 +3950,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.0039,
       "color": "ΓΚΡΕΪΖ"
-    },
-    {
-      "id": 415,
-      "code": "285-50",
-      "description": "ΠΙΓΚΑΛ ΤΟΥΑΛΕΤΑΣ ΝΕΟ 11,5x9,5x36h cm-ΓΚΡΙ ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_285-50.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0039,
-      "color": "ΓΚΡΙ ΜΠΕΖ"
     },
     {
       "id": 418,
@@ -4562,15 +4085,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.007143,
       "color": "ΤΙΤΑΝΙΟ"
-    },
-    {
-      "id": 1037,
-      "code": "290-65-00020",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ ΤΕΡΑΚΟΤΑ 30lt-60x33x26h cm-ΒΟΤΣΑΛΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_290-65-00020.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.007143,
-      "color": "ΒΟΤΣΑΛΟ"
     },
     {
       "id": 1028,
@@ -4726,15 +4240,6 @@
       "color": "ΤΙΤΑΝΙΟ"
     },
     {
-      "id": 1055,
-      "code": "292-65-00020",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ ΤΕΡΑΚΟΤΑ 55lt-80x38x31h cm-ΒΟΤΣΑΛΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_292-65-00020.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.013333,
-      "color": "ΒΟΤΣΑΛΟ"
-    },
-    {
       "id": 1046,
       "code": "292-90",
       "description": "ΖΑΡΝΤΙΝΙΕΡΑ ΤΕΡΑΚΟΤΑ 55lt-80x38x31h cm-MAPMAPI",
@@ -4760,15 +4265,6 @@
       "pieces_per_package": 3,
       "volume_liters": 0.03125,
       "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1063,
-      "code": "293-143-00020",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ ΤΕΡΑΚΟΤΑ 105lt-100x45x35h cm-ΕΛΙΑ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_293-143-00020.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.03125,
-      "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
     },
     {
       "id": 1060,
@@ -4823,15 +4319,6 @@
       "pieces_per_package": 3,
       "volume_liters": 0.03125,
       "color": "ΤΙΤΑΝΙΟ"
-    },
-    {
-      "id": 1066,
-      "code": "293-65-00020",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ ΤΕΡΑΚΟΤΑ 105lt-100x45x35h cm-ΒΟΤΣΑΛΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_293-65-00020.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.03125,
-      "color": "ΒΟΤΣΑΛΟ"
     },
     {
       "id": 1057,
@@ -5023,15 +4510,6 @@
       "color": "ΜΠΡΟΝΖΕ"
     },
     {
-      "id": 1092,
-      "code": "297-143-00020",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 76x34x6h cm-ΕΛΙΑ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_297-143-00020.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003125,
-      "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
-    },
-    {
       "id": 1088,
       "code": "297-25",
       "description": "ΔΙΣΚΟΣ TEPAKOTA 76x34x6h cm-ΜΟΛΥΒΙ",
@@ -5113,15 +4591,6 @@
       "color": "ΜΠΡΟΝΖΕ"
     },
     {
-      "id": 1102,
-      "code": "298-143-00020",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 97x40x6h cm-ΕΛΙΑ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_298-143-00020.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.003077,
-      "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
-    },
-    {
       "id": 1098,
       "code": "298-25",
       "description": "ΔΙΣΚΟΣ TEPAKOTA 97x40x6h cm-ΜΟΛΥΒΙ",
@@ -5194,15 +4663,6 @@
       "color": "MAPMAPI"
     },
     {
-      "id": 456,
-      "code": "300-02+37",
-      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΜΑΥΡΟ+ΑΣΗΜΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_300-02_37.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.003125,
-      "color": "ΜΑΥΡΟ+ΑΣΗΜΙ"
-    },
-    {
       "id": 463,
       "code": "300-02/86-00101",
       "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΜΑΥΡΟ/ΧΡΥΣΟ",
@@ -5212,22 +4672,13 @@
       "color": "ΜΑΥΡΟ/ΧΡΥΣΟ"
     },
     {
-      "id": 464,
-      "code": "300-05+32+22-00101",
-      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΚΟΚΚΙΝΟ+ΛΑΧΑΝΙ+ΣΚ.ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_300-05_32_22-00101.jpg",
+      "id": 456,
+      "code": "300-02+37",
+      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΜΑΥΡΟ+ΑΣΗΜΙ",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_300-02_37.jpg",
       "pieces_per_package": 10,
       "volume_liters": 0.003125,
-      "color": "ΚΟΚΚΙΝΟ+ΛΑΧΑΝΙ+ΣΚ.ΜΩΒ"
-    },
-    {
-      "id": 454,
-      "code": "300-05+62",
-      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΚΟΚΚΙΝΟ+ΜΠΛΕ ΑΙΓΑΙΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_300-05_62.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.003125,
-      "color": "ΚΟΚΚΙΝΟ+ΜΠΛΕ ΑΙΓΑΙΟΥ"
+      "color": "ΜΑΥΡΟ+ΑΣΗΜΙ"
     },
     {
       "id": 458,
@@ -5237,6 +4688,15 @@
       "pieces_per_package": 10,
       "volume_liters": 0.003125,
       "color": "ΚΟΚΚΙΝΟ/ΛΕΥΚΟ"
+    },
+    {
+      "id": 454,
+      "code": "300-05+62",
+      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΚΟΚΚΙΝΟ+ΜΠΛΕ ΑΙΓΑΙΟΥ",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_300-05_62.jpg",
+      "pieces_per_package": 10,
+      "volume_liters": 0.003125,
+      "color": "ΚΟΚΚΙΝΟ+ΜΠΛΕ ΑΙΓΑΙΟΥ"
     },
     {
       "id": 459,
@@ -5257,15 +4717,6 @@
       "color": "ΜΠΛΕ ΡΑΦ/ΚΡΕΜ"
     },
     {
-      "id": 465,
-      "code": "300-37/02-00103",
-      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΑΣΗΜΙ/ΜΑΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_300-37_02-00103.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.003125,
-      "color": "ΑΣΗΜΙ/ΜΑΥΡΟ"
-    },
-    {
       "id": 461,
       "code": "300-57/02-00011",
       "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΜΠΛΕ ΜΑΥΑ/ΜΑΥΡΟ",
@@ -5273,6 +4724,15 @@
       "pieces_per_package": 12,
       "volume_liters": 0.003125,
       "color": "ΜΠΛΕ MAYA/ΜΑΥΡΟ"
+    },
+    {
+      "id": 2167,
+      "code": "300-58",
+      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΤΙΤΑΝΙΟ",
+      "image_url": "",
+      "pieces_per_package": 10,
+      "volume_liters": 0,
+      "color": "ΤΙΤΑΝΙΟ"
     },
     {
       "id": 455,
@@ -5284,12 +4744,12 @@
       "color": "ΤΙΤΑΝΙΟ+ΓΚΡΙ ΜΠΕΖ"
     },
     {
-      "id": 457,
-      "code": "300-62/50",
-      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΜΠΛΕ ΑΙΓΑΙΟΥ/ΓΚΡΙ ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_300-62_50.jpg",
+      "id": 2168,
+      "code": "300-62",
+      "description": "ΚΟΥΒΑΣ ΣΦΟΥΓΓΑΡΙΣΜΑΤΟΣ 16lt-39,5x27x28,5h cm-ΜΠΛΕ ΑΙΓΑΙΟΥ",
+      "image_url": "",
       "pieces_per_package": 10,
-      "volume_liters": 0.003125,
+      "volume_liters": 0,
       "color": "ΜΠΛΕ ΑΙΓΑΙΟΥ"
     },
     {
@@ -5320,24 +4780,6 @@
       "color": "ΜΑΥΡΟ"
     },
     {
-      "id": 479,
-      "code": "301-02+16+50-00101",
-      "description": "ΣΤΥΦΤΗΡΙ 28x22x16h cm-ΜΑΥΡΟ+ΜΩΒ+ΓΚΡΙ ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_301-02_16_50-00101.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001149,
-      "color": "ΜΑΥΡΟ+ΜΩΒ+ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 466,
-      "code": "301-02+50",
-      "description": "ΣΤΥΦΤΗΡΙ 28x22x16h cm-ΜΑΥΡΟ+ΓΚΡΙ ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_301-02_50.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001149,
-      "color": "ΜΑΥΡΟ+ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
       "id": 475,
       "code": "301-02-00011",
       "description": "ΣΤΥΦΤΗΡΙ 28x22x16h cm-MAYPO",
@@ -5356,13 +4798,13 @@
       "color": "MAYPO"
     },
     {
-      "id": 478,
-      "code": "301-02-00103",
-      "description": "ΣΤΥΦΤΗΡΙ 28x22x16h cm-MAYPO",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_301-02-00103.jpg",
+      "id": 466,
+      "code": "301-02+50",
+      "description": "ΣΤΥΦΤΗΡΙ 28x22x16h cm-ΜΑΥΡΟ+ΓΚΡΙ ΜΠΕΖ",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_301-02_50.jpg",
       "pieces_per_package": 10,
       "volume_liters": 0.001149,
-      "color": "MAYPO"
+      "color": "ΜΑΥΡΟ+ΓΚΡΙ ΜΠΕΖ"
     },
     {
       "id": 470,
@@ -5419,15 +4861,6 @@
       "color": "ΚΡΕΜ-ΠΑΛΙΟ"
     },
     {
-      "id": 476,
-      "code": "301-79-00011",
-      "description": "ΣΤΥΦΤΗΡΙ 28x22x16h cm-ΓΚΡΙ ΣΤΑΧΤI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_301-79-00011.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001149,
-      "color": "ΓΚΡΙ ΣΤΑΧΤI"
-    },
-    {
       "id": 480,
       "code": "301-86-00101",
       "description": "ΣΤΥΦΤΗΡΙ 28x22x16h cm-ΧΡΥΣΟ",
@@ -5446,24 +4879,6 @@
       "color": "ΜΑΥΡΟ+ΓΚΡΙ ΜΠΕΖ"
     },
     {
-      "id": 482,
-      "code": "302-50",
-      "description": "ΣΤΥΦΤΗΡΙ 28x22x10,5h cm-ΓΚΡΙ ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_302-50.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001471,
-      "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 483,
-      "code": "302-50+22+02-00101",
-      "description": "ΣΤΥΦΤΗΡΙ 28x22x10,5h cm-ΓΚΡΙΜΠΕΖ+ΜΩΒ ΣΚ.+ΜΑΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_302-50_22_02-00101.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001471,
-      "color": "ΓΚΡΙΜΠΕΖ+ΜΩΒ ΣΚ.+ΜΑΥΡΟ"
-    },
-    {
       "id": 488,
       "code": "305-02/79-00011",
       "description": "ΚΟΥΒΑΣ ME ΕΡΓΟΝ/ΚΗ ΛΑΒΗ16lt-39,5x27x28,5h cm-ΜΑΥΡΟ/ΓΚΡΙ ΣΤΑΧΤΙ",
@@ -5471,6 +4886,15 @@
       "pieces_per_package": 10,
       "volume_liters": 0.003125,
       "color": "ΜΑΥΡΟ/ΓΚΡΙ ΣΤΑΧΤΙ"
+    },
+    {
+      "id": 2169,
+      "code": "305-05",
+      "description": "ΚΟΥΒΑΣ ME ΕΡΓΟΝ/ΚΗ ΛΑΒΗ16lt-39,5x27x28,5h cm-KOKKINO",
+      "image_url": "",
+      "pieces_per_package": 10,
+      "volume_liters": 0,
+      "color": "KOKKINO"
     },
     {
       "id": 489,
@@ -5530,9 +4954,9 @@
       "id": 2064,
       "code": "306-01",
       "description": "ΒΟΥΡΤΣΑ ΠΙΓΚΑΛ d7x37h cm-ΛΕΥΚΟ",
-      "image_url": "",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_306-01.jpg",
       "pieces_per_package": 42,
-      "volume_liters": 0,
+      "volume_liters": 0.0021,
       "color": "ΛΕΥΚΟ"
     },
     {
@@ -5640,17 +5064,8 @@
       "description": "ΚΟΥΒΑΣ ΑΠΟΡΡΙΜΑΤΩΝ 60lt-d40x58h cm-MAYPO",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_315_1-02.jpg",
       "pieces_per_package": 10,
-      "volume_liters": 0,
+      "volume_liters": 0.055556,
       "color": "MAYPO"
-    },
-    {
-      "id": 599,
-      "code": "315.1-37",
-      "description": "ΚΟΥΒΑΣ ΑΠΟΡΡΙΜΑΤΩΝ 60lt-d40x58h cm-ΑΣΗΜΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_315_1-37.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0,
-      "color": "ΑΣΗΜΙ"
     },
     {
       "id": 600,
@@ -5743,15 +5158,6 @@
       "color": "ΑΣΗΜΙ"
     },
     {
-      "id": 607,
-      "code": "317-43",
-      "description": "ΚΑΔΟΣ ME ΚΑΠΑΚΙ ΑΣΦΑΛΕΙΑΣ 60lt-d42x62h cm-ΚΥΠΑΡΙΣΣΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_317-43.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.047619,
-      "color": "ΚΥΠΑΡΙΣΣΙ"
-    },
-    {
       "id": 1919,
       "code": "32-03",
       "description": "ΚΑΣΠΩ TEPAKOTA d31,5x12h cm-ΤΕΡΑΚΟΤΑ",
@@ -5777,15 +5183,6 @@
       "pieces_per_package": 50,
       "volume_liters": 0.001249,
       "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1923,
-      "code": "32-16",
-      "description": "ΚΑΣΠΩ TEPAKOTA d31,5x12h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_32-16.jpg",
-      "pieces_per_package": 50,
-      "volume_liters": 0.001249,
-      "color": "ΜΩΒ"
     },
     {
       "id": 1922,
@@ -5842,15 +5239,6 @@
       "color": "ΓΚΡΕΙΖ/ΠΕΤΡΑ"
     },
     {
-      "id": 646,
-      "code": "320.1-11",
-      "description": "DECO COLORED ΚΑΔΟΣ ΑΙΩ/ΝΟ ΚΑΠΑΚΙ 7lt-d20x28h cm-ΚΕΡΑΣΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_320_1-11.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.013889,
-      "color": "ΚΕΡΑΣΙ"
-    },
-    {
       "id": 647,
       "code": "320.1-62",
       "description": "DECO COLORED ΚΑΔΟΣ ΑΙΩ/ΝΟ ΚΑΠΑΚΙ 7lt-d20x28h cm-ΜΠΛΕ ΑΙΓΑΙΟΥ",
@@ -5858,24 +5246,6 @@
       "pieces_per_package": 4,
       "volume_liters": 0.013889,
       "color": "ΜΠΛΕ ΑΙΓΑΙΟΥ"
-    },
-    {
-      "id": 648,
-      "code": "320.1-84",
-      "description": "DECO COLORED ΚΑΔΟΣ ΑΙΩ/ΝΟ ΚΑΠΑΚΙ 7lt-d20x28h cm-ΒΑΣΙΛΙΚΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_320_1-84.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.013889,
-      "color": "ΒΑΣΙΛΙΚΟΣ"
-    },
-    {
-      "id": 649,
-      "code": "320.1-89",
-      "description": "DECO COLORED ΚΑΔΟΣ ΑΙΩ/ΝΟ ΚΑΠΑΚΙ 7lt-d20x28h cm-ΜΑΝΓΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_320_1-89.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.013889,
-      "color": "ΜΑΝΓΚΟ"
     },
     {
       "id": 2160,
@@ -5921,33 +5291,6 @@
       "pieces_per_package": 2,
       "volume_liters": 0.045,
       "color": "ΤΙΤΑΝΙΟ"
-    },
-    {
-      "id": 690,
-      "code": "327.1-02/11",
-      "description": "DECO COLORED ΚΑΔΟΣ ΑΝ. ΚΑΠΑΚΙ 28lt-d30x50hcm-ΜΑΥΡΟ/ΚΕΡΑΣΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_327_1-02_11.jpg",
-      "pieces_per_package": 2,
-      "volume_liters": 0.045,
-      "color": "ΜΑΥΡΟ/ΚΕΡΑΣΙ"
-    },
-    {
-      "id": 692,
-      "code": "327.1-02/62",
-      "description": "DECO COLORED ΚΑΔΟΣ ΑΝ. ΚΑΠΑΚΙ 28lt-d30x50hcm-ΜΑΥΡΟ/ΜΠΛΕ ΑΙΓ.",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_327_1-02_62.jpg",
-      "pieces_per_package": 2,
-      "volume_liters": 0.045,
-      "color": "ΜΑΥΡΟ/ΜΠΛΕ ΑΙΓ."
-    },
-    {
-      "id": 693,
-      "code": "327.1-02/84",
-      "description": "DECO COLORED ΚΑΔΟΣ ΑΝ. ΚΑΠΑΚΙ 28lt-d30x50hcm-ΜΑΥΡΟ/ΒΑΣΙΛΙΚΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_327_1-02_84.jpg",
-      "pieces_per_package": 2,
-      "volume_liters": 0.045,
-      "color": "ΜΑΥΡΟ/ΒΑΣΙΛΙΚΟΣ"
     },
     {
       "id": 691,
@@ -6011,15 +5354,6 @@
       "pieces_per_package": 2,
       "volume_liters": 0.045,
       "color": "ΠΕΤΡΑ"
-    },
-    {
-      "id": 696,
-      "code": "327.6-98",
-      "description": "DECO MOSAIC ΚΑΔΟΣ ΑΝ.ΚΑΠΑΚΙ 28lt-d30x50h cm-ΑΧΑΤΗΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_327_6-98.jpg",
-      "pieces_per_package": 2,
-      "volume_liters": 0.045,
-      "color": "ΑΧΑΤΗΣ"
     },
     {
       "id": 697,
@@ -6562,24 +5896,6 @@
       "color": "INOX"
     },
     {
-      "id": 272,
-      "code": "341-01",
-      "description": "ΘΗΚΗ MAX/ΝΩΝ NEPOXYTH 16x16x18h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_341-01.jpg",
-      "pieces_per_package": 45,
-      "volume_liters": 0.001421,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 273,
-      "code": "341-37",
-      "description": "ΘΗΚΗ MAX/ΝΩΝ NEPOXYTH 16x16x18h cm-ΑΣΗΜΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_341-37.jpg",
-      "pieces_per_package": 45,
-      "volume_liters": 0.001421,
-      "color": "ΑΣΗΜΙ"
-    },
-    {
       "id": 274,
       "code": "342-01",
       "description": "ΚΟΥΤΑΛΟΘΗΚΗ ΣΥΡΤΑΡΙΟΥ 28x39x6h cm-ΛΕΥΚΟ",
@@ -6596,69 +5912,6 @@
       "pieces_per_package": 24,
       "volume_liters": 0.001948,
       "color": "ΑΣΗΜΙ"
-    },
-    {
-      "id": 234,
-      "code": "3430-99",
-      "description": "ΒΑΖΟ PET ΜΕ ΣΙΤΑ 1,5lt",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_3430-99.jpg",
-      "pieces_per_package": 44,
-      "volume_liters": 0.004909,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 235,
-      "code": "3431-99",
-      "description": "ΒΑΖΟ PET ΜΕ ΣΙΤΑ 3lt",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_3431-99.jpg",
-      "pieces_per_package": 40,
-      "volume_liters": 0.006171,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 236,
-      "code": "3431-99-00100",
-      "description": "ECONOMY ΒΑΖΟ PET ΜΕ ΣΙΤΑ 3lt",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_3431-99-00100.jpg",
-      "pieces_per_package": 40,
-      "volume_liters": 0.006171,
-      "color": "MARKET IN"
-    },
-    {
-      "id": 237,
-      "code": "3432-99",
-      "description": "ΒΑΖΟ PET ΜΕ ΣΙΤΑ 5lt",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_3432-99.jpg",
-      "pieces_per_package": 28,
-      "volume_liters": 0.01,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 238,
-      "code": "3432-99-00100",
-      "description": "ECONOMY ΒΑΖΟ PET ΜΕ ΣΙΤΑ 5lt",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_3432-99-00100.jpg",
-      "pieces_per_package": 28,
-      "volume_liters": 0.01,
-      "color": "MARKET IN"
-    },
-    {
-      "id": 239,
-      "code": "3442-99",
-      "description": "ΒΑΡΕΛΙ ΠΛΑΣΤΙΚΟ 6lt",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_3442-99.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.01,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 240,
-      "code": "3442-99-00100",
-      "description": "ECONOMY ΒΑΡΕΛΙ ΠΛΑΣΤΙΚΟ 6lt",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_3442-99-00100.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.01,
-      "color": "MARKET IN"
     },
     {
       "id": 427,
@@ -6697,15 +5950,6 @@
       "color": "ΡΟΖ ΣΚΟΥΡΟ"
     },
     {
-      "id": 2053,
-      "code": "354-84",
-      "description": "ΠΟΤΙΣΤΗΡΙ 6lt - ΒΑΣΙΛΙΚΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_354-84.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.012,
-      "color": "ΒΑΣΙΛΙΚΟΣ"
-    },
-    {
       "id": 2057,
       "code": "355-01",
       "description": "ΒΑΣΗ TOIXOY ΓΙΑ ΛΑΣΤΙΧΟ 22x22x17h cm-ΛΕΥΚΟ",
@@ -6736,7 +5980,7 @@
       "id": 2059,
       "code": "356-145",
       "description": "ΛΑΣΤΙΧΟ ΠΟΤΙΣΜΑΤΟΣ  1/2\", 15m - ΚΙΤΡΙΝΟ",
-      "image_url": "0",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_356-145.jpg",
       "pieces_per_package": 1,
       "volume_liters": 0.007962,
       "color": "ΚΙΤΡΙΝΟ"
@@ -6913,15 +6157,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 20,
-      "code": "362-01",
-      "description": "ΛΕΚΑΝΗ ORA 9,5lt-d36x15,5h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_362-01.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002592,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
       "id": 18,
       "code": "362-27",
       "description": "ΛΕΚΑΝΗ ORA 9,5lt-d36x15,5h cm-ΠΡΑΣΙΝΟ ΕΛΙΑΣ",
@@ -6974,15 +6209,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.002592,
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 27,
-      "code": "363-01",
-      "description": "ΛΕΚΑΝΗ ORA 14lt-d41x17,5h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_363-01.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.003362,
-      "color": "ΛΕΥΚΟ"
     },
     {
       "id": 26,
@@ -7064,15 +6290,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.001163,
       "color": "ΠΑΣΤΕΛ ΓΚΡΙ"
-    },
-    {
-      "id": 495,
-      "code": "385-05+02",
-      "description": "ΚΟΥΒΑΣ ΟΒΑΛ 14lt-36x27x26,5h cm-ΚΟΚΚΙΝΟ+ΜΑΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_385-05_02.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003704,
-      "color": "ΚΟΚΚΙΝΟ+ΜΑΥΡΟ"
     },
     {
       "id": 494,
@@ -7201,28 +6418,10 @@
       "color": "MAYPO"
     },
     {
-      "id": 1441,
-      "code": "4-890.6-96-61",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA MOSAIC d16x2h cm- ΛΑΒΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_4-890_6-96-61.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.00016,
-      "color": "ΛΑΒΑ"
-    },
-    {
-      "id": 1442,
-      "code": "4-890.6-97-61",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA MOSAIC d16x2h cm- ΠΕΤΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_4-890_6-97-61.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.00016,
-      "color": "ΠΕΤΡΑ"
-    },
-    {
       "id": 2060,
       "code": "4-895",
       "description": "ΜΕΤΑΛΛΙΚΟ STAND ME ΡΟΔΕΣ 0,80x0,60 m-ΔΙΑΦΟΡΑ",
-      "image_url": "0",
+      "image_url": "https://viomes.gr/images/packshot_photos/viomes_4-895.jpg",
       "pieces_per_package": 1,
       "volume_liters": 0.93248,
       "color": "ΔΙΑΦΟΡΑ"
@@ -7233,7 +6432,7 @@
       "description": "ΜΠΙΛΙΕΣ\" ΜΕΤΑΚΙΝΗΣΗΣ-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_400-99.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.003229,
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
@@ -7271,24 +6470,6 @@
       "pieces_per_package": 6,
       "volume_liters": 0.0091,
       "color": "ΜΠΕΖ ΙΒΟΥΑΡ"
-    },
-    {
-      "id": 788,
-      "code": "405-05-00014",
-      "description": "ΣΚΑΜΠΩ d33x43h cm-ΚΟΚΚΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_405-05-00014.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.0091,
-      "color": "ΚΟΚΚΙΝΟ"
-    },
-    {
-      "id": 783,
-      "code": "405-26",
-      "description": "ΣΚΑΜΠΩ d33x43h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_405-26.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.0091,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
       "id": 789,
@@ -7334,15 +6515,6 @@
       "pieces_per_package": 60,
       "volume_liters": 0.0016,
       "color": "MAPMAPI"
-    },
-    {
-      "id": 2061,
-      "code": "4101",
-      "description": "ΚΑΛΥΜΜΑ ΗΛΕΚΤΡΙΚΗΣ ΣΥΣΚΕΥΗΣ",
-      "image_url": "0",
-      "pieces_per_package": 100,
-      "volume_liters": 0.00037,
-      "color": "ΔΙΑΦΟΡΑ RAYCAP"
     },
     {
       "id": 96,
@@ -8101,24 +7273,6 @@
       "color": "ΛΕΥΚΟ"
     },
     {
-      "id": 1238,
-      "code": "469-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 2lt-d16x15,5h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_469-12.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.00035,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1239,
-      "code": "469-13",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 2lt-d16x15,5h cm-ΜΠΡΟΝΖΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_469-13.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.00035,
-      "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
       "id": 1240,
       "code": "469-14",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 2lt-d16x15,5h cm-ΜΠΟΡΝΤΩ",
@@ -8126,24 +7280,6 @@
       "pieces_per_package": 25,
       "volume_liters": 0.00035,
       "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1236,
-      "code": "469-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 2lt-d16x15,5h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_469-16.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.00035,
-      "color": "ΜΩΒ"
-    },
-    {
-      "id": 1241,
-      "code": "469-17",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 2lt-d16x15,5h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_469-17.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.00035,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
       "id": 1242,
@@ -8164,15 +7300,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 179,
-      "code": "47-27",
-      "description": "ΑΕΡΟΣΤΕΓΕΣ ΠΑΡ/ΜΟ 8lt-38x28x13h cm-ΠΡΑΣΙΝΟ ΕΛΙΑΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_47-27.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.008696,
-      "color": "ΠΡΑΣΙΝΟ ΕΛΙΑΣ"
-    },
-    {
       "id": 177,
       "code": "47-59",
       "description": "ΑΕΡΟΣΤΕΓΕΣ ΠΑΡ/ΜΟ 8lt-38x28x13h cm-ΑΜΕΘΥΣΤΟΣ",
@@ -8180,15 +7307,6 @@
       "pieces_per_package": 6,
       "volume_liters": 0.008696,
       "color": "ΑΜΕΘΥΣΤΟΣ"
-    },
-    {
-      "id": 180,
-      "code": "47-73",
-      "description": "ΑΕΡΟΣΤΕΓΕΣ ΠΑΡ/ΜΟ 8lt-38x28x13h cm-ΣΙΕΛ ΜΠΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_47-73.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.008696,
-      "color": "ΣΙΕΛ ΜΠΛΕ"
     },
     {
       "id": 178,
@@ -8216,15 +7334,6 @@
       "pieces_per_package": 6,
       "volume_liters": 0.008696,
       "color": "ΜΠΟΡΝΤΩ+ΒΑΣΙΛΙΚΟΣ"
-    },
-    {
-      "id": 181,
-      "code": "47.1-28",
-      "description": "ΣΕΤ ΑΕΡΟΣΤΕΓΗ ΠΑΡ/ΜΟ 8lt(1+2)-38x28x13h cm-ΓΑΛΑΖΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_47_1-28.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.008696,
-      "color": "ΓΑΛΑΖΙΟ"
     },
     {
       "id": 182,
@@ -8263,156 +7372,12 @@
       "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
-      "id": 1245,
-      "code": "470-01",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-01.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 1246,
-      "code": "470-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-12.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1247,
-      "code": "470-13",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΜΠΡΟΝΖΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-13.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1248,
-      "code": "470-14",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-14.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1244,
-      "code": "470-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-16.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΜΩΒ"
-    },
-    {
-      "id": 1249,
-      "code": "470-17",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-17.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
-      "id": 1250,
-      "code": "470-25",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-25.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1251,
-      "code": "470-26",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_470-26.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.001167,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1257,
-      "code": "471-01",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_471-01.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002471,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 1252,
-      "code": "471-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_471-12.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002471,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1256,
-      "code": "471-13",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΜΠΡΟΝΖΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_471-13.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002471,
-      "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1255,
-      "code": "471-14",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_471-14.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002471,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1258,
-      "code": "471-17",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_471-17.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002471,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
-      "id": 1254,
-      "code": "471-25",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_471-25.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002471,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1253,
-      "code": "471-26",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_471-26.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002471,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
       "id": 301,
       "code": "48-99-00100",
       "description": "ΒΟΥΡΤΣΑ ΔΑΠΕΔΟΥ ΧΕΙΡΟΣ-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_48-99-00100.jpg",
       "pieces_per_package": 12,
       "volume_liters": 0.000833,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 302,
-      "code": "49-99",
-      "description": "ΣΚΟΥΠΑ ΜΑΓΝΗΤΙΚΗ ΔΙΧΡΩΜΗ-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_49-99.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0021,
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
@@ -8468,15 +7433,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.002857,
       "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
-    },
-    {
-      "id": 1105,
-      "code": "491-20",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ TEPAKOTA 45x21x18h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_491-20.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.002857,
-      "color": "KPOKI"
     },
     {
       "id": 1113,
@@ -8614,51 +7570,6 @@
       "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
     },
     {
-      "id": 1121,
-      "code": "492-17",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ TEPAKOTA 59x22x18h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_492-17.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003448,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
-      "id": 1122,
-      "code": "492-19",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ TEPAKOTA 59x22x18h cm-ΠΟΡΤΟΚΑΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_492-19.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003448,
-      "color": "ΠΟΡΤΟΚΑΛΙ"
-    },
-    {
-      "id": 1123,
-      "code": "492-20",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ TEPAKOTA 59x22x18h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_492-20.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003448,
-      "color": "KPOKI"
-    },
-    {
-      "id": 1124,
-      "code": "492-21",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ TEPAKOTA 59x22x18h cm-ΒΙΟΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_492-21.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003448,
-      "color": "ΒΙΟΛΕ"
-    },
-    {
-      "id": 1125,
-      "code": "492-23",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ TEPAKOTA 59x22x18h cm-ΠΡΑΣΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_492-23.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003448,
-      "color": "ΠΡΑΣΙΝΟ"
-    },
-    {
       "id": 1133,
       "code": "492-25",
       "description": "ΖΑΡΝΤΙΝΙΕΡΑ TEPAKOTA 13,5lt 59x22x18h cm-ΜΟΛΥΒΙ",
@@ -8776,42 +7687,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1141,
-      "code": "496-19",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 40x17x3h cm-ΠΟΡΤΟΚΑΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_496-19.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000364,
-      "color": "ΠΟΡΤΟΚΑΛΙ"
-    },
-    {
-      "id": 1142,
-      "code": "496-20",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 40x17x3h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_496-20.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000364,
-      "color": "KPOKI"
-    },
-    {
-      "id": 1143,
-      "code": "496-21",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 40x17x3h cm-ΒΙΟΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_496-21.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000364,
-      "color": "ΒΙΟΛΕ"
-    },
-    {
-      "id": 1144,
-      "code": "496-23",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 40x17x3h cm-ΠΡΑΣΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_496-23.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000364,
-      "color": "ΠΡΑΣΙΝΟ"
-    },
-    {
       "id": 1152,
       "code": "496-25",
       "description": "ΔΙΣΚΟΣ TEPAKOTA 40x17x3h cm-ΜΟΛΥΒΙ",
@@ -8891,42 +7766,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.000595,
       "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1154,
-      "code": "497-19",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 55x17x3h cm-ΠΟΡΤΟΚΑΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_497-19.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000595,
-      "color": "ΠΟΡΤΟΚΑΛΙ"
-    },
-    {
-      "id": 1155,
-      "code": "497-20",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 55x17x3h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_497-20.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000595,
-      "color": "KPOKI"
-    },
-    {
-      "id": 1156,
-      "code": "497-21",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 55x17x3h cm-ΒΙΟΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_497-21.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000595,
-      "color": "ΒΙΟΛΕ"
-    },
-    {
-      "id": 1157,
-      "code": "497-23",
-      "description": "ΔΙΣΚΟΣ TEPAKOTA 55x17x3h cm-ΠΡΑΣΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_497-23.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000595,
-      "color": "ΠΡΑΣΙΝΟ"
     },
     {
       "id": 1165,
@@ -9046,15 +7885,6 @@
       "color": "ΛΑΪΜ"
     },
     {
-      "id": 792,
-      "code": "505-04",
-      "description": "ΣΚΑΜΠΩ 36x36x46,5h cm-ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_505-04.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0068,
-      "color": "ΜΠΕΖ"
-    },
-    {
       "id": 795,
       "code": "505-50",
       "description": "ΣΚΑΜΠΩ 36x36x46,5h cm-ΓΚΡΙ ΜΠΕΖ",
@@ -9071,15 +7901,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.0068,
       "color": "ΤΙΤΑΝΙΟ"
-    },
-    {
-      "id": 794,
-      "code": "505-99",
-      "description": "ΣΚΑΜΠΩ 36x36x46,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_505-99.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0068,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
       "id": 197,
@@ -9244,42 +8065,6 @@
       "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
-      "id": 499,
-      "code": "521-99",
-      "description": "ΚΟΥΒΑΣ NEPOY 6lt-d23,5x22h cm",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_521-99.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002778,
-      "color": "ΜΟΝΟ ΚΟΚΚΙΝΟ"
-    },
-    {
-      "id": 500,
-      "code": "522-99",
-      "description": "ΚΟΥΒΑΣ NEPOY 9lt-d27x24,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_522-99.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003704,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 501,
-      "code": "523-99",
-      "description": "ΚΟΥΒΑΣ NEPOY 12lt-d29,5x27h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_523-99.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.004651,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 502,
-      "code": "524-99",
-      "description": "ΚΟΥΒΑΣ NEPOY 15lt-d32x30h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_524-99.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.005882,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
       "id": 507,
       "code": "530-02",
       "description": "ΚΟΥΒΑΣ ΤΥΠΟΥ ΙΤΑΛΙΑΣ ME MYTH 13lt d29x27h cm-MAYPO",
@@ -9370,15 +8155,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 2062,
-      "code": "550.099",
-      "description": "ΜΑΝΤΑΛΑΚΙΑ ΠΛΑΣΤΙΚΑ 18x8x3,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ ΧΩΡΙΣ ΕΤΙΚΕΤΑ",
-      "image_url": "",
-      "pieces_per_package": 60,
-      "volume_liters": 0.00058,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
       "id": 584,
       "code": "552-01",
       "description": "ΚΑΛΑΘΙ ΓΡΑΦΕΙΟΥ ΚΛΕΙΣΤΟ14lt-d29x31h cm-ΛΕΥΚΟ",
@@ -9424,15 +8200,6 @@
       "color": "ΤΙΤΑΝΙΟ"
     },
     {
-      "id": 2063,
-      "code": "555.136/137-03",
-      "description": "ΚΟΝΤΑΡΙ ΓΙΑ ΦΑΡΑΣΙ ΟΡΘΟΠ. Νο 136/137  ΜΑΥΡΟ LOGO VIOMES",
-      "image_url": "",
-      "pieces_per_package": 1,
-      "volume_liters": 0,
-      "color": "ΜΑΥΡΟ"
-    },
-    {
       "id": 1550,
       "code": "560-01",
       "description": "ΚΑΣΠΩ TETP. LINEA 2lt-15x15x12,5h cm-ΛΕΥΚΟ",
@@ -9467,15 +8234,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.001958,
       "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1544,
-      "code": "560-17",
-      "description": "ΚΑΣΠΩ TETP. LINEA 2lt-15x15x12,5h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_560-17.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001958,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
       "id": 1547,
@@ -9523,33 +8281,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1555,
-      "code": "560.2-25",
-      "description": "ΚΑΣΠΩ TETP.LINEA GLOSS 2lt-15x15x12,5h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_560_2-25.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001958,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1553,
-      "code": "560.2-26",
-      "description": "ΚΑΣΠΩ TETP.LINEA GLOSS 2lt-15x15x12,5h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_560_2-26.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001958,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1556,
-      "code": "560.2-53",
-      "description": "ΚΑΣΠΩ TETP.LINEA GLOSS 2lt-15x15x12,5h cm-ΕΚΡΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_560_2-53.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001958,
-      "color": "ΕΚΡΟΥ"
-    },
-    {
       "id": 1557,
       "code": "560.5-92",
       "description": "ΚΑΣΠΩ TETP.LINEA NATURA 2lt-15x15x12,5h cm-ΟΝΥΧΑΣ",
@@ -9577,15 +8308,6 @@
       "color": "ΜΑΟΝΙ"
     },
     {
-      "id": 1560,
-      "code": "560.5-95",
-      "description": "ΚΑΣΠΩ TETP.LINEA NATURA 2lt-15x15x12,5h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_560_5-95.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001958,
-      "color": "CITRINE"
-    },
-    {
       "id": 1567,
       "code": "561-01",
       "description": "ΚΑΣΠΩ TETP. LINEA 5lt-21x21x17h cm-ΛΕΥΚΟ",
@@ -9593,15 +8315,6 @@
       "pieces_per_package": 8,
       "volume_liters": 0.004361,
       "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 1562,
-      "code": "561-12",
-      "description": "ΚΑΣΠΩ TETP. LINEA 5lt-21x21x17h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_561-12.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.004361,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
     },
     {
       "id": 1566,
@@ -9622,15 +8335,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1561,
-      "code": "561-16",
-      "description": "ΚΑΣΠΩ TETP. LINEA 5lt-21x21x17h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_561-16.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.004361,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1564,
       "code": "561-25",
       "description": "ΚΑΣΠΩ TETP. LINEA 5lt-21x21x17h cm-ΜΟΛΥΒΙ",
@@ -9647,15 +8351,6 @@
       "pieces_per_package": 8,
       "volume_liters": 0.004361,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1568,
-      "code": "561-79",
-      "description": "ΚΑΣΠΩ TETP. LINEA 5lt-21x21x17h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_561-79.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.004361,
-      "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
       "id": 1574,
@@ -9847,15 +8542,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1582,
-      "code": "570-77",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 2,5lt-15x15x18h cm-ΙΒΟΥΑΡ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_570-77.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.001163,
-      "color": "ΙΒΟΥΑΡ"
-    },
-    {
       "id": 1591,
       "code": "570-79",
       "description": "ΓΛΑΣΤΡΑ TETP. LINEA 2,5lt-15x15x18h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
@@ -9953,33 +8639,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.003308,
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 1594,
-      "code": "571-81",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 7,5lt-21x21x26h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_571-81.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.003308,
-      "color": "ΩΧΡΑ"
-    },
-    {
-      "id": 1595,
-      "code": "571-83",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 7,5lt-21x21x26h cm-MABI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_571-83.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.003308,
-      "color": "MABI"
-    },
-    {
-      "id": 1596,
-      "code": "571-84",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 7,5lt-21x21x26h cm-ΒΑΣΙΛΙΚΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_571-84.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.003308,
-      "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
       "id": 1605,
@@ -10081,24 +8740,6 @@
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
-      "id": 1608,
-      "code": "572-81",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 17lt-27x27x34h cm Νο 572-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_572-81.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.007533,
-      "color": "ΩΧΡΑ"
-    },
-    {
-      "id": 1609,
-      "code": "572-83",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 17lt-27x27x34h cm Νο 572-MABI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_572-83.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.007533,
-      "color": "MABI"
-    },
-    {
       "id": 1618,
       "code": "572-84",
       "description": "ΓΛΑΣΤΡΑ TETP. LINEA 17lt-27x27x34h cm Νο 572-ΒΑΣΙΛΙΚΟΣ",
@@ -10160,15 +8801,6 @@
       "pieces_per_package": 5,
       "volume_liters": 0.014375,
       "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1627,
-      "code": "574-16",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 30lt-33x33x42h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_574-16.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.014375,
-      "color": "ΜΩΒ"
     },
     {
       "id": 1623,
@@ -10252,24 +8884,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1631,
-      "code": "580-16",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 3lt-15x15x27h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_580-16.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.001547,
-      "color": "ΜΩΒ"
-    },
-    {
-      "id": 1632,
-      "code": "580-17",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 3lt-15x15x27h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_580-17.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.001547,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
       "id": 1635,
       "code": "580-25",
       "description": "ΓΛΑΣΤΡΑ TETP. LINEA 3lt-15x15x27h cm-ΜΟΛΥΒΙ",
@@ -10286,15 +8900,6 @@
       "pieces_per_package": 8,
       "volume_liters": 0.001547,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1639,
-      "code": "580-79",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 3lt-15x15x27h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_580-79.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.001547,
-      "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
       "id": 1647,
@@ -10351,24 +8956,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1640,
-      "code": "581-59",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 11,5lt-21x21x38h cm-ΑΜΕΘΥΣΤΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_581-59.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.00441,
-      "color": "ΑΜΕΘΥΣΤΟΣ"
-    },
-    {
-      "id": 1641,
-      "code": "581-79",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 11,5lt-21x21x38h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_581-79.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.00441,
-      "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
       "id": 1655,
       "code": "582-01",
       "description": "ΓΛΑΣΤΡΑ TETP. LINEA 26lt-27x27x50h cm-ΛΕΥΚΟ",
@@ -10405,15 +8992,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1648,
-      "code": "582-17",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 26lt-27x27x50h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_582-17.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.009331,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
       "id": 1652,
       "code": "582-25",
       "description": "ΓΛΑΣΤΡΑ TETP. LINEA 26lt-27x27x50h cm-ΜΟΛΥΒΙ",
@@ -10430,15 +9008,6 @@
       "pieces_per_package": 5,
       "volume_liters": 0.009331,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1649,
-      "code": "582-59",
-      "description": "ΓΛΑΣΤΡΑ TETP. LINEA 26lt-27x27x50h cm-ΑΜΕΘΥΣΤΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_582-59.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.009331,
-      "color": "ΑΜΕΘΥΣΤΟΣ"
     },
     {
       "id": 1656,
@@ -10639,24 +9208,6 @@
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
-      "id": 1668,
-      "code": "590-81",
-      "description": "ΠΙΑΤΟ TETP. LINEA 12x12x2h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_590-81.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000096,
-      "color": "ΩΧΡΑ"
-    },
-    {
-      "id": 1669,
-      "code": "590-83",
-      "description": "ΠΙΑΤΟ TETP. LINEA 12x12x2h cm-MABI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_590-83.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000096,
-      "color": "MABI"
-    },
-    {
       "id": 1681,
       "code": "590-92",
       "description": "ΠΙΑΤΟ TETP. LINEA 12x12x2h cm-ΟΝΥΧΑΣ",
@@ -10682,15 +9233,6 @@
       "pieces_per_package": 25,
       "volume_liters": 0.000096,
       "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1682,
-      "code": "590-95",
-      "description": "ΠΙΑΤΟ TETP. LINEA 12x12x2h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_590-95.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000096,
-      "color": "CITRINE"
     },
     {
       "id": 1684,
@@ -10756,15 +9298,6 @@
       "color": "ΜΩΒ"
     },
     {
-      "id": 1686,
-      "code": "591-17",
-      "description": "ΠΙΑΤΟ TETP. LINEA 17x17x2h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_591-17.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000168,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
       "id": 1693,
       "code": "591-25",
       "description": "ΠΙΑΤΟ TETP. LINEA 17x17x2h cm-ΜΟΛΥΒΙ",
@@ -10783,15 +9316,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1687,
-      "code": "591-59",
-      "description": "ΠΙΑΤΟ TETP. LINEA 17x17x2h cm-ΑΜΕΘΥΣΤΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_591-59.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000168,
-      "color": "ΑΜΕΘΥΣΤΟΣ"
-    },
-    {
       "id": 1698,
       "code": "591-79",
       "description": "ΠΙΑΤΟ TETP. LINEA 17x17x2h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
@@ -10799,33 +9323,6 @@
       "pieces_per_package": 25,
       "volume_liters": 0.000168,
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 1688,
-      "code": "591-81",
-      "description": "ΠΙΑΤΟ TETP. LINEA 17x17x2h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_591-81.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000168,
-      "color": "ΩΧΡΑ"
-    },
-    {
-      "id": 1689,
-      "code": "591-83",
-      "description": "ΠΙΑΤΟ TETP. LINEA 17x17x2h cm-MABI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_591-83.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000168,
-      "color": "MABI"
-    },
-    {
-      "id": 1690,
-      "code": "591-84",
-      "description": "ΠΙΑΤΟ TETP. LINEA 17x17x2h cm-ΒΑΣΙΛΙΚΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_591-84.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.000168,
-      "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
       "id": 1699,
@@ -10909,15 +9406,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1701,
-      "code": "592-59",
-      "description": "ΠΙΑΤΟ TETP. LINEA 25x25x3h cm-ΑΜΕΘΥΣΤΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_592-59.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000552,
-      "color": "ΑΜΕΘΥΣΤΟΣ"
-    },
-    {
       "id": 1711,
       "code": "592-79",
       "description": "ΠΙΑΤΟ TETP. LINEA 25x25x3h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
@@ -10925,33 +9413,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.000552,
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 1702,
-      "code": "592-81",
-      "description": "ΠΙΑΤΟ TETP. LINEA 25x25x3h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_592-81.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000552,
-      "color": "ΩΧΡΑ"
-    },
-    {
-      "id": 1703,
-      "code": "592-83",
-      "description": "ΠΙΑΤΟ TETP. LINEA 25x25x3h cm-MABI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_592-83.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000552,
-      "color": "MABI"
-    },
-    {
-      "id": 1712,
-      "code": "592-84",
-      "description": "ΠΙΑΤΟ TETP. LINEA 25x25x3h cm-ΒΑΣΙΛΙΚΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_592-84.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000552,
-      "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
       "id": 1713,
@@ -11017,15 +9478,6 @@
       "color": "ΜΩΒ"
     },
     {
-      "id": 1715,
-      "code": "594-17",
-      "description": "ΠΙΑΤΟ TETP. LINEA 29x29x3h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_594-17.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000828,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
       "id": 1718,
       "code": "594-25",
       "description": "ΠΙΑΤΟ TETP. LINEA 29x29x3h cm-ΜΟΛΥΒΙ",
@@ -11076,26 +9528,8 @@
       "description": "ΓΛΑΣΤΡΑ ΦΥΤΩΡΙΟΥ 7,2lt d23x22h-MAYPO",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_6-02.jpg",
       "pieces_per_package": 50,
-      "volume_liters": 0,
+      "volume_liters": 0.000867,
       "color": "MAYPO"
-    },
-    {
-      "id": 32,
-      "code": "60-05+60",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 3lt-d27x10h cm-ΚΟΚΚΙΝΟ+ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_60-05_60.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000714,
-      "color": "ΚΟΚΚΙΝΟ+ΓΡΑΝΙΤΗ"
-    },
-    {
-      "id": 33,
-      "code": "60-16",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 3lt-d27x10h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_60-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000714,
-      "color": "ΜΩΒ"
     },
     {
       "id": 36,
@@ -11107,24 +9541,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 34,
-      "code": "60-28",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 3lt-d27x10h cm-ΓΑΛΑΖΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_60-28.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000714,
-      "color": "ΓΑΛΑΖΙΟ"
-    },
-    {
-      "id": 35,
-      "code": "60-32",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 3lt-d27x10h cm-ΛΑΧΑΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_60-32.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000714,
-      "color": "ΛΑΧΑΝΙ"
-    },
-    {
       "id": 37,
       "code": "60-50+14",
       "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 3lt-d27x10h cm-ΓΚΡΙ ΜΠΕΖ+ΜΠΟΡΝΤΩ",
@@ -11132,24 +9548,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.000714,
       "color": "ΓΚΡΙ ΜΠΕΖ+ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 38,
-      "code": "61-05",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 4lt-d30,5x10h cm-KOKKINO",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_61-05.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.0008,
-      "color": "KOKKINO"
-    },
-    {
-      "id": 39,
-      "code": "61-16",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 4lt-d30,5x10h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_61-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.0008,
-      "color": "ΜΩΒ"
     },
     {
       "id": 42,
@@ -11161,15 +9559,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 40,
-      "code": "61-28",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 4lt-d30,5x10h cm-ΓΑΛΑΖΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_61-28.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.0008,
-      "color": "ΓΑΛΑΖΙΟ"
-    },
-    {
       "id": 43,
       "code": "61-31",
       "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 4lt-d30,5x10h cm-ΔΙΑΦΑΝΟ",
@@ -11177,33 +9566,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.0008,
       "color": "ΔΙΑΦΑΝΟ"
-    },
-    {
-      "id": 41,
-      "code": "61-60",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 4lt-d30,5x10h cm-ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_61-60.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.0008,
-      "color": "ΓΡΑΝΙΤΗ"
-    },
-    {
-      "id": 44,
-      "code": "62-05",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 6lt-d35x12,5h cm-KOKKINO",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_62-05.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001053,
-      "color": "KOKKINO"
-    },
-    {
-      "id": 45,
-      "code": "62-16",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 6lt-d35x12,5h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_62-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001053,
-      "color": "ΜΩΒ"
     },
     {
       "id": 49,
@@ -11215,15 +9577,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 46,
-      "code": "62-32",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 6lt-d35x12,5h cm-ΛΑΧΑΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_62-32.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001053,
-      "color": "ΛΑΧΑΝΙ"
-    },
-    {
       "id": 50,
       "code": "62-50+14",
       "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 6lt-d35x12,5h cm-ΓΚΡΙ ΜΠΕΖ+ΜΠΟΡΝΤΩ",
@@ -11231,24 +9584,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.001053,
       "color": "ΓΚΡΙ ΜΠΕΖ+ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 47,
-      "code": "62-60",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 6lt-d35x12,5h cm-ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_62-60.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001053,
-      "color": "ΓΡΑΝΙΤΗ"
-    },
-    {
-      "id": 48,
-      "code": "62-99",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 6lt-d35x12,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_62-99.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001053,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
       "id": 519,
@@ -11296,6 +9631,15 @@
       "color": "ΣΙΕΛ ΜΠΛΕ+ΡΟΖ ΣΚΟΥΡΟ"
     },
     {
+      "id": 2170,
+      "code": "627-76",
+      "description": "ΚΟΥΤΙ ΑΠΟΘΗΚΕΥΣΗΣ&ΚΑΠΑΚΙ 21lt-39x30x28h cm-ΡΟΖ ΣΚΟΥΡΟ",
+      "image_url": "",
+      "pieces_per_package": 8,
+      "volume_liters": 0,
+      "color": "ΡΟΖ ΣΚΟΥΡΟ"
+    },
+    {
       "id": 524,
       "code": "627-83+27",
       "description": "ΚΟΥΤΙ ΑΠΟΘΗΚΕΥΣΗΣ&ΚΑΠΑΚΙ 21lt-39x30x28h cm-ΜΑΒΙ+ΕΛΙΑΣ",
@@ -11341,15 +9685,6 @@
       "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
-      "id": 51,
-      "code": "63-99",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 8,5lt-d37,5x14,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_63-99.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001471,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
       "id": 525,
       "code": "630-73+76",
       "description": "ΚΟΥΤΙ ΑΠΟΘΗΚΕΥΣΗΣ 33lt-59x40x19,5h cm-ΣΙΕΛ ΜΠΛΕ+ΡΟΖ ΣΚΟΥΡΟ",
@@ -11386,24 +9721,6 @@
       "color": "ΜΑΒΙ+ΕΛΙΑΣ"
     },
     {
-      "id": 56,
-      "code": "64-05",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 11,5lt-d41x16h cm-KOKKINO",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_64-05.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001786,
-      "color": "KOKKINO"
-    },
-    {
-      "id": 57,
-      "code": "64-16",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 11,5lt-d41x16h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_64-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001786,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 60,
       "code": "64-199",
       "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 11,5lt-d41x16h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
@@ -11411,24 +9728,6 @@
       "pieces_per_package": 40,
       "volume_liters": 0.001786,
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 58,
-      "code": "64-28",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 11,5lt-d41x16h cm-ΓΑΛΑΖΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_64-28.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001786,
-      "color": "ΓΑΛΑΖΙΟ"
-    },
-    {
-      "id": 59,
-      "code": "64-32",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 11,5lt-d41x16h cm-ΛΑΧΑΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_64-32.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001786,
-      "color": "ΛΑΧΑΝΙ"
     },
     {
       "id": 61,
@@ -11458,24 +9757,6 @@
       "color": "ΤΙΤΑΝΙΟ"
     },
     {
-      "id": 62,
-      "code": "65-05",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 15lt-d45,5x17,5h cm-KOKKINO",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_65-05.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002128,
-      "color": "KOKKINO"
-    },
-    {
-      "id": 63,
-      "code": "65-16",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 15lt-d45,5x17,5h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_65-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002128,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 67,
       "code": "65-199",
       "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 15lt-d45,5x17,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
@@ -11485,15 +9766,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 64,
-      "code": "65-28",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 15lt-d45,5x17,5h cm-ΓΑΛΑΖΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_65-28.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002128,
-      "color": "ΓΑΛΑΖΙΟ"
-    },
-    {
       "id": 68,
       "code": "65-50",
       "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 15lt-d45,5x17,5h cm-ΓΚΡΙ ΜΠΕΖ",
@@ -11501,15 +9773,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.002128,
       "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 65,
-      "code": "65-60",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 15lt-d45,5x17,5h cm-ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_65-60.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002128,
-      "color": "ΓΡΑΝΙΤΗ"
     },
     {
       "id": 69,
@@ -11530,22 +9793,13 @@
       "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
-      "id": 66,
-      "code": "65-99",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 15lt-d45,5x17,5h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_65-99.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.002128,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 71,
-      "code": "66-05+60",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 20lt-d48,1x19,8h cm-ΚΟΚΚΙΝΟ+ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_66-05_60.jpg",
+      "id": 2164,
+      "code": "66-14",
+      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 20lt-d48x19,8h cm-ΜΠΟΡΝΤΩ",
+      "image_url": "",
       "pieces_per_package": 25,
-      "volume_liters": 0.0025,
-      "color": "ΚΟΚΚΙΝΟ+ΓΡΑΝΙΤΗ"
+      "volume_liters": 0,
+      "color": "ΜΠΟΡΝΤΩ"
     },
     {
       "id": 73,
@@ -11557,6 +9811,15 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
+      "id": 2165,
+      "code": "66-50",
+      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 20lt-d48x19,8h cm-ΓΚΡΙ ΜΠΕΖ",
+      "image_url": "",
+      "pieces_per_package": 25,
+      "volume_liters": 0,
+      "color": "ΓΚΡΙ ΜΠΕΖ"
+    },
+    {
       "id": 74,
       "code": "66-50+14",
       "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 20lt-d48x19,8h cm-ΓΚΡΙ ΜΠΕΖ+ΜΠΟΡΝΤΩ",
@@ -11566,85 +9829,13 @@
       "color": "ΓΚΡΙ ΜΠΕΖ+ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 72,
-      "code": "66-99",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 20lt-d48,1x19,8h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_66-99.jpg",
+      "id": 2166,
+      "code": "66-66",
+      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 20lt-d48x19,8h cm-ΓΚΡΙ",
+      "image_url": "",
       "pieces_per_package": 25,
-      "volume_liters": 0.0025,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
-      "id": 1863,
-      "code": "665.2-12",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY GLOSS 2,5lt 30x12x11h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_2-12.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1865,
-      "code": "665.2-14",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY GLOSS 2,5lt 30x12x11h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_2-14.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1866,
-      "code": "665.2-25",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY GLOSS 2,5lt 30x12x11h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_2-25.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1864,
-      "code": "665.2-26",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY GLOSS 2,5lt 30x12x11h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_2-26.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1867,
-      "code": "665.5-92",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY NATURA 2,5lt 30x12x11h cm-ΟΝΥΧΑΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_5-92.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "ΟΝΥΧΑΣ"
-    },
-    {
-      "id": 1868,
-      "code": "665.5-93",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY NATURA 2,5lt 30x12x11h cm-SMOKE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_5-93.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "SMOKE"
-    },
-    {
-      "id": 1869,
-      "code": "665.5-94",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY NATURA 2,5lt 30x12x11h cm-ΜΑΟΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_5-94.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1870,
-      "code": "665.5-95",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ LILY NATURA 2,5lt 30x12x11h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_665_5-95.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.000972,
-      "color": "CITRINE"
+      "volume_liters": 0,
+      "color": "ΓΚΡΙ"
     },
     {
       "id": 830,
@@ -11746,78 +9937,6 @@
       "color": "MABI"
     },
     {
-      "id": 1871,
-      "code": "668.2-12",
-      "description": "ΓΛΑΣΤΡΑ LILY GLOSS 1,1lt 12x12x14h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_2-12.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1872,
-      "code": "668.2-14",
-      "description": "ΓΛΑΣΤΡΑ LILY GLOSS 1,1lt 12x12x14h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_2-14.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1873,
-      "code": "668.2-25",
-      "description": "ΓΛΑΣΤΡΑ LILY GLOSS 1,1lt 12x12x14h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_2-25.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1874,
-      "code": "668.2-26",
-      "description": "ΓΛΑΣΤΡΑ LILY GLOSS 1,1lt 12x12x14h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_2-26.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1875,
-      "code": "668.5-92",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,1lt 12x12x14h cm-ΟΝΥΧΑΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_5-92.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "ΟΝΥΧΑΣ"
-    },
-    {
-      "id": 1876,
-      "code": "668.5-93",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,1lt 12x12x14h cm-SMOKE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_5-93.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "SMOKE"
-    },
-    {
-      "id": 1877,
-      "code": "668.5-94",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,1lt 12x12x14h cm-ΜΑΟΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_5-94.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1878,
-      "code": "668.5-95",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,1lt 12x12x14h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_668_5-95.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000547,
-      "color": "CITRINE"
-    },
-    {
       "id": 1880,
       "code": "669.2-12",
       "description": "ΓΛΑΣΤΡΑ LILY GLOSS 1,8lt 15x15x14h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
@@ -11843,69 +9962,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.000867,
       "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1883,
-      "code": "669.2-26",
-      "description": "ΓΛΑΣΤΡΑ LILY GLOSS 1,8lt 15x15x14h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_669_2-26.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000867,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1879,
-      "code": "669.2-53",
-      "description": "ΓΛΑΣΤΡΑ LILY GLOSS 1,8lt 15x15x14h cm-ΕΚΡΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_669_2-53.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000867,
-      "color": "ΕΚΡΟΥ"
-    },
-    {
-      "id": 1884,
-      "code": "669.5-92",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,8lt 15x15x14h cm-ΟΝΥΧΑΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_669_5-92.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000867,
-      "color": "ΟΝΥΧΑΣ"
-    },
-    {
-      "id": 1885,
-      "code": "669.5-93",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,8lt 15x15x14h cm-SMOKE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_669_5-93.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000867,
-      "color": "SMOKE"
-    },
-    {
-      "id": 1886,
-      "code": "669.5-94",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,8lt 15x15x14h cm-ΜΑΟΝΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_669_5-94.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000867,
-      "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1887,
-      "code": "669.5-95",
-      "description": "ΓΛΑΣΤΡΑ LILY NATURA 1,8lt 15x15x14h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_669_5-95.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.000867,
-      "color": "CITRINE"
-    },
-    {
-      "id": 75,
-      "code": "67-05+60",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 30lt-d55x24h cm-ΚΟΚΚΙΝΟ+ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_67-05_60.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.004444,
-      "color": "ΚΟΚΚΙΝΟ+ΓΡΑΝΙΤΗ"
     },
     {
       "id": 76,
@@ -12052,15 +10108,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 78,
-      "code": "68-99",
-      "description": "ΛΕΚΑΝΗ ΣΤΡΟΓΓΥΛΗ 48lt-d61x27h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_68-99.jpg",
-      "pieces_per_package": 15,
-      "volume_liters": 0.00625,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
       "id": 529,
       "code": "680-02",
       "description": "ΚΟΥΤΙ NOVA 3,5lt-28x18,5x9h cm-MAYPO",
@@ -12167,15 +10214,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.003036,
       "color": "ΔΙΑΦΑΝΟ"
-    },
-    {
-      "id": 536,
-      "code": "681-43",
-      "description": "ΚΟΥΤΙ NOVA 5lt-28x18,5x13,5h cm-ΚΥΠΑΡΙΣΣΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_681-43.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.003036,
-      "color": "ΚΥΠΑΡΙΣΣΙ"
     },
     {
       "id": 543,
@@ -12365,15 +10403,6 @@
       "pieces_per_package": 8,
       "volume_liters": 0.00537,
       "color": "ΔΙΑΦΑΝΟ"
-    },
-    {
-      "id": 552,
-      "code": "690-43",
-      "description": "ΚΟΥΤΙ NOVA 10lt-35,5x26,5x13,5h cm-ΚΥΠΑΡΙΣΣΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_690-43.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.00537,
-      "color": "ΚΥΠΑΡΙΣΣΙ"
     },
     {
       "id": 558,
@@ -12583,49 +10612,13 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 796,
-      "code": "703-01",
-      "description": "ΤΡΑΠΕΖΙ Φ60 cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_703-01.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.0833,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
       "id": 797,
       "code": "704-01",
       "description": "ΤΡΑΠΕΖΙ 70x70cm-ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_704-01.jpg",
-      "pieces_per_package": 15,
+      "pieces_per_package": 1,
       "volume_liters": 0.0833,
       "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 798,
-      "code": "705-04",
-      "description": "ΤΡΑΠΕΖΙ  80x135x72h cm-ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_705-04.jpg",
-      "pieces_per_package": 1,
-      "volume_liters": 0.0833,
-      "color": "ΜΠΕΖ"
-    },
-    {
-      "id": 799,
-      "code": "705-26",
-      "description": "ΤΡΑΠΕΖΙ  80x135x72h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_705-26.jpg",
-      "pieces_per_package": 1,
-      "volume_liters": 0.0833,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 800,
-      "code": "705-44",
-      "description": "ΤΡΑΠΕΖΙ  80x135x72h cm-ΜΠΛΕ ΜΑΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_705-44.jpg",
-      "pieces_per_package": 1,
-      "volume_liters": 0.0833,
-      "color": "ΜΠΛΕ ΜΑΥΡΟ"
     },
     {
       "id": 801,
@@ -12637,24 +10630,6 @@
       "color": "ΓΚΡΙ ΜΠΕΖ"
     },
     {
-      "id": 802,
-      "code": "710-43",
-      "description": "ΚΑΡΕΚΛΑ ΠΛΑΤΗ ΨΑΘΑ-45,5x46x88h cm-ΚΥΠΑΡΙΣΣΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_710-43.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.02,
-      "color": "ΚΥΠΑΡΙΣΣΙ"
-    },
-    {
-      "id": 803,
-      "code": "710-44",
-      "description": "ΚΑΡΕΚΛΑ ΠΛΑΤΗ ΨΑΘΑ-45,5x46x88h cm-ΜΠΛΕ ΜΑΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_710-44.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.02,
-      "color": "ΜΠΛΕ ΜΑΥΡΟ"
-    },
-    {
       "id": 805,
       "code": "710-50",
       "description": "ΚΑΡΕΚΛΑ ΠΛΑΤΗ ΨΑΘΑ-45,5x46x88h cm-ΓΚΡΙ ΜΠΕΖ",
@@ -12662,24 +10637,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.02,
       "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 806,
-      "code": "710-50-00014",
-      "description": "ΚΑΡΕΚΛΑ ΠΛΑΤΗ ΨΑΘΑ-45,5x46x88h cm-ΓΚΡΙ ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_710-50-00014.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.02,
-      "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 804,
-      "code": "710-60",
-      "description": "ΚΑΡΕΚΛΑ ΠΛΑΤΗ ΨΑΘΑ-45,5x46x88h cm-ΓΡΑΝΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_710-60.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.02,
-      "color": "ΓΡΑΝΙΤΗ"
     },
     {
       "id": 2155,
@@ -12691,24 +10648,6 @@
       "color": "ΓΚΡΙ ΨΥΧΡΟ"
     },
     {
-      "id": 807,
-      "code": "720-04",
-      "description": "ΚΑΡΕΚΛΑ ΒΕΝΤΑΛΙΑ-45,5x46x88h cm-ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_720-04.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.02,
-      "color": "ΜΠΕΖ"
-    },
-    {
-      "id": 808,
-      "code": "720-44",
-      "description": "ΚΑΡΕΚΛΑ ΒΕΝΤΑΛΙΑ-45,5x46x88h cm-ΜΠΛΕ ΜΑΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_720-44.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.02,
-      "color": "ΜΠΛΕ ΜΑΥΡΟ"
-    },
-    {
       "id": 810,
       "code": "720-50",
       "description": "ΚΑΡΕΚΛΑ ΒΕΝΤΑΛΙΑ-45,5x46x88h cm-ΓΚΡΙ ΜΠΕΖ",
@@ -12716,15 +10655,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.02,
       "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 809,
-      "code": "720-55",
-      "description": "ΚΑΡΕΚΛΑ ΒΕΝΤΑΛΙΑ-45,5x46x88h cm-ΚΥΠΑΡΙΣΙ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_720-55.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.02,
-      "color": "ΚΥΠΑΡΙΣΙ ΣΚΟΥΡΟ"
     },
     {
       "id": 29,
@@ -12889,15 +10819,6 @@
       "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
     },
     {
-      "id": 824,
-      "code": "760-14",
-      "description": "ΓΛΑΣΤΡΑ VITA 4lt-d20x18h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_760-14.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.0044,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
       "id": 822,
       "code": "760-26",
       "description": "ΓΛΑΣΤΡΑ VITA 4lt-d20x18h cm-ΓΚΡΙ ΚΑΦΕ",
@@ -12961,51 +10882,6 @@
       "color": "ΜΑΝΓΚΟ"
     },
     {
-      "id": 1259,
-      "code": "767-12",
-      "description": "ΓΛΑΣΤΡΑ LINEA 3TEM.0,6LT Νο 767-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_767-12.jpg",
-      "pieces_per_package": 160,
-      "volume_liters": 0.000412,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1260,
-      "code": "767-16",
-      "description": "ΓΛΑΣΤΡΑ LINEA 3TEM.0,6LT Νο 767-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_767-16.jpg",
-      "pieces_per_package": 160,
-      "volume_liters": 0.000412,
-      "color": "ΜΩΒ"
-    },
-    {
-      "id": 1261,
-      "code": "767-26",
-      "description": "ΓΛΑΣΤΡΑ LINEA 3TEM.0,6LT Νο 767-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_767-26.jpg",
-      "pieces_per_package": 160,
-      "volume_liters": 0.000412,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 811,
-      "code": "770-04",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΨΑΘΑ-53x56x82h cm-ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_770-04.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΜΠΕΖ"
-    },
-    {
-      "id": 812,
-      "code": "770-44",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΨΑΘΑ-53x56x82h cm-ΜΠΛΕ ΜΑΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_770-44.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΜΠΛΕ ΜΑΥΡΟ"
-    },
-    {
       "id": 815,
       "code": "770-50",
       "description": "ΠΟΛΥΘΡΟΝΑ ΨΑΘΑ-53x56x82h cm-ΓΚΡΙ ΜΠΕΖ",
@@ -13015,42 +10891,6 @@
       "color": "ΓΚΡΙ ΜΠΕΖ"
     },
     {
-      "id": 813,
-      "code": "770-55",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΨΑΘΑ-53x56x82h cm-ΚΥΠΑΡΙΣΙ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_770-55.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΚΥΠΑΡΙΣΙ ΣΚΟΥΡΟ"
-    },
-    {
-      "id": 814,
-      "code": "770-63",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΨΑΘΑ-53x56x82h cm-ΓΚΡΙ ΨΥΧΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_770-63.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΓΚΡΙ ΨΥΧΡΟ"
-    },
-    {
-      "id": 816,
-      "code": "780-04",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΒΕΝΤΑΛΙΑ-53x56x82h cm-ΜΠΕΖ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_780-04.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΜΠΕΖ"
-    },
-    {
-      "id": 817,
-      "code": "780-43",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΒΕΝΤΑΛΙΑ-53x56x82h cm-ΚΥΠΑΡΙΣΣΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_780-43.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΚΥΠΑΡΙΣΣΙ"
-    },
-    {
       "id": 820,
       "code": "780-50",
       "description": "ΠΟΛΥΘΡΟΝΑ ΒΕΝΤΑΛΙΑ-53x56x82h cm-ΓΚΡΙ ΜΠΕΖ",
@@ -13058,33 +10898,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.0227,
       "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 818,
-      "code": "780-55",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΒΕΝΤΑΛΙΑ-53x56x82h cm-ΚΥΠΑΡΙΣΙ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_780-55.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΚΥΠΑΡΙΣΙ ΣΚΟΥΡΟ"
-    },
-    {
-      "id": 819,
-      "code": "780-63",
-      "description": "ΠΟΛΥΘΡΟΝΑ ΒΕΝΤΑΛΙΑ-53x56x82h cm-ΓΚΡΙ ΨΥΧΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_780-63.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.0227,
-      "color": "ΓΚΡΙ ΨΥΧΡΟ"
-    },
-    {
-      "id": 1941,
-      "code": "790-06",
-      "description": "ΓΛΑΣΤΡΑ GEA 5lt-d23,5x20,5h cm-ΓΚΡΙ ΑΝΟΙΧΤΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_790-06.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.002777,
-      "color": "ΓΚΡΙ ΑΝΟΙΧΤΟ"
     },
     {
       "id": 1947,
@@ -13121,15 +10934,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.002777,
       "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 1946,
-      "code": "790-56",
-      "description": "ΓΛΑΣΤΡΑ GEA 5lt-d23,5x20,5h cm-ΜΠΕΖ ΑΜΜΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_790-56.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.002777,
-      "color": "ΜΠΕΖ ΑΜΜΟΥ"
     },
     {
       "id": 1944,
@@ -13177,15 +10981,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1950,
-      "code": "791-45",
-      "description": "ΓΛΑΣΤΡΑ GEA 9lt-d29x25h cm-ΓΡΑΦΙΤΗΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_791-45.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.00423,
-      "color": "ΓΡΑΦΙΤΗΣ"
-    },
-    {
       "id": 1951,
       "code": "791-50",
       "description": "ΓΛΑΣΤΡΑ GEA 9lt-d29x25h cm-ΓΚΡΙ ΜΠΕΖ",
@@ -13231,15 +11026,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1962,
-      "code": "792-45",
-      "description": "ΓΛΑΣΤΡΑ GEA 16lt-d35x30 cm-ΓΡΑΦΙΤΗ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_792-45.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.0075,
-      "color": "ΓΡΑΦΙΤΗ"
-    },
-    {
       "id": 1956,
       "code": "792-50",
       "description": "ΓΛΑΣΤΡΑ GEA 16lt-d35x30 cm-ΓΚΡΙ ΜΠΕΖ",
@@ -13247,15 +11033,6 @@
       "pieces_per_package": 8,
       "volume_liters": 0.0075,
       "color": "ΓΚΡΙ ΜΠΕΖ"
-    },
-    {
-      "id": 1961,
-      "code": "792-56",
-      "description": "ΓΛΑΣΤΡΑ GEA 16lt-d35x30 cm-ΜΠΕΖ ΑΜΜΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_792-56.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.0075,
-      "color": "ΜΠΕΖ ΑΜΜΟΥ"
     },
     {
       "id": 1958,
@@ -13321,222 +11098,6 @@
       "color": "ΠΗΛΟΣ"
     },
     {
-      "id": 2075,
-      "code": "800.015",
-      "description": "ΕΤΙΚΕΤΑ HCG-1 ΜΙΚΡΗ 21X50",
-      "image_url": "",
-      "pieces_per_package": 7000,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2076,
-      "code": "800.016",
-      "description": "ΕΤΙΚΕΤΑ HCG-2 ΜΕΓΑΛΗ 50Χ35",
-      "image_url": "",
-      "pieces_per_package": 4000,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2072,
-      "code": "800.031",
-      "description": "ΕΤΙΚΕΤΑ Ε-5 23X56 ΝΕΑ ΤΑΠΕΡ ΜΙΚΡΗ",
-      "image_url": "",
-      "pieces_per_package": 6000,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2080,
-      "code": "800.052",
-      "description": "ΕΤΙΚΕΤΑ MM-2 MODA MOSAIC 50X180",
-      "image_url": "",
-      "pieces_per_package": 900,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2078,
-      "code": "800.053",
-      "description": "ΕΤΙΚΕΤΑ LM-1 LINEA MOSAIC 40X60",
-      "image_url": "",
-      "pieces_per_package": 2900,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2079,
-      "code": "800.054",
-      "description": "ΕΤΙΚΕΤΑ LM-2 LINEA MOSAIC 50Χ80",
-      "image_url": "",
-      "pieces_per_package": 3600,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2074,
-      "code": "800.055",
-      "description": "ETIKETA HCB-2 35x50 NEA ΠΕΝΤΑΛ ΜΕΓΑΛΗ",
-      "image_url": "",
-      "pieces_per_package": 4000,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2073,
-      "code": "800.056",
-      "description": "ETIKETA HCB-1 NEA ΠΕΝΤΑΛ-ΠΙΓΚΑΛ 21X50",
-      "image_url": "",
-      "pieces_per_package": 7000,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2071,
-      "code": "800.057",
-      "description": "ΕΤΙΚΕΤΑ 70Χ20 ΔΙΑΦΑΝΗ",
-      "image_url": "",
-      "pieces_per_package": 2000,
-      "volume_liters": 0,
-      "color": "ΓΕΩΡΓΙΑΔΗΣ"
-    },
-    {
-      "id": 2081,
-      "code": "800.058",
-      "description": "ΕΤΙΚΕΤΑ MM-3 MODA MOSAIC 40X60",
-      "image_url": "",
-      "pieces_per_package": 900,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2082,
-      "code": "800.059",
-      "description": "ΕΤΙΚΕΤΑ MM-4 MODA MOSAIC 40X100",
-      "image_url": "",
-      "pieces_per_package": 900,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2087,
-      "code": "800.071",
-      "description": "ΕΤΙΚΕΤΑ Ε-6 80X35 ΤΑΠΕΡ ΜΕΓΑΛΗ NEA",
-      "image_url": "",
-      "pieces_per_package": 4400,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2088,
-      "code": "800.099",
-      "description": "ΕΤΙΚΕΤΑ ΛΕΥΚΗ 45X50 ΜΑΤ",
-      "image_url": "",
-      "pieces_per_package": 3400,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2083,
-      "code": "800.101",
-      "description": "ΕΤΙΚΕΤΑ Δ-1 ΚΟΥΤΙ NOVA 120X60",
-      "image_url": "",
-      "pieces_per_package": 1350,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2084,
-      "code": "800.102",
-      "description": "ΕΤΙΚΕΤΑ Δ-2 ΚΟΥΤΙ MOSAIC 120X60",
-      "image_url": "",
-      "pieces_per_package": 1350,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2085,
-      "code": "800.103",
-      "description": "ΕΤΙΚΕΤΑ Δ-3 80x35 ΝΕΑ ΚΟΥΤΙΑ",
-      "image_url": "",
-      "pieces_per_package": 4400,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2086,
-      "code": "800.104",
-      "description": "ΕΤΙΚΕΤΑ Δ-4 (ΠΡΩΗΝ Δ) 100X50",
-      "image_url": "",
-      "pieces_per_package": 3400,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
-      "id": 2065,
-      "code": "800.123",
-      "description": "ETIKETA ECOBIN ΓΚΡΙ ΜΠΕΖ 220Χ120mm",
-      "image_url": "",
-      "pieces_per_package": 2800,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2066,
-      "code": "800.124",
-      "description": "ETIKETA ECOBIN ΤΙΤΑΝΙΟ 220Χ120mm",
-      "image_url": "",
-      "pieces_per_package": 2800,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2067,
-      "code": "800.125",
-      "description": "ETIKETA ECOBIN ΜΑΥΡΟ 220Χ120mm",
-      "image_url": "",
-      "pieces_per_package": 2800,
-      "volume_liters": 0,
-      "color": "FORLABELS"
-    },
-    {
-      "id": 2068,
-      "code": "800.500",
-      "description": "ΕΤΙΚΕΤΑ ΛΕΥΚΗ 90X65 XAPTINH",
-      "image_url": "",
-      "pieces_per_package": 2500,
-      "volume_liters": 0,
-      "color": "ΓΕΩΡΓΙΑΔΗΣ/ΘΕΟΔΩΡΟΥ"
-    },
-    {
-      "id": 2069,
-      "code": "800.501",
-      "description": "ΕΤΙΚΕΤΑ ΛΕΥΚΗ 80X105 XAPTINH",
-      "image_url": "",
-      "pieces_per_package": 2000,
-      "volume_liters": 0,
-      "color": "ΓΕΩΡΓΙΑΔΗΣ/ΘΕΟΔΩΡΟΥ"
-    },
-    {
-      "id": 2070,
-      "code": "800.502",
-      "description": "ΕΤΙΚΕΤΑ ΛΕΥΚΗ 105X148 XAPTINH",
-      "image_url": "",
-      "pieces_per_package": 1250,
-      "volume_liters": 0,
-      "color": "ΓΕΩΡΓΙΑΔΗΣ/ΘΕΟΔΩΡΟΥ"
-    },
-    {
-      "id": 2077,
-      "code": "800.701",
-      "description": "ΕΤΙΚΕΤΑ L-6 80X35 ΝΕΑ LINEA ΜΕΓΑΛΗ",
-      "image_url": "",
-      "pieces_per_package": 4400,
-      "volume_liters": 0,
-      "color": "PERIGRAMMA"
-    },
-    {
       "id": 1735,
       "code": "821-01",
       "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 7lt-38x18x17h cm-ΛΕΥΚΟ",
@@ -13562,42 +11123,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.003398,
       "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1733,
-      "code": "821-14",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 7lt-38x18x17h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_821-14.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.003398,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1726,
-      "code": "821-17",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 7lt-38x18x17h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_821-17.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.003398,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
-      "id": 1727,
-      "code": "821-21",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 7lt-38x18x17h cm-ΒΙΟΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_821-21.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.003398,
-      "color": "ΒΙΟΛΕ"
-    },
-    {
-      "id": 1728,
-      "code": "821-24",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 7lt-38x18x17h cm-ΓΑΛΑΖΙΟ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_821-24.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.003398,
-      "color": "ΓΑΛΑΖΙΟ ΣΚΟΥΡΟ"
     },
     {
       "id": 1732,
@@ -13663,15 +11188,6 @@
       "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
-      "id": 1737,
-      "code": "822-19",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 9lt-48x18x17h cm-ΠΟΡΤΟΚΑΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_822-19.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.004351,
-      "color": "ΠΟΡΤΟΚΑΛΙ"
-    },
-    {
       "id": 1738,
       "code": "822-22",
       "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 9lt-48x18x17h cm-ΜΩΒ ΣΚΟΥΡΟ",
@@ -13679,15 +11195,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.004351,
       "color": "ΜΩΒ ΣΚΟΥΡΟ"
-    },
-    {
-      "id": 1739,
-      "code": "822-24",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 9lt-48x18x17h cm-ΓΑΛΑΖΙΟ ΣΚΟΥΡΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_822-24.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.004351,
-      "color": "ΓΑΛΑΖΙΟ ΣΚΟΥΡΟ"
     },
     {
       "id": 1744,
@@ -13744,15 +11251,6 @@
       "color": "ΜΠΡΟΝΖΕ"
     },
     {
-      "id": 1751,
-      "code": "823-14",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 11lt-58x18x17h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_823-14.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.005258,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
       "id": 1747,
       "code": "823-16",
       "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 11lt-58x18x17h cm-ΜΩΒ",
@@ -13789,24 +11287,6 @@
       "color": "ΑΜΕΘΥΣΤΟΣ"
     },
     {
-      "id": 1754,
-      "code": "823-79",
-      "description": "ΖΑΡΝΤΙΝΙΕΡΑ&ΔΙΣΚΟΣ LINEA 11lt-58x18x17h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_823-79.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.005258,
-      "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 30,
-      "code": "83-99",
-      "description": "ΛΕΚΑΝΗ 25lt-d50x23h cm-ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_83-99.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.003333,
-      "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
-    },
-    {
       "id": 513,
       "code": "830-05",
       "description": "ΚΟΥΒΑΣ ΑΓΡΟΤΙΚΟΣ  12lt-d33x26h cm-KOKKINO",
@@ -13823,15 +11303,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.005,
       "color": "ΜΠΛΕ"
-    },
-    {
-      "id": 515,
-      "code": "830-58",
-      "description": "ΚΟΥΒΑΣ ΑΓΡΟΤΙΚΟΣ  12lt-d33x26h cm-ΤΙΤΑΝΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_830-58.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.005,
-      "color": "ΤΙΤΑΝΙΟ"
     },
     {
       "id": 516,
@@ -13924,15 +11395,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1173,
-      "code": "860-16",
-      "description": "ΚΑΣΠΩ LINEA 3,5lt-d20x17h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_860-16.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.004677,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1169,
       "code": "860-25",
       "description": "ΚΑΣΠΩ LINEA 3,5lt-d20x17h cm-ΜΟΛΥΒΙ",
@@ -13960,33 +11422,6 @@
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
-      "id": 1176,
-      "code": "860.2-12",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 3,5lt-d20x17h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_860_2-12.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.004677,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1175,
-      "code": "860.2-13",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 3,5lt-d20x17h cm-ΜΠΡΟΝΖΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_860_2-13.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.004677,
-      "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1179,
-      "code": "860.2-14",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 3,5lt-d20x17h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_860_2-14.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.004677,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
       "id": 1178,
       "code": "860.2-25",
       "description": "ΚΑΣΠΩ LINEA GLOSS 3,5lt-d20x17h cm-ΜΟΛΥΒΙ",
@@ -13994,24 +11429,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.004677,
       "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1177,
-      "code": "860.2-26",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 3,5lt-d20x17h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_860_2-26.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.004677,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1180,
-      "code": "860.2-53",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 3,5lt-d20x17h cm-ΕΚΡΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_860_2-53.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.004677,
-      "color": "ΕΚΡΟΥ"
     },
     {
       "id": 1181,
@@ -14095,15 +11512,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1192,
-      "code": "861-16",
-      "description": "ΚΑΣΠΩ LINEA 7lt-d25x21h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_861-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.009364,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1188,
       "code": "861-25",
       "description": "ΚΑΣΠΩ LINEA 7lt-d25x21h cm-ΜΟΛΥΒΙ",
@@ -14129,51 +11537,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.009364,
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 1194,
-      "code": "861.2-12",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 7lt-d25x21h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_861_2-12.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.009364,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1197,
-      "code": "861.2-14",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 7lt-d25x21h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_861_2-14.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.009364,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1196,
-      "code": "861.2-25",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 7lt-d25x21h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_861_2-25.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.009364,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1195,
-      "code": "861.2-26",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 7lt-d25x21h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_861_2-26.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.009364,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1198,
-      "code": "861.2-53",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 7lt-d25x21h cm-ΕΚΡΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_861_2-53.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.009364,
-      "color": "ΕΚΡΟΥ"
     },
     {
       "id": 1199,
@@ -14230,24 +11593,6 @@
       "color": "ΛΕΥΚΟ"
     },
     {
-      "id": 1204,
-      "code": "862-12",
-      "description": "ΚΑΣΠΩ LINEA 13lt-d30x25h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862-12.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.021,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1207,
-      "code": "862-14",
-      "description": "ΚΑΣΠΩ LINEA 13lt-d30x25h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862-14.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.021,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
       "id": 1206,
       "code": "862-25",
       "description": "ΚΑΣΠΩ LINEA 13lt-d30x25h cm-ΜΟΛΥΒΙ",
@@ -14264,51 +11609,6 @@
       "pieces_per_package": 5,
       "volume_liters": 0.021,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1209,
-      "code": "862.2-12",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 13lt-d30x25h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862_2-12.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.021,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1212,
-      "code": "862.2-14",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 13lt-d30x25h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862_2-14.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.021,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1211,
-      "code": "862.2-25",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 13lt-d30x25h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862_2-25.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.021,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1210,
-      "code": "862.2-26",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 13lt-d30x25h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862_2-26.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.021,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1213,
-      "code": "862.2-53",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 13lt-d30x25h cm-ΕΚΡΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862_2-53.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.021,
-      "color": "ΕΚΡΟΥ"
     },
     {
       "id": 1214,
@@ -14338,15 +11638,6 @@
       "color": "ΜΑΟΝΙ"
     },
     {
-      "id": 1217,
-      "code": "862.5-95",
-      "description": "ΚΑΣΠΩ LINEA NATURA 13lt-d30x25h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_862_5-95.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.021,
-      "color": "CITRINE"
-    },
-    {
       "id": 1218,
       "code": "862.6-96",
       "description": "ΚΑΣΠΩ LINEA MOSAIC 13lt-d30x25h cm-ΛΑΒΑ",
@@ -14374,24 +11665,6 @@
       "color": "ΛΕΥΚΟ"
     },
     {
-      "id": 1220,
-      "code": "864-12",
-      "description": "ΚΑΣΠΩ LINEA 30lt-d40x34h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864-12.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.0392,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1223,
-      "code": "864-14",
-      "description": "ΚΑΣΠΩ LINEA 30lt-d40x34h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864-14.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.0392,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
       "id": 1222,
       "code": "864-25",
       "description": "ΚΑΣΠΩ LINEA 30lt-d40x34h cm-ΜΟΛΥΒΙ",
@@ -14408,51 +11681,6 @@
       "pieces_per_package": 4,
       "volume_liters": 0.0392,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1225,
-      "code": "864.2-12",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 30lt-d40x34h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864_2-12.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.0392,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1228,
-      "code": "864.2-14",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 30lt-d40x34h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864_2-14.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.0392,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1227,
-      "code": "864.2-25",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 30lt-d40x34h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864_2-25.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.0392,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1226,
-      "code": "864.2-26",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 30lt-d40x34h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864_2-26.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.0392,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1229,
-      "code": "864.2-53",
-      "description": "ΚΑΣΠΩ LINEA GLOSS 30lt-d40x34h cm-ΕΚΡΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864_2-53.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.0392,
-      "color": "ΕΚΡΟΥ"
     },
     {
       "id": 1230,
@@ -14480,15 +11708,6 @@
       "pieces_per_package": 3,
       "volume_liters": 0.0392,
       "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1233,
-      "code": "864.5-95",
-      "description": "ΚΑΣΠΩ LINEA NATURA 30lt-d40x34h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_864_5-95.jpg",
-      "pieces_per_package": 3,
-      "volume_liters": 0.0392,
-      "color": "CITRINE"
     },
     {
       "id": 1234,
@@ -14572,24 +11791,6 @@
       "color": "ΠΟΡΤΟΚΑΛΙ"
     },
     {
-      "id": 1262,
-      "code": "867-20",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 0,6lt-d11x10,5h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_867-20.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.000137,
-      "color": "KPOKI"
-    },
-    {
-      "id": 1272,
-      "code": "867-21",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 0,6lt-d11x10,5h cm-ΒΙΟΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_867-21.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.000137,
-      "color": "ΒΙΟΛΕ"
-    },
-    {
       "id": 1266,
       "code": "867-25",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 0,6lt-d11x10,5h cm-ΜΟΛΥΒΙ",
@@ -14644,15 +11845,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1281,
-      "code": "868-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 1,2lt-d13x13h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_868-16.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000212,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1280,
       "code": "868-17",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 1,2lt-d13x13h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
@@ -14671,24 +11863,6 @@
       "color": "ΠΟΡΤΟΚΑΛΙ"
     },
     {
-      "id": 1283,
-      "code": "868-20",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 1,2lt-d13x13h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_868-20.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000212,
-      "color": "KPOKI"
-    },
-    {
-      "id": 1284,
-      "code": "868-21",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 1,2lt-d13x13h cm-ΒΙΟΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_868-21.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000212,
-      "color": "ΒΙΟΛΕ"
-    },
-    {
       "id": 1273,
       "code": "868-24",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 1,2lt-d13x13h cm-ΓΑΛΑΖΙΟ ΣΚΟΥΡΟ",
@@ -14705,15 +11879,6 @@
       "pieces_per_package": 30,
       "volume_liters": 0.000212,
       "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1276,
-      "code": "868-26",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 1,2lt-d13x13h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_868-26.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000212,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
       "id": 1290,
@@ -14860,15 +12025,6 @@
       "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
-      "id": 1295,
-      "code": "870-20",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_870-20.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.003,
-      "color": "KPOKI"
-    },
-    {
       "id": 1301,
       "code": "870-25",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΜΟΛΥΒΙ",
@@ -14903,24 +12059,6 @@
       "pieces_per_package": 32,
       "volume_liters": 0.003,
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 1296,
-      "code": "870-81",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_870-81.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.003,
-      "color": "ΩΧΡΑ"
-    },
-    {
-      "id": 1297,
-      "code": "870-83",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3,5lt-d20x18,5h cm-MABI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_870-83.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.003,
-      "color": "MABI"
     },
     {
       "id": 1298,
@@ -15031,15 +12169,6 @@
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
-      "id": 1309,
-      "code": "871-81",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_871-81.jpg",
-      "pieces_per_package": 16,
-      "volume_liters": 0.006228,
-      "color": "ΩΧΡΑ"
-    },
-    {
       "id": 1312,
       "code": "871-83",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 7lt-d25x24h cm-MABI",
@@ -15121,15 +12250,6 @@
       "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
-      "id": 1334,
-      "code": "872-20",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 13lt-d30x28,5h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_872-20.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.011023,
-      "color": "KPOKI"
-    },
-    {
       "id": 1328,
       "code": "872-25",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 13lt-d30x28,5h cm-ΜΟΛΥΒΙ",
@@ -15173,15 +12293,6 @@
       "pieces_per_package": 12,
       "volume_liters": 0.011023,
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 1324,
-      "code": "872-81",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 13lt-d30x28,5h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_872-81.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.011023,
-      "color": "ΩΧΡΑ"
     },
     {
       "id": 1326,
@@ -15409,15 +12520,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1359,
-      "code": "875-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 44lt-d45x42h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_875-16.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.029427,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1361,
       "code": "875-25",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 44lt-d45x42h cm-ΜΟΛΥΒΙ",
@@ -15436,15 +12538,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1365,
-      "code": "875-59",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 44lt-d45x42h cm-ΑΜΕΘΥΣΤΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_875-59.jpg",
-      "pieces_per_package": 5,
-      "volume_liters": 0.029427,
-      "color": "ΑΜΕΘΥΣΤΟΣ"
-    },
-    {
       "id": 1366,
       "code": "875-79",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 44lt-d45x42h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
@@ -15461,15 +12554,6 @@
       "pieces_per_package": 4,
       "volume_liters": 0.0425,
       "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 1367,
-      "code": "876-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 60lt-d50x46h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_876-12.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.0425,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
     },
     {
       "id": 1370,
@@ -15497,15 +12581,6 @@
       "pieces_per_package": 4,
       "volume_liters": 0.0425,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1372,
-      "code": "876-79",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 60lt-d50x46h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_876-79.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.0425,
-      "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
       "id": 1377,
@@ -15562,114 +12637,6 @@
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
-      "id": 1384,
-      "code": "879-01",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3lt-d16x22h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_879-01.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.002016,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 1379,
-      "code": "879-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3lt-d16x22h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_879-12.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.002016,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1383,
-      "code": "879-13",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3lt-d16x22h cm-ΜΠΡΟΝΖΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_879-13.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.002016,
-      "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1382,
-      "code": "879-14",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3lt-d16x22h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_879-14.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.002016,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1381,
-      "code": "879-25",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3lt-d16x22h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_879-25.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.002016,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1380,
-      "code": "879-26",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 3lt-d16x22h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_879-26.jpg",
-      "pieces_per_package": 32,
-      "volume_liters": 0.002016,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1390,
-      "code": "880-01",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 5lt-d20x26h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_880-01.jpg",
-      "pieces_per_package": 24,
-      "volume_liters": 0.004467,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 1385,
-      "code": "880-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 5lt-d20x26h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_880-12.jpg",
-      "pieces_per_package": 24,
-      "volume_liters": 0.004467,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
-      "id": 1389,
-      "code": "880-13",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 5lt-d20x26h cm-ΜΠΡΟΝΖΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_880-13.jpg",
-      "pieces_per_package": 24,
-      "volume_liters": 0.004467,
-      "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1388,
-      "code": "880-14",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 5lt-d20x26h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_880-14.jpg",
-      "pieces_per_package": 24,
-      "volume_liters": 0.004467,
-      "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1387,
-      "code": "880-25",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 5lt-d20x26h cm-ΜΟΛΥΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_880-25.jpg",
-      "pieces_per_package": 24,
-      "volume_liters": 0.004467,
-      "color": "ΜΟΛΥΒΙ"
-    },
-    {
-      "id": 1386,
-      "code": "880-26",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 5lt-d20x26h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_880-26.jpg",
-      "pieces_per_package": 24,
-      "volume_liters": 0.004467,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
       "id": 1396,
       "code": "881-01",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 10lt-d25x34h cm-ΛΕΥΚΟ",
@@ -15695,15 +12662,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.009604,
       "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1394,
-      "code": "881-14",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 10lt-d25x34h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_881-14.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.009604,
-      "color": "ΜΠΟΡΝΤΩ"
     },
     {
       "id": 1393,
@@ -15733,15 +12691,6 @@
       "color": "ΛΕΥΚΟ"
     },
     {
-      "id": 1397,
-      "code": "882-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 18lt-d30x41h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_882-12.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.015316,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
       "id": 1401,
       "code": "882-13",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 18lt-d30x41h cm-ΜΠΡΟΝΖΕ",
@@ -15749,15 +12698,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.015316,
       "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1400,
-      "code": "882-14",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 18lt-d30x41h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_882-14.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.015316,
-      "color": "ΜΠΟΡΝΤΩ"
     },
     {
       "id": 1399,
@@ -15778,15 +12718,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1403,
-      "code": "882-79",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 18lt-d30x41h cm-ΓΚΡΙ ΣΤΑΧΤΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_882-79.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.015316,
-      "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
       "id": 1409,
       "code": "884-01",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 42lt-d40x52h cm-ΛΕΥΚΟ",
@@ -15796,15 +12727,6 @@
       "color": "ΛΕΥΚΟ"
     },
     {
-      "id": 1404,
-      "code": "884-12",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 42lt-d40x52h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_884-12.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.026134,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
       "id": 1408,
       "code": "884-13",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 42lt-d40x52h cm-ΜΠΡΟΝΖΕ",
@@ -15812,15 +12734,6 @@
       "pieces_per_package": 4,
       "volume_liters": 0.026134,
       "color": "ΜΠΡΟΝΖΕ"
-    },
-    {
-      "id": 1407,
-      "code": "884-14",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. LINEA 42lt-d40x52h cm-ΜΠΟΡΝΤΩ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_884-14.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.026134,
-      "color": "ΜΠΟΡΝΤΩ"
     },
     {
       "id": 1406,
@@ -15895,24 +12808,6 @@
       "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
-      "id": 1410,
-      "code": "889-20",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d12,5x1,5h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_889-20.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000096,
-      "color": "KPOKI"
-    },
-    {
-      "id": 1411,
-      "code": "889-21",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d12,5x1,5h cm-ΒΙΟΛΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_889-21.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000096,
-      "color": "ΒΙΟΛΕ"
-    },
-    {
       "id": 1416,
       "code": "889-25",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d12,5x1,5h cm-ΜΟΛΥΒΙ",
@@ -15947,24 +12842,6 @@
       "pieces_per_package": 30,
       "volume_liters": 0.000096,
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
-    },
-    {
-      "id": 1412,
-      "code": "889-83",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d12,5x1,5h cm-ΜΑΒΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_889-83.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000096,
-      "color": "ΜΑΒΙ"
-    },
-    {
-      "id": 1413,
-      "code": "889-84",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d12,5x1,5h cm-ΒΑΣΙΛΙΚΟΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_889-84.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000096,
-      "color": "ΒΑΣΙΛΙΚΟΣ"
     },
     {
       "id": 1433,
@@ -16057,15 +12934,6 @@
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
-      "id": 1424,
-      "code": "890-81",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d16x2h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_890-81.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.00016,
-      "color": "ΩΧΡΑ"
-    },
-    {
       "id": 1425,
       "code": "890-83",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d16x2h cm-MABI",
@@ -16109,15 +12977,6 @@
       "pieces_per_package": 30,
       "volume_liters": 0.00016,
       "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1428,
-      "code": "890-95",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d16x2h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_890-95.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.00016,
-      "color": "CITRINE"
     },
     {
       "id": 1443,
@@ -16192,15 +13051,6 @@
       "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
-      "id": 1456,
-      "code": "891-20",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d20x2h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_891-20.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000368,
-      "color": "KPOKI"
-    },
-    {
       "id": 1450,
       "code": "891-25",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d20x2h cm-ΜΟΛΥΒΙ",
@@ -16244,15 +13094,6 @@
       "pieces_per_package": 30,
       "volume_liters": 0.000368,
       "color": "ΓΚΡΙ ΣΤΑΧΤΗΣ"
-    },
-    {
-      "id": 1445,
-      "code": "891-81",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d20x2h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_891-81.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000368,
-      "color": "ΩΧΡΑ"
     },
     {
       "id": 1448,
@@ -16307,15 +13148,6 @@
       "pieces_per_package": 30,
       "volume_liters": 0.000368,
       "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1462,
-      "code": "891-95",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d20x2h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_891-95.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.000368,
-      "color": "CITRINE"
     },
     {
       "id": 1465,
@@ -16390,15 +13222,6 @@
       "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
     },
     {
-      "id": 1477,
-      "code": "892-20",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d24x2,5h cm-KPOKI",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_892-20.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.00048,
-      "color": "KPOKI"
-    },
-    {
       "id": 1471,
       "code": "892-25",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d24x2,5h cm-ΜΟΛΥΒΙ",
@@ -16471,15 +13294,6 @@
       "color": "ΓΚΡΙ ΣΤΑΧΤΙ"
     },
     {
-      "id": 1467,
-      "code": "892-81",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d24x2,5h cm-ΩΧΡΑ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_892-81.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.00048,
-      "color": "ΩΧΡΑ"
-    },
-    {
       "id": 1468,
       "code": "892-83",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d24x2,5h cm-MABI",
@@ -16532,15 +13346,6 @@
       "pieces_per_package": 30,
       "volume_liters": 0.00048,
       "color": "ΜΑΟΝΙ"
-    },
-    {
-      "id": 1483,
-      "code": "892-95",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d24x2,5h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_892-95.jpg",
-      "pieces_per_package": 30,
-      "volume_liters": 0.00048,
-      "color": "CITRINE"
     },
     {
       "id": 1490,
@@ -16678,15 +13483,6 @@
       "color": "ΜΩΒ"
     },
     {
-      "id": 1515,
-      "code": "894-17",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d32x3h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_894-17.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001024,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
       "id": 1502,
       "code": "894-25",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d32x3h cm-ΜΟΛΥΒΙ",
@@ -16712,24 +13508,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.001024,
       "color": "ΑΣΗΜΙ"
-    },
-    {
-      "id": 1514,
-      "code": "894-53",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d32x3h cm-ΕΚΡΟΥ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_894-53.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001024,
-      "color": "ΕΚΡΟΥ"
-    },
-    {
-      "id": 1511,
-      "code": "894-58",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d32x3h cm-ΤΙΤΑΝΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_894-58.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001024,
-      "color": "ΤΙΤΑΝΙΟ"
     },
     {
       "id": 1506,
@@ -16768,15 +13546,6 @@
       "color": "ΜΑΟΝΙ"
     },
     {
-      "id": 1510,
-      "code": "894-95",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d32x3h cm-CITRINE",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_894-95.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001024,
-      "color": "CITRINE"
-    },
-    {
       "id": 1516,
       "code": "894.6-96",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA MOSAIC d32x3h cm-ΛΑΒΑ",
@@ -16804,15 +13573,6 @@
       "color": "ΛΕΥΚΟ"
     },
     {
-      "id": 1519,
-      "code": "895-12",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d36x3,5h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_895-12.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001382,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
       "id": 1523,
       "code": "895-13",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d36x3,5h cm-ΜΠΡΟΝΖΕ",
@@ -16829,15 +13589,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.001382,
       "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1518,
-      "code": "895-16",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d36x3,5h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_895-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001382,
-      "color": "ΜΩΒ"
     },
     {
       "id": 1521,
@@ -16912,15 +13663,6 @@
       "color": "ΜΠΟΡΝΤΩ"
     },
     {
-      "id": 1527,
-      "code": "896-16",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d38x3,5h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_896-16.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.002297,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1530,
       "code": "896-25",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d38x3,5h cm-ΜΟΛΥΒΙ",
@@ -16966,15 +13708,6 @@
       "color": "ΛΕΥΚΟ"
     },
     {
-      "id": 1536,
-      "code": "897-12",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d43x4h cm-ΠΡΑΣ/ΚΙΤΡΙΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_897-12.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.002958,
-      "color": "ΠΡΑΣ/ΚΙΤΡΙΝΟ"
-    },
-    {
       "id": 1541,
       "code": "897-13",
       "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d43x4h cm-ΜΠΡΟΝΖΕ",
@@ -16991,15 +13724,6 @@
       "pieces_per_package": 4,
       "volume_liters": 0.002958,
       "color": "ΜΠΟΡΝΤΩ"
-    },
-    {
-      "id": 1537,
-      "code": "897-16",
-      "description": "ΠΙΑΤΟ ΣΤΡΟΓΓ. LINEA d43x4h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_897-16.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.002958,
-      "color": "ΜΩΒ"
     },
     {
       "id": 1539,
@@ -17106,7 +13830,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΑΠΟΡΡΙΜΜΑΤΑ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-800.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.00058,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ/ΛΕΥΚΟ"
     },
     {
@@ -17115,7 +13839,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΜΙΧ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-801.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.00058,
       "color": "ΜΙΧ/ΛΕΥΚΟ"
     },
     {
@@ -17124,7 +13848,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΧΑΡΤΙ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-802.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.062,
       "color": "ΧΑΡΤΙ/ΛΕΥΚΟ"
     },
     {
@@ -17133,7 +13857,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΠΛΑΣΤΙΚΟ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-803.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "ΠΛΑΣΤΙΚΟ/ΛΕΥΚΟ"
     },
     {
@@ -17142,7 +13866,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΓΥΑΛΙ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-804.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "ΓΥΑΛΙ/ΛΕΥΚΟ"
     },
     {
@@ -17151,7 +13875,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΜΕΤΑΛΛΟ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-805.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "ΜΕΤΑΛΛΟ/ΛΕΥΚΟ"
     },
     {
@@ -17160,7 +13884,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-CUSTOM/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-806.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "CUSTOM/ΛΕΥΚΟ"
     },
     {
@@ -17169,7 +13893,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΟΡΓΑΝΙΚΑ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-808.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.00357,
       "color": "ΟΡΓΑΝΙΚΑ/ΛΕΥΚΟ"
     },
     {
@@ -17178,7 +13902,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΜΑΣΚΕΣ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-809.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.00357,
       "color": "ΜΑΣΚΕΣ/ΛΕΥΚΟ"
     },
     {
@@ -17187,7 +13911,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-810.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ"
     },
     {
@@ -17196,7 +13920,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΜΙΧ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-811.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.003693,
       "color": "ΜΙΧ/ΜΑΥΡΟ"
     },
     {
@@ -17205,7 +13929,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΧΑΡΤΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-812.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.003693,
       "color": "ΧΑΡΤΙ/ΜΑΥΡΟ"
     },
     {
@@ -17214,7 +13938,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-813.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ"
     },
     {
@@ -17223,7 +13947,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΓΥΑΛΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-814.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΓΥΑΛΙ/ΜΑΥΡΟ"
     },
     {
@@ -17232,7 +13956,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΜΕΤΑΛΛΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-815.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.00357,
       "color": "ΜΕΤΑΛΛΟ/ΜΑΥΡΟ"
     },
     {
@@ -17241,7 +13965,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-CUSTOM/ΜΑΥΡΟ",
       "image_url": "",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "CUSTOM/ΜΑΥΡΟ"
     },
     {
@@ -17250,7 +13974,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΟΡΓΑΝΙΚΑ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-818.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.00357,
       "color": "ΟΡΓΑΝΙΚΑ/ΜΑΥΡΟ"
     },
     {
@@ -17259,7 +13983,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-ΜΑΣΚΕΣ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-819.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.001421,
       "color": "ΜΑΣΚΕΣ/ΜΑΥΡΟ"
     },
     {
@@ -17268,7 +13992,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-820.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ-GR"
     },
     {
@@ -17277,7 +14001,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-MIX/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-821.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "MIX/ΜΑΥΡΟ-GR"
     },
     {
@@ -17286,7 +14010,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-ΧΑΡΤΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-822.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.003693,
       "color": "ΧΑΡΤΙ/ΜΑΥΡΟ-GR"
     },
     {
@@ -17295,7 +14019,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-823.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ-GR"
     },
     {
@@ -17304,7 +14028,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-ΓΥΑΛΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-824.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΓΥΑΛΙ/ΜΑΥΡΟ-GR"
     },
     {
@@ -17313,7 +14037,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-ΜΕΤΑΛΛΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-825.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.00357,
       "color": "ΜΕΤΑΛΛΟ/ΜΑΥΡΟ-GR"
     },
     {
@@ -17322,7 +14046,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-ΑΠΟΡΡΙΜΜΑΤΑ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-826.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.000517,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ/ΛΕΥΚΟ-GR"
     },
     {
@@ -17331,7 +14055,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM 8,5x33 cm-GR-ΠΛΑΣΤΙΚΟ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-827.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΠΛΑΣΤΙΚΟ/ΛΕΥΚΟ-GR"
     },
     {
@@ -17340,7 +14064,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM ECOBIN 8,5x33 cm-GR/EN-ΑΠΟΡΙΜΜΑΤΑ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-830.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΑΠΟΡΙΜΜΑΤΑ/ΛΕΥΚΟ-GR/EN"
     },
     {
@@ -17349,7 +14073,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM ECOBIN 8,5x33 cm-GR/EN-MIX",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-831.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "MIX-GR/EN"
     },
     {
@@ -17358,7 +14082,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM ECOBIN 8,5x33 cm-GR/EN-ΧΑΡΤΙ/ΜΠΛΕ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-832.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΧΑΡΤΙ/ΜΠΛΕ-GR/EN"
     },
     {
@@ -17367,7 +14091,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM ECOBIN 8,5x33 cm-GR/EN-ΠΛΑΣΤΙΚΟ/ΚΙΤΡΙΝΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-833.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΠΛΑΣΤΙΚΟ/ΚΙΤΡΙΝΟ-GR/EN"
     },
     {
@@ -17376,7 +14100,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM ECOBIN 8,5x33 cm-GR/EN-ΓΥΑΛΙ/ΠΡΑΣΙΝΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-834.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΓΥΑΛΙ/ΠΡΑΣΙΝΟ-GR/EN"
     },
     {
@@ -17385,7 +14109,7 @@
       "description": "ΕΤΙΚΕΤΑ PREMIUM ECOBIN 8,5x33 cm-GR/EN-ΜΕΤΑΛΛΟ/ΚΟΚΚΙΝΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_950-835.jpg",
       "pieces_per_package": 1,
-      "volume_liters": 0,
+      "volume_liters": 0.0012,
       "color": "ΜΕΤΑΛΛΟ/ΚΟΚΚΙΝΟ-GR/EN"
     },
     {
@@ -17393,8 +14117,8 @@
       "code": "951-800",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΑΠΟΡΡΙΜΜΑΤΑ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-800.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.001421,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ/ΛΕΥΚΟ"
     },
     {
@@ -17402,8 +14126,8 @@
       "code": "951-801",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΜΙΧ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-801.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.001421,
       "color": "ΜΙΧ/ΛΕΥΚΟ"
     },
     {
@@ -17411,8 +14135,8 @@
       "code": "951-802",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΧΑΡΤΙ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-802.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.001948,
       "color": "ΧΑΡΤΙ/ΛΕΥΚΟ"
     },
     {
@@ -17420,8 +14144,8 @@
       "code": "951-803",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΠΛΑΣΤΙΚΟ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-803.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.001948,
       "color": "ΠΛΑΣΤΙΚΟ/ΛΕΥΚΟ"
     },
     {
@@ -17429,8 +14153,8 @@
       "code": "951-804",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΓΥΑΛΙ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-804.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.001948,
       "color": "ΓΥΑΛΙ/ΛΕΥΚΟ"
     },
     {
@@ -17438,26 +14162,17 @@
       "code": "951-805",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΜΕΤΑΛΛΟ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-805.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.00108,
       "color": "ΜΕΤΑΛΛΟ/ΛΕΥΚΟ"
-    },
-    {
-      "id": 756,
-      "code": "951-806",
-      "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-CUSTOM/ΛΕΥΚΟ",
-      "image_url": "",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
-      "color": "CUSTOM/ΛΕΥΚΟ"
     },
     {
       "id": 761,
       "code": "951-810",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-810.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.00108,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ"
     },
     {
@@ -17465,8 +14180,8 @@
       "code": "951-811",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΜΙΧ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-811.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.00108,
       "color": "ΜΙΧ/ΜΑΥΡΟ"
     },
     {
@@ -17474,8 +14189,8 @@
       "code": "951-812",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΧΑΡΤΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-812.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.013333,
       "color": "ΧΑΡΤΙ/ΜΑΥΡΟ"
     },
     {
@@ -17483,8 +14198,8 @@
       "code": "951-813",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-813.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.013333,
       "color": "ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ"
     },
     {
@@ -17492,8 +14207,8 @@
       "code": "951-814",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΓΥΑΛΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-814.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.013333,
       "color": "ΓΥΑΛΙ/ΜΑΥΡΟ"
     },
     {
@@ -17501,8 +14216,8 @@
       "code": "951-815",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 13x13 cm-ΜΕΤΑΛΛΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_951-815.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.013333,
       "color": "ΜΕΤΑΛΛΟ/ΜΑΥΡΟ"
     },
     {
@@ -17510,8 +14225,8 @@
       "code": "952-820",
       "description": "ΕΤΙΚΕΤΑ ADVANCED 10x10 cm-ΑΠΟΡΡΙΜΜΑΤΑ ΜΑΥΡΟ/ΛΕΥΚ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_952-820.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0026,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ ΜΑΥΡΟ/ΛΕΥΚΟ"
     },
     {
@@ -17519,8 +14234,8 @@
       "code": "952-821",
       "description": "ΕΤΙΚΕΤΑ ADVANCED 10x10 cm-ΜΙΧ - ΜΑΥΡΟ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_952-821.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0026,
       "color": "ΜΙΧ - ΜΑΥΡΟ/ΛΕΥΚΟ"
     },
     {
@@ -17528,8 +14243,8 @@
       "code": "952-822",
       "description": "ΕΤΙΚΕΤΑ ADVANCED 13x13 cm-ΧΑΡΤΙ ΜΑΥΡΟ/ΜΠΛΕ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_952-822.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0026,
       "color": "ΧΑΡΤΙ ΜΑΥΡΟ/ΜΠΛΕ"
     },
     {
@@ -17537,8 +14252,8 @@
       "code": "952-823",
       "description": "ΕΤΙΚΕΤΑ ADVANCED 13x13 cm-ΠΛΑΣΤΙΚΟ ΜΑΥΡΟ/KITPINO",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_952-823.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0026,
       "color": "ΠΛΑΣΤΙΚΟ ΜΑΥΡΟ/KITPINO"
     },
     {
@@ -17546,8 +14261,8 @@
       "code": "952-824",
       "description": "ΕΤΙΚΕΤΑ ADVANCED 13x13 cm-ΓΥΑΛΙ ΜΑΥΡΟ/ΠΡΑΣΙΝΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_952-824.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.004167,
       "color": "ΓΥΑΛΙ ΜΑΥΡΟ/ΠΡΑΣΙΝΟ"
     },
     {
@@ -17555,8 +14270,8 @@
       "code": "952-825",
       "description": "ΕΤΙΚΕΤΑ ADVANCED 13x13 cm-ΜΕΤΑΛΛΟ ΜΑΥΡΟ/ΚΟΚΚΙΝΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_952-825.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.004167,
       "color": "ΜΕΤΑΛΛΟ ΜΑΥΡΟ/ΚΟΚΚΙΝΟ"
     },
     {
@@ -17564,26 +14279,17 @@
       "code": "953-808",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΟΡΓΑΝΙΚΑ/ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-808.jpg",
-      "pieces_per_package": 80,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0021,
       "color": "ΟΡΓΑΝΙΚΑ/ΛΕΥΚΟ"
-    },
-    {
-      "id": 773,
-      "code": "953-809",
-      "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΜΑΣΚΕΣ/ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-809.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
-      "color": "ΜΑΣΚΕΣ/ΛΕΥΚΟ"
     },
     {
       "id": 774,
       "code": "953-810",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-810.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0833,
       "color": "ΑΠΟΡΡΙΜΜΑΤΑ/ΜΑΥΡΟ"
     },
     {
@@ -17591,8 +14297,8 @@
       "code": "953-811",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΜΙΧ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-811.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0833,
       "color": "ΜΙΧ/ΜΑΥΡΟ"
     },
     {
@@ -17600,8 +14306,8 @@
       "code": "953-812",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΧΑΡΤΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-812.jpg",
-      "pieces_per_package": 80,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.0833,
       "color": "ΧΑΡΤΙ/ΜΑΥΡΟ"
     },
     {
@@ -17609,8 +14315,8 @@
       "code": "953-813",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-813.jpg",
-      "pieces_per_package": 80,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.000833,
       "color": "ΠΛΑΣΤΙΚΟ/ΜΑΥΡΟ"
     },
     {
@@ -17618,8 +14324,8 @@
       "code": "953-814",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΓΥΑΛΙ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-814.jpg",
-      "pieces_per_package": 80,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.000833,
       "color": "ΓΥΑΛΙ/ΜΑΥΡΟ"
     },
     {
@@ -17627,8 +14333,8 @@
       "code": "953-815",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΜΕΤΑΛΛΟ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-815.jpg",
-      "pieces_per_package": 80,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.001,
       "color": "ΜΕΤΑΛΛΟ/ΜΑΥΡΟ"
     },
     {
@@ -17636,8 +14342,8 @@
       "code": "953-818",
       "description": "ΕΤΙΚΕΤΑ PREMIUM 4,5x18 cm-ΟΡΓΑΝΙΚΑ/ΜΑΥΡΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_953-818.jpg",
-      "pieces_per_package": 80,
-      "volume_liters": 0,
+      "pieces_per_package": 1,
+      "volume_liters": 0.001,
       "color": "ΟΡΓΑΝΙΚΑ/ΜΑΥΡΟ"
     },
     {
@@ -17646,7 +14352,7 @@
       "description": "ΣΕΤ ΠΕΝΤΑΛ 455 & ΠΙΓΚΑΛ 225-ΓΚΡΙ ΜΠΕΖ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_955-50.jpg",
       "pieces_per_package": 6,
-      "volume_liters": 0,
+      "volume_liters": 0.0141,
       "color": "ΓΚΡΙ ΜΠΕΖ"
     },
     {
@@ -17655,7 +14361,7 @@
       "description": "ΣΕΤ ΠΕΝΤΑΛ 455 & ΠΙΓΚΑΛ 225-ΤΙΤΑΝΙΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_955-58.jpg",
       "pieces_per_package": 6,
-      "volume_liters": 0,
+      "volume_liters": 0.0141,
       "color": "ΤΙΤΑΝΙΟ"
     },
     {
@@ -17666,15 +14372,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.001587,
       "color": "ΚΑΦΕ ΑΝΟΙΧΤΟ   "
-    },
-    {
-      "id": 306,
-      "code": "964-99",
-      "description": "ΣΚΟΥΠΑ ME ΛΑΣΤΙΧΑ 34x9x11h cm",
-      "image_url": "",
-      "pieces_per_package": 10,
-      "volume_liters": 0.001587,
-      "color": "ΔΙΑΦΟΡΑ"
     },
     {
       "id": 304,
@@ -17785,15 +14482,6 @@
       "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
     },
     {
-      "id": 1755,
-      "code": "969-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 1,5lt-d16x14,5h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_969-16.jpg",
-      "pieces_per_package": 40,
-      "volume_liters": 0.001216,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1761,
       "code": "969-17",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 1,5lt-d16x14,5h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
@@ -17830,24 +14518,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1765,
-      "code": "969-26-00020",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 1,5lt-d16x14,5h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_969-26-00020.jpg",
-      "pieces_per_package": 40,
-      "volume_liters": 0.001216,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1766,
-      "code": "969-65-00020",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 1,5lt-d16x14,5h cm-ΒΟΤΣΑΛΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_969-65-00020.jpg",
-      "pieces_per_package": 40,
-      "volume_liters": 0.001216,
-      "color": "ΒΟΤΣΑΛΟ"
-    },
-    {
       "id": 1767,
       "code": "969-83",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 1,5lt-d16x14,5h cm-MABI",
@@ -17870,15 +14540,6 @@
       "code": "970-01",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 3lt-d20x18h cm-ΛΕΥΚΟ",
       "image_url": "https://viomes.gr/images/packshot_photos/viomes_970-01.jpg",
-      "pieces_per_package": 16,
-      "volume_liters": 0.001575,
-      "color": "ΛΕΥΚΟ"
-    },
-    {
-      "id": 1774,
-      "code": "970-01-00020",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 3lt-d20x18h cm-ΛΕΥΚΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_970-01-00020.jpg",
       "pieces_per_package": 16,
       "volume_liters": 0.001575,
       "color": "ΛΕΥΚΟ"
@@ -17965,15 +14626,6 @@
       "color": "ΓΚΡΙ ΚΑΦΕ"
     },
     {
-      "id": 1777,
-      "code": "970-26-00020",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 3lt-d20x18h cm-ΓΚΡΙ ΚΑΦΕ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_970-26-00020.jpg",
-      "pieces_per_package": 16,
-      "volume_liters": 0.001575,
-      "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
       "id": 1782,
       "code": "970-26-00021",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 3lt-d20x18h cm-ΓΚΡΙ ΚΑΦΕ",
@@ -17981,15 +14633,6 @@
       "pieces_per_package": 16,
       "volume_liters": 0.001575,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1778,
-      "code": "970-65-00020",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 3lt-d20x18h cm-ΒΟΤΣΑΛΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_970-65-00020.jpg",
-      "pieces_per_package": 16,
-      "volume_liters": 0.001575,
-      "color": "ΒΟΤΣΑΛΟ"
     },
     {
       "id": 1783,
@@ -18217,24 +14860,6 @@
       "color": "ΕΛΙΑ ΣΚΟΥΡΟ/GROEN"
     },
     {
-      "id": 1801,
-      "code": "972-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 11lt-d30x27h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_972-16.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.00556,
-      "color": "ΜΩΒ"
-    },
-    {
-      "id": 1807,
-      "code": "972-17",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 11lt-d30x27h cm-ΤΡΙΑΝΤΑΦΥΛΛΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_972-17.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.00556,
-      "color": "ΤΡΙΑΝΤΑΦΥΛΛΙ"
-    },
-    {
       "id": 1804,
       "code": "972-25",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 11lt-d30x27h cm-ΜΟΛΥΒΙ",
@@ -18287,15 +14912,6 @@
       "pieces_per_package": 10,
       "volume_liters": 0.00556,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1812,
-      "code": "972-65-00020",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 11lt-d30x27h cm-ΒΟΤΣΑΛΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_972-65-00020.jpg",
-      "pieces_per_package": 10,
-      "volume_liters": 0.00556,
-      "color": "ΒΟΤΣΑΛΟ"
     },
     {
       "id": 1817,
@@ -18359,15 +14975,6 @@
       "pieces_per_package": 8,
       "volume_liters": 0.0098,
       "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
-    },
-    {
-      "id": 1819,
-      "code": "973-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 17lt-d35x31h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_973-16.jpg",
-      "pieces_per_package": 8,
-      "volume_liters": 0.0098,
-      "color": "ΜΩΒ"
     },
     {
       "id": 1822,
@@ -18478,15 +15085,6 @@
       "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
     },
     {
-      "id": 1830,
-      "code": "974-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 28lt-d40x35h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_974-16.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.014667,
-      "color": "ΜΩΒ"
-    },
-    {
       "id": 1833,
       "code": "974-25",
       "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 28lt-d40x35h cm-ΜΟΛΥΒΙ",
@@ -18539,15 +15137,6 @@
       "pieces_per_package": 6,
       "volume_liters": 0.014667,
       "color": "ΓΚΡΙ ΚΑΦΕ"
-    },
-    {
-      "id": 1836,
-      "code": "974-58",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 28lt-d40x35h cm-ΤΙΤΑΝΙΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_974-58.jpg",
-      "pieces_per_package": 6,
-      "volume_liters": 0.014667,
-      "color": "ΤΙΤΑΝΙΟ"
     },
     {
       "id": 1841,
@@ -18620,15 +15209,6 @@
       "pieces_per_package": 4,
       "volume_liters": 0.02875,
       "color": "ΕΛΙΑ ΣΚΟΥΡΟ"
-    },
-    {
-      "id": 1846,
-      "code": "976-16",
-      "description": "ΓΛΑΣΤΡΑ ΣΤΡΟΓΓ. IRIS 55lt-d50x44h cm-ΜΩΒ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_976-16.jpg",
-      "pieces_per_package": 4,
-      "volume_liters": 0.02875,
-      "color": "ΜΩΒ"
     },
     {
       "id": 1849,
@@ -19027,15 +15607,6 @@
       "color": "ΔΙΑΦΟΡΑ ΧΡΩΜΑΤΑ"
     },
     {
-      "id": 2014,
-      "code": "990-06",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ RONDO d17,50x2h cm-ΓΚΡΙ ΑΝΟΙΧΤΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_990-06.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.00038,
-      "color": "ΓΚΡΙ ΑΝΟΙΧΤΟ"
-    },
-    {
       "id": 2009,
       "code": "990-25",
       "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ RONDO d17,50x2h cm-ΜΟΛΥΒΙ",
@@ -19061,24 +15632,6 @@
       "pieces_per_package": 25,
       "volume_liters": 0.00038,
       "color": "ΠΡΑΣΙΝΟ ΕΛΙΑΣ"
-    },
-    {
-      "id": 2016,
-      "code": "990-31",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ RONDO d17,50x2h cm-ΔΙΑΦΑΝΟ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_990-31.jpg",
-      "pieces_per_package": 25,
-      "volume_liters": 0.00038,
-      "color": "ΔΙΑΦΑΝΟ"
-    },
-    {
-      "id": 2015,
-      "code": "990-45",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ RONDO d17,50x2h cm-ΓΡΑΦΙΤΗΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_990-45.jpg",
-      "pieces_per_package": 12,
-      "volume_liters": 0.00038,
-      "color": "ΓΡΑΦΙΤΗΣ"
     },
     {
       "id": 2005,
@@ -19153,15 +15706,6 @@
       "color": "ΠΗΛΟΣ"
     },
     {
-      "id": 2021,
-      "code": "991-06",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ RONDO d22x2,5h cm-ΑΝΟΙΧΤΟ ΓΚΡΙ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_991-06.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.00038,
-      "color": "ΑΝΟΙΧΤΟ ΓΚΡΙ"
-    },
-    {
       "id": 2025,
       "code": "991-25",
       "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ RONDO d22x2,5h cm-ΜΟΛΥΒΙ",
@@ -19187,15 +15731,6 @@
       "pieces_per_package": 20,
       "volume_liters": 0.00038,
       "color": "ΠΡΑΣΙΝΟ ΕΛΙΑΣ"
-    },
-    {
-      "id": 2022,
-      "code": "991-45",
-      "description": "ΠΙΑΤΟ ΓΛΑΣΤΡΑΣ RONDO d22x2,5h cm-ΓΡΑΦΙΤΗΣ",
-      "image_url": "https://viomes.gr/images/packshot_photos/viomes_991-45.jpg",
-      "pieces_per_package": 20,
-      "volume_liters": 0.00038,
-      "color": "ΓΡΑΦΙΤΗΣ"
     },
     {
       "id": 2019,
