@@ -50,6 +50,14 @@ function buildSubmittedByHtml(order, escapeHtml) {
 function buildValueHtml(order, { escapeHtml, formatMoney }) {
   const money = escapeHtml(formatMoney(order.total_net_value));
 
+  // Takes priority over the plain estimate badges below: the live pricing service was
+  // configured but unreachable when this order was submitted, so total_net_value is not
+  // an estimate at all - it's 0,00, and someone has to price the order by hand before
+  // approving it. Must never look like a normal (if uncertain) "εκτ." price.
+  if (order.needs_manual_price_review) {
+    return `<span class="admin-order-needs-review" title="Η υπηρεσία τιμολόγησης δεν ήταν διαθέσιμη κατά την υποβολή. Χρειάζεται χειροκίνητη τιμολόγηση πριν την έγκριση.">⚠ Χειροκίνητος έλεγχος τιμής</span>`;
+  }
+
   if (order.value_is_partial) {
     return `${money} <span class="muted" title="Μία ή περισσότερες γραμμές δεν έχουν ιστορικό τιμής — μη πλήρης εκτίμηση">εκτ.*</span>`;
   }
@@ -138,7 +146,11 @@ function buildDetailRow(order, context, { isExpanded }) {
   if (order.customer_email) {
     metaParts.push(`Email: ${escapeHtml(order.customer_email)}`);
   }
-  if (order.value_is_partial) {
+  if (order.needs_manual_price_review) {
+    metaParts.push(
+      `<span class="admin-order-needs-review">⚠ Η υπηρεσία τιμολόγησης ήταν εκτός λειτουργίας κατά την υποβολή — τιμολογήστε χειροκίνητα</span>`,
+    );
+  } else if (order.value_is_partial) {
     metaParts.push(
       `<span class="admin-order-line-missing">Μη πλήρης εκτίμηση αξίας</span>`,
     );

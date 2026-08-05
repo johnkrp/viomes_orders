@@ -10,6 +10,7 @@ export function registerPublicRoutes(app, context) {
     APP_NAME,
     dbClient,
     customerStatsProvider,
+    pricingClient,
     IMPORTED_SALES_ARCHITECTURE,
     LATEST_IMPORT_RUN_SQL,
     logRouteError,
@@ -36,6 +37,7 @@ export function registerPublicRoutes(app, context) {
       db_client: dbClient?.kind || null,
       customer_stats_provider: customerStatsProvider?.name || null,
       customer_stats_provider_mode: customerStatsProvider?.mode || null,
+      pricing_source: pricingClient ? "live" : "heuristic",
       db_architecture: {
         raw_fact_table: IMPORTED_SALES_ARCHITECTURE.rawFactTable,
         projection_tables: IMPORTED_SALES_ARCHITECTURE.projectionTables,
@@ -159,10 +161,11 @@ export function registerPublicRoutes(app, context) {
         submission,
         getImportedCustomerByCode,
       });
-      const { orderId } = await createOrderSubmission(db, {
-        ...submission,
-        ...identity,
-      });
+      const { orderId } = await createOrderSubmission(
+        db,
+        { ...submission, ...identity },
+        { pricingClient },
+      );
       res.json({ ok: true, order_id: orderId });
     } catch (error) {
       logRouteError(error);

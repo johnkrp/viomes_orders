@@ -15,12 +15,13 @@ const settings = buildRuntimeSettings({
 });
 
 initializeRuntimeState({ settings })
-  .then(({ db, dbClient, customerStatsProvider }) => {
+  .then(({ db, dbClient, customerStatsProvider, pricingClient }) => {
     const app = createApp({
       settings,
       db,
       dbClient,
       customerStatsProvider,
+      pricingClient,
     });
 
     app.listen(settings.port, () => {
@@ -28,6 +29,7 @@ initializeRuntimeState({ settings })
       console.log(`Static root: ${settings.publicDir}`);
       console.log(`Database (${dbClient?.kind || "unknown"}): ${dbClient?.description || "n/a"}`);
       console.log(`Customer stats provider: ${customerStatsProvider?.name || "n/a"}`);
+      console.log(`Pricing service: ${pricingClient ? "live" : "not configured (heuristic estimate)"}`);
     });
   })
   .catch((error) => {

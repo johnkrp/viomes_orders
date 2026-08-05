@@ -88,8 +88,13 @@ async function findCustomerModalDiscount(db, customerCode) {
  * each customer+item pair (falls back to any customer's last invoiced price for
  * that item if this customer has never bought it). Items with no invoice history
  * anywhere come back with source "no_history" and are excluded from the total.
+ *
+ * This is the fallback model, used only when no live `pricingClient` is configured
+ * at all (dev/test, or before the pricing-service is deployed) - see
+ * `estimateOrderValue` below for why it must NOT be used as a failure fallback once
+ * the live service exists.
  */
-export async function estimateOrderValue(db, { customerCode, items }) {
+async function estimateOrderValueFromHistory(db, { customerCode, items }) {
   const lines = [];
   let customerModalDiscount;
 
@@ -168,5 +173,127 @@ export async function estimateOrderValue(db, { customerCode, items }) {
     totalLines: lines.length,
     isPartial: pricedLines < lines.length,
     hasFallback: fallbackLines > 0,
+    needsManualPriceReview: false,
+    pricingSource: "heuristic",
+  };
+}
+
+// Sources the live pricing engine can return per line - see priceLine() in
+// viomes_db/pricing-service/src/pricing-engine.js. An error here means THAT line
+// couldn't be priced (unknown customer/item, or an out-of-scope pricing mode), not that
+// the service itself is unreachable - unlike a thrown request error, it does not trigger
+// whole-order manual review, only leaves that one line at 0 with a distinct source.
+const LIVE_LINE_ERROR_SOURCES = new Set([
+  "customer_not_found",
+  "item_not_found",
+  "vat_included_unsupported",
+  "invalid_line",
+]);
+
+function effectiveDiscountPct(line) {
+  const factor =
+    (1 - Number(line.discount1 || 0) / 100) *
+    (1 - Number(line.discount2 || 0) / 100) *
+    (1 - Number(line.discount3 || 0) / 100) *
+    (1 - Number(line.discount4 || 0) / 100);
+  return Number(((1 - factor) * 100).toFixed(2));
+}
+
+// `priced`/`hasCaveats` are internal-only (stripped before the line is returned to
+// callers) - kept alongside the line instead of re-parsing the `source` string back
+// apart, which is fragile once source values can contain underscores of their own.
+function mapLivePricedLine(item, result) {
+  if (!result || result.error) {
+    const errorSource = LIVE_LINE_ERROR_SOURCES.has(result?.error)
+      ? result.error
+      : "live_error";
+    return {
+      code: item.code,
+      qty: item.qty,
+      unitPrice: 0,
+      discountPct: 0,
+      lineNetValue: 0,
+      source: `live_${errorSource}`,
+      priced: false,
+      hasCaveats: false,
+    };
+  }
+
+  const hasCaveats = result.confidence === "verified_with_caveats";
+  return {
+    code: item.code,
+    qty: item.qty,
+    unitPrice: Number(result.price) || 0,
+    discountPct: effectiveDiscountPct(result),
+    lineNetValue: Number(result.netValue) || 0,
+    source: `live_${result.source || "priced"}${hasCaveats ? "_caveats" : ""}`,
+    priced: true,
+    hasCaveats,
+  };
+}
+
+/**
+ * Prices an order two ways depending on whether a live `pricingClient` (the on-prem
+ * service that ports ES1's own decoded pricing/discount resolution) is configured:
+ *
+ * - Configured and reachable: authoritative per-line prices from `pricingClient`,
+ *   individual unpriceable lines (unknown item, VAT-included, etc.) marked but not
+ *   fatal to the rest of the order.
+ * - Not configured at all (dev/test, or before the service is deployed): falls back to
+ *   the older last-invoiced-price heuristic, unchanged.
+ * - Configured but the REQUEST fails (network error, timeout, bad response shape): does
+ *   NOT silently fall back to the heuristic - that was explicitly rejected in favor of
+ *   flagging the whole order `needsManualPriceReview` for a human to price at approval.
+ *   Silently substituting a statistical guess for an authoritative-but-unreachable
+ *   source would look identical to a real price in the admin queue.
+ */
+export async function estimateOrderValue(db, { customerCode, items, pricingClient }) {
+  if (!pricingClient) {
+    return estimateOrderValueFromHistory(db, { customerCode, items });
+  }
+
+  let results;
+  try {
+    results = await pricingClient.priceLines(customerCode, items);
+  } catch {
+    const lines = items.map((item) => ({
+      code: item.code,
+      qty: item.qty,
+      unitPrice: 0,
+      discountPct: 0,
+      lineNetValue: 0,
+      source: "manual_review_required",
+    }));
+    return {
+      lines,
+      totalNetValue: 0,
+      pricedLines: 0,
+      fallbackLines: 0,
+      totalLines: lines.length,
+      isPartial: true,
+      hasFallback: false,
+      needsManualPriceReview: true,
+      pricingSource: "live_unavailable",
+    };
+  }
+
+  const mappedLines = items.map((item, index) => mapLivePricedLine(item, results[index]));
+  const pricedLines = mappedLines.filter((line) => line.priced).length;
+  const fallbackLines = mappedLines.filter((line) => line.hasCaveats).length;
+  const totalNetValue = Number(
+    mappedLines.reduce((sum, line) => sum + line.lineNetValue, 0).toFixed(2),
+  );
+  const lines = mappedLines.map(({ priced, hasCaveats, ...line }) => line);
+
+  return {
+    lines,
+    totalNetValue,
+    pricedLines,
+    fallbackLines,
+    totalLines: lines.length,
+    isPartial: pricedLines < lines.length,
+    hasFallback: fallbackLines > 0,
+    needsManualPriceReview: false,
+    pricingSource: "live",
   };
 }

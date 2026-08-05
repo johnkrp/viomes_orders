@@ -207,7 +207,7 @@ export async function resolveOrderSubmissionIdentity(
   };
 }
 
-export async function createOrderSubmission(db, submission) {
+export async function createOrderSubmission(db, submission, { pricingClient } = {}) {
   const codes = submission.items.map((item) => item.code);
   const placeholders = codes.map(() => "?").join(", ");
   const products = await db.all(
@@ -251,6 +251,7 @@ export async function createOrderSubmission(db, submission) {
   const valueEstimate = await estimateOrderValue(db, {
     customerCode: submission.customerCode || null,
     items: submission.items,
+    pricingClient,
   });
   const valueByCode = new Map(
     valueEstimate.lines.map((line) => [line.code, line]),
@@ -267,9 +268,10 @@ export async function createOrderSubmission(db, submission) {
       INSERT INTO orders(
         customer_name, customer_email, customer_code, customer_substore, notes,
         desired_delivery_date, es1_order_channel_code, total_qty_pieces,
-        total_net_value, status, submitted_by, submitted_by_role, submitted_at, created_at
+        total_net_value, needs_manual_price_review, status, submitted_by,
+        submitted_by_role, submitted_at, created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
     `,
     [
       submission.customerName,
@@ -281,6 +283,7 @@ export async function createOrderSubmission(db, submission) {
       ES1_ORDER_CHANNEL_PLATFORM,
       totalQtyPieces,
       valueEstimate.totalNetValue,
+      valueEstimate.needsManualPriceReview ? 1 : 0,
       submission.submittedBy || null,
       submission.submittedByRole || null,
       submittedAt,
@@ -314,8 +317,8 @@ export async function listPendingOrderSubmissions(db) {
   const orders = await db.all(`
     SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
            desired_delivery_date, dispatch_date, es1_order_channel_code,
-           total_qty_pieces, total_net_value, status, submitted_by, submitted_by_role,
-           submitted_at
+           total_qty_pieces, total_net_value, needs_manual_price_review, status,
+           submitted_by, submitted_by_role, submitted_at
     FROM orders
     WHERE status = 'pending'
     ORDER BY submitted_at DESC
@@ -358,11 +361,15 @@ export async function listPendingOrderSubmissions(db) {
     return {
       ...order,
       lines: orderLines,
+      needs_manual_price_review: Boolean(Number(order.needs_manual_price_review)),
       value_is_partial: orderLines.some((line) => Number(line.unit_price) === 0),
-      // Priced from another customer's invoice - a far weaker signal than this
-      // customer's own history, and the approver has to be able to tell them apart.
+      // Priced from another customer's invoice (heuristic model) or from a live-pricing
+      // branch flagged "verified_with_caveats" - both are a weaker signal than the
+      // customer's own confirmed history, and the approver has to be able to tell them apart.
       value_has_fallback: orderLines.some(
-        (line) => line.price_source === "last_invoice_any_customer",
+        (line) =>
+          line.price_source === "last_invoice_any_customer" ||
+          String(line.price_source || "").endsWith("_caveats"),
       ),
     };
   });

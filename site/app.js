@@ -27,6 +27,7 @@ import {
   IMPORTED_SALES_ARCHITECTURE,
   LATEST_IMPORT_RUN_SQL,
 } from "./lib/imported-sales.js";
+import { createPricingServiceClient } from "./lib/pricing-client.js";
 import {
   approveOrderSubmission,
   createOrderSubmission,
@@ -313,6 +314,13 @@ export function buildRuntimeSettings({
       .trim()
       .toLowerCase(),
     adminUploadApiKey: String(env.ADMIN_UPLOAD_API_KEY || "").trim(),
+    // Live pricing service (viomes_db/pricing-service). Unset in dev/test and until
+    // SRV2019 deployment - order-value-estimate.js treats "no baseUrl" as a distinct,
+    // expected case from "configured but unreachable", so leaving these blank is safe
+    // and keeps the older heuristic estimate active, not an error state.
+    pricingServiceUrl: String(env.PRICING_SERVICE_URL || "").trim(),
+    pricingServiceApiKey: String(env.PRICING_SERVICE_API_KEY || "").trim(),
+    pricingServiceTimeoutMs: Number(env.PRICING_SERVICE_TIMEOUT_MS || 8000),
     cookieSecureMode: String(
       env.COOKIE_SECURE_MODE || (nodeEnv === "production" ? "auto" : "off"),
     )
@@ -404,7 +412,13 @@ export async function initializeRuntimeState({ settings }) {
     env: settings.env,
   });
 
-  return { db, dbClient, customerStatsProvider };
+  const pricingClient = createPricingServiceClient({
+    baseUrl: settings.pricingServiceUrl,
+    apiKey: settings.pricingServiceApiKey,
+    timeoutMs: settings.pricingServiceTimeoutMs,
+  });
+
+  return { db, dbClient, customerStatsProvider, pricingClient };
 }
 
 export function createApp({
@@ -412,6 +426,7 @@ export function createApp({
   db,
   dbClient,
   customerStatsProvider,
+  pricingClient,
   importRunner,
 } = {}) {
   if (!settings) {
@@ -660,6 +675,7 @@ export function createApp({
     APP_NAME,
     dbClient,
     customerStatsProvider,
+    pricingClient,
     IMPORTED_SALES_ARCHITECTURE,
     LATEST_IMPORT_RUN_SQL,
     logRouteError,

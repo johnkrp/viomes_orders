@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
+    "dev": "node scripts/dev-with-pricing-service.js",
     "test": "node --test \"tests/*.test.js\"",
     "import:entersoft": "node scripts/run-entersoft-import.js",
     "preflight:import": "node scripts/preflight-entersoft-import.js",

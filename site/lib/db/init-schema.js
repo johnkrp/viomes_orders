@@ -861,6 +861,18 @@ export async function initDatabaseSchema({ db, kind }) {
     "submitted_by_role",
     `submitted_by_role ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"}`,
   );
+  // Set when the live pricing service (viomes_db/pricing-service) was configured but
+  // unreachable at submission time. Per the user's explicit choice, an unreachable
+  // service must never silently fall back to the older statistical estimate - that would
+  // look identical to a real price in the queue. This is the flag that tells the approver
+  // "price this by hand", distinct from value_is_partial (some lines priced, some not).
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "needs_manual_price_review",
+    `needs_manual_price_review ${kind === "mysql" ? "TINYINT(1)" : "INTEGER"} NOT NULL DEFAULT 0`,
+  );
   await ensureIndex(
     db,
     kind,
