@@ -1,5 +1,9 @@
-const ORDER_SUBMISSION_COLUMNS = 9;
+const ORDER_SUBMISSION_COLUMNS = 10;
 const NOTES_PREVIEW_LENGTH = 60;
+
+// Rows in these statuses can be soft-archived from the panel (mirrors the server's
+// ARCHIVABLE_STATUSES). A 'writing' / 'written' row gets no checkbox and no button.
+const ARCHIVABLE_CLIENT_STATUSES = new Set(["ready", "write_failed", "held"]);
 
 // orders.status values the viomes_db ΠΑΡ writer moves a captured order through. There
 // is no approve/reject here any more - this panel is read-only.
@@ -34,6 +38,96 @@ function getExpandedIds(state) {
     state.expandedOrderSubmissionIds = new Set();
   }
   return state.expandedOrderSubmissionIds;
+}
+
+function getSelectedIds(state) {
+  if (!(state.orderSubmissionsSelectedIds instanceof Set)) {
+    state.orderSubmissionsSelectedIds = new Set();
+  }
+  return state.orderSubmissionsSelectedIds;
+}
+
+function isShowingArchived(context) {
+  return Boolean(context.elements.orderSubmissionsShowArchivedToggle?.checked);
+}
+
+// from / to (YYYY-MM-DD, either optional) + the archived toggle, as a query string.
+function buildOrderSubmissionsQuery(context) {
+  const params = new URLSearchParams();
+  const from = context.elements.orderSubmissionsFromDate?.value || "";
+  const to = context.elements.orderSubmissionsToDate?.value || "";
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (isShowingArchived(context)) params.set("archived", "1");
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function updateBulkBar(context) {
+  const {
+    orderSubmissionsBulkBar,
+    orderSubmissionsSelectionInfo,
+    orderSubmissionsArchiveSelectedBtn,
+  } = context.elements;
+  const count = getSelectedIds(context.state).size;
+  if (orderSubmissionsBulkBar) orderSubmissionsBulkBar.hidden = count === 0;
+  if (orderSubmissionsSelectionInfo) {
+    orderSubmissionsSelectionInfo.textContent = `${count} ${
+      count === 1 ? "επιλεγμένη" : "επιλεγμένες"
+    }`;
+  }
+  if (orderSubmissionsArchiveSelectedBtn) {
+    orderSubmissionsArchiveSelectedBtn.textContent = `Αρχειοθέτηση επιλεγμένων (${count})`;
+  }
+}
+
+// Drop selected ids whose row is no longer present or no longer archivable (status
+// moved on, or the archived view is showing) so the bulk count can't lie.
+export function pruneOrderSubmissionSelection(context) {
+  const selected = getSelectedIds(context.state);
+  if (!selected.size) {
+    updateBulkBar(context);
+    return;
+  }
+  const archivableIds = isShowingArchived(context)
+    ? new Set()
+    : new Set(
+        (context.state.currentOrderSubmissions || [])
+          .filter((order) =>
+            ARCHIVABLE_CLIENT_STATUSES.has(String(order.status || "")),
+          )
+          .map((order) => String(order.id)),
+      );
+  for (const id of selected) {
+    if (!archivableIds.has(id)) selected.delete(id);
+  }
+  updateBulkBar(context);
+}
+
+export function toggleOrderSubmissionSelection(context, orderId, checked) {
+  const selected = getSelectedIds(context.state);
+  const key = String(orderId);
+  if (checked) selected.add(key);
+  else selected.delete(key);
+  updateBulkBar(context);
+}
+
+function buildActionsCell(order, escapeHtml, showArchived) {
+  if (showArchived) {
+    return `<td class="admin-order-actions"><button type="button" class="btn ghost admin-order-action-btn" data-action="unarchive" data-order-id="${order.id}">Επαναφορά</button></td>`;
+  }
+  if (!ARCHIVABLE_CLIENT_STATUSES.has(String(order.status || ""))) {
+    return `<td class="admin-order-actions"></td>`;
+  }
+  return (
+    `<td class="admin-order-actions">` +
+    `<label class="admin-order-select">` +
+    `<input type="checkbox" data-archive-select data-order-id="${order.id}" />` +
+    `<span class="sr-only">Επιλογή παραγγελίας ${order.id} για αρχειοθέτηση</span>` +
+    `</label>` +
+    `<button type="button" class="btn ghost admin-order-action-btn" data-action="archive" data-order-id="${order.id}">Αρχειοθέτηση</button>` +
+    `</td>`
+  );
 }
 
 function formatDiscount(value) {
@@ -204,30 +298,45 @@ function buildDetailRow(order, context, { isExpanded }) {
   `;
 }
 
-export async function fetchOrderSubmissions(context) {
-  if (context.elements.orderSubmissionsBody) {
+// `silent` is the auto-refresh poll: it must not flash "Φόρτωση...", and a failed
+// tick must keep the last good table (with a stale marker) rather than blank it.
+export async function fetchOrderSubmissions(context, { silent = false } = {}) {
+  if (context.state.orderSubmissionsFetchInFlight) return;
+  context.state.orderSubmissionsFetchInFlight = true;
+
+  if (!silent && context.elements.orderSubmissionsBody) {
     context.elements.orderSubmissionsBody.innerHTML = `
       <tr><td colspan="${ORDER_SUBMISSION_COLUMNS}" class="admin-table-empty">Φόρτωση...</td></tr>
     `;
   }
 
   try {
-    const payload = await context.apiFetch("/api/admin/order-submissions", {
-      method: "GET",
-    });
+    const payload = await context.apiFetch(
+      `/api/admin/order-submissions${buildOrderSubmissionsQuery(context)}`,
+      { method: "GET" },
+    );
     context.state.currentOrderSubmissions = Array.isArray(payload?.items)
       ? payload.items
       : [];
+    context.state.orderSubmissionsStale = false;
+    context.state.orderSubmissionsLastFetchAt = Date.now();
   } catch (error) {
-    context.state.currentOrderSubmissions = [];
-    context.setStatus(
-      `Σφάλμα φόρτωσης παραγγελιών πωλητών: ${error.message}`,
-      "error",
-    );
+    context.state.orderSubmissionsStale = true;
+    if (!silent) {
+      context.state.currentOrderSubmissions = [];
+      context.setStatus(
+        `Σφάλμα φόρτωσης παραγγελιών πωλητών: ${error.message}`,
+        "error",
+      );
+    }
+  } finally {
+    context.state.orderSubmissionsFetchInFlight = false;
   }
 
   pruneExpandedOrderSubmissions(context);
+  pruneOrderSubmissionSelection(context);
   renderOrderSubmissions(context);
+  context.refreshOrderSubmissionsFreshness?.();
 }
 
 // Orders leave the queue once decided, so drop their expansion state instead of
@@ -260,12 +369,26 @@ export function renderOrderSubmissions(context) {
   const { elements, state, escapeHtml, formatMoney } = context;
   if (!elements.orderSubmissionsBody) return;
 
+  pruneOrderSubmissionSelection(context);
+
+  // Hold the table's scroll position across the innerHTML rebuild so an auto-refresh
+  // doesn't yank the view back to the top while someone is reading a lower row.
+  const scrollHost =
+    elements.orderSubmissionsBody.closest?.(".admin-table-wrap") || null;
+  const savedScrollTop = scrollHost ? scrollHost.scrollTop : 0;
+
+  const showArchived = isShowingArchived(context);
   const formatTimestamp = context.formatDateTime || context.formatDate;
   const orders = state.currentOrderSubmissions || [];
   if (!orders.length) {
+    const message = showArchived
+      ? "Δεν υπάρχουν αρχειοθετημένες παραγγελίες."
+      : "Δεν υπάρχουν παραγγελίες προς καταχώρηση.";
     elements.orderSubmissionsBody.innerHTML = `
-      <tr><td colspan="${ORDER_SUBMISSION_COLUMNS}" class="admin-table-empty">Δεν υπάρχουν παραγγελίες προς καταχώρηση.</td></tr>
+      <tr><td colspan="${ORDER_SUBMISSION_COLUMNS}" class="admin-table-empty">${message}</td></tr>
     `;
+    if (scrollHost) scrollHost.scrollTop = savedScrollTop;
+    updateBulkBar(context);
     return;
   }
 
@@ -309,13 +432,94 @@ export function renderOrderSubmissions(context) {
           <td>${formatOrderDate(order.desired_delivery_date)}</td>
           <td>${formatTimestamp(order.submitted_at)}${submittedByHtml}</td>
           <td>${buildStatusHtml(order, escapeHtml)}</td>
+          ${buildActionsCell(order, escapeHtml, showArchived)}
         </tr>
       `;
 
       return summaryRow + buildDetailRow(order, context, { isExpanded });
     })
     .join("");
+
+  // Re-apply checkbox state (innerHTML rebuild drops it) and refresh the bulk bar.
+  const selected = getSelectedIds(state);
+  const boxes =
+    elements.orderSubmissionsBody.querySelectorAll?.("[data-archive-select]") ||
+    [];
+  for (const box of boxes) {
+    box.checked = selected.has(box.getAttribute("data-order-id"));
+  }
+  updateBulkBar(context);
+
+  if (scrollHost) scrollHost.scrollTop = savedScrollTop;
 }
 
 // decideOrderSubmission (approve/reject) was removed with the approval step. The panel
-// is now read-only: orders advance ready -> written under the viomes_db ΠΑΡ writer.
+// is now read-only for the ES1 lifecycle; the only mutation left is the reversible
+// soft-archive below.
+
+function summarizeSkipped(skipped) {
+  if (!skipped?.length) return "";
+  const reasons = {
+    not_found: "δεν βρέθηκε",
+    already_archived: "ήδη αρχειοθετημένη",
+    status_not_archivable: "καταχωρείται/καταχωρήθηκε στο ES1",
+  };
+  const parts = skipped.map(
+    (item) => `#${item.id} (${reasons[item.reason] || item.reason})`,
+  );
+  return ` Παραλείφθηκαν: ${parts.join(", ")}.`;
+}
+
+async function runArchiveCall(context, endpoint, ids, { verb }) {
+  const list = (Array.isArray(ids) ? ids : [ids])
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (!list.length) return;
+
+  try {
+    const result = await context.apiFetch(
+      `/api/admin/order-submissions/${endpoint}`,
+      { method: "POST", body: JSON.stringify({ ids: list }) },
+    );
+    getSelectedIds(context.state).clear();
+    const done = result?.archived ?? result?.unarchived ?? 0;
+    context.setStatus(
+      `${verb} ${done} ${done === 1 ? "παραγγελία" : "παραγγελίες"}.${summarizeSkipped(
+        result?.skipped,
+      )}`,
+      "ok",
+    );
+  } catch (error) {
+    context.setStatus(`Σφάλμα αρχειοθέτησης: ${error.message}`, "error");
+  }
+
+  await fetchOrderSubmissions(context);
+}
+
+// Per-row "Αρχειοθέτηση".
+export function archiveOrderSubmission(context, orderId) {
+  return runArchiveCall(context, "archive", orderId, { verb: "Αρχειοθετήθηκαν" });
+}
+
+// Per-row "Επαναφορά" from the archived view.
+export function unarchiveOrderSubmission(context, orderId) {
+  return runArchiveCall(context, "unarchive", orderId, { verb: "Επαναφέρθηκαν" });
+}
+
+// Bulk "Αρχειοθέτηση επιλεγμένων (N)". Over ~5 rows it asks for a typed confirmation.
+export function archiveSelectedOrderSubmissions(context) {
+  const ids = [...getSelectedIds(context.state)];
+  if (!ids.length) return;
+
+  if (ids.length > 5 && typeof context.promptConfirm === "function") {
+    const answer = context.promptConfirm(
+      `Θα αρχειοθετηθούν ${ids.length} παραγγελίες. Γράψτε ΕΚΚΑΘΑΡΙΣΗ για επιβεβαίωση:`,
+    );
+    if (String(answer || "").trim().toUpperCase() !== "ΕΚΚΑΘΑΡΙΣΗ") {
+      context.setStatus("Η μαζική αρχειοθέτηση ακυρώθηκε.", "");
+      return;
+    }
+  }
+
+  return runArchiveCall(context, "archive", ids, { verb: "Αρχειοθετήθηκαν" });
+}

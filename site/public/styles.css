@@ -1900,6 +1900,82 @@ button.success:active,
   flex-wrap: wrap;
 }
 
+/* Order-submissions panel: date-range filter, freshness, bulk-archive bar */
+.admin-order-controls {
+  justify-content: flex-end;
+}
+
+.admin-order-filter-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.admin-order-filter-field input[type="date"] {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
+.admin-order-archived-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.admin-order-freshness {
+  font-size: 12px;
+  min-width: 150px;
+  text-align: right;
+}
+
+.admin-order-freshness.is-stale {
+  color: #b23b2e;
+  font-weight: 600;
+}
+
+.admin-order-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--card);
+  font-size: 13px;
+}
+
+.admin-order-actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.admin-order-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.admin-order-select {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.admin-order-action-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 .admin-compact-field {
   min-width: 180px;
 }

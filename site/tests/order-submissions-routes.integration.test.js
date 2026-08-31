@@ -187,13 +187,37 @@ function createDbFixture() {
             pieces_per_package: product.pieces_per_package ?? 0,
           }));
       }
-      // Read-only pipeline feed: WHERE status IN (ready, writing, written, write_failed, held)
-      if (sql.includes("FROM orders") && sql.includes("WHERE status IN")) {
-        const wanted = new Set(params);
+      // Read-only pipeline feed: WHERE status IN (…) AND archived_at IS [NOT] NULL,
+      // optionally AND submitted_at >= ? AND submitted_at < ?
+      if (sql.includes("FROM orders") && sql.includes("status IN")) {
+        const statuses = params.slice(0, 5);
+        const rest = params.slice(5);
+        const wantArchived = sql.includes("archived_at IS NOT NULL");
+        const from = sql.includes("submitted_at >= ?") ? rest.shift() : null;
+        const to = sql.includes("submitted_at < ?") ? rest.shift() : null;
+        const wanted = new Set(statuses);
         return [...orders.values()]
           .filter((order) => wanted.has(order.status))
+          .filter((order) =>
+            wantArchived ? order.archived_at != null : order.archived_at == null,
+          )
+          .filter((order) => (from ? String(order.submitted_at) >= from : true))
+          .filter((order) => (to ? String(order.submitted_at) < to : true))
           .sort((a, b) => (a.submitted_at < b.submitted_at ? 1 : -1))
           .slice(0, 200);
+      }
+      // archiveOrderSubmissions classification read.
+      if (
+        sql.includes("SELECT id, status, archived_at FROM orders WHERE id IN")
+      ) {
+        const ids = new Set(params.map(Number));
+        return [...orders.values()]
+          .filter((order) => ids.has(order.id))
+          .map((order) => ({
+            id: order.id,
+            status: order.status,
+            archived_at: order.archived_at ?? null,
+          }));
       }
       // Double-submit guard: recent lines for one customer, joined to products.
       if (
@@ -311,8 +335,41 @@ function createDbFixture() {
           es1_written_at: null,
           es1_write_error: null,
           es1_write_attempts: 0,
+          archived_at: null,
         });
         return { changes: 1, lastID: id };
+      }
+      if (sql.includes("UPDATE orders") && sql.includes("SET archived_at = ?")) {
+        // archiveOrderSubmissions: SET archived_at=<now> WHERE id IN (…) AND
+        // archived_at IS NULL AND status IN (ready, write_failed, held)
+        const now = params[0];
+        const archivable = new Set(["ready", "write_failed", "held"]);
+        const ids = new Set(params.slice(1).map(Number));
+        let changes = 0;
+        for (const order of orders.values()) {
+          if (
+            ids.has(order.id) &&
+            order.archived_at == null &&
+            archivable.has(order.status)
+          ) {
+            order.archived_at = now;
+            changes += 1;
+          }
+        }
+        return { changes };
+      }
+      if (
+        sql.includes("UPDATE orders SET archived_at = NULL WHERE id IN")
+      ) {
+        const ids = new Set(params.map(Number));
+        let changes = 0;
+        for (const order of orders.values()) {
+          if (ids.has(order.id) && order.archived_at != null) {
+            order.archived_at = null;
+            changes += 1;
+          }
+        }
+        return { changes };
       }
       if (sql.includes("INSERT INTO order_lines(")) {
         const [
@@ -995,13 +1052,26 @@ test("order-submission routes are forbidden for a non-owner admin (salesman) log
     });
     const { order_id: orderId } = await submitResponse.json();
 
-    const response0 = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
-      headers: { Cookie: salespersonCookie },
-    });
-    assert.equal(response0.status, 403);
+    for (const path of [
+      "/api/admin/order-submissions",
+      "/api/admin/order-submissions/archive",
+      "/api/admin/order-submissions/unarchive",
+    ]) {
+      const method = path.endsWith("submissions") ? "GET" : "POST";
+      const forbidden = await fetch(`${app.baseUrl}${path}`, {
+        method,
+        headers: { "Content-Type": "application/json", Cookie: salespersonCookie },
+        ...(method === "POST"
+          ? { body: JSON.stringify({ ids: [orderId] }) }
+          : {}),
+      });
+      assert.equal(forbidden.status, 403, `${path} should 403 for a salesman`);
+      await forbidden.arrayBuffer();
+    }
 
     const untouchedOrder = app.db.orders.get(orderId);
     assert.equal(untouchedOrder.status, "ready");
+    assert.equal(untouchedOrder.archived_at, null);
 
     const ownerCookie = await app.loginCookie();
     const response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
@@ -1010,6 +1080,72 @@ test("order-submission routes are forbidden for a non-owner admin (salesman) log
     assert.equal(response.status, 200);
     const listPayload = await response.json();
     assert.equal(listPayload.items.length, 1);
+  } finally {
+    await app.close();
+  }
+});
+
+test("the order-submissions list rejects a bad filter date and the archive round-trip works", async () => {
+  const app = await startTestApp();
+
+  try {
+    const cookie = await app.loginCookie();
+    const submit = await fetch(`${app.baseUrl}/api/orders/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie },
+      body: JSON.stringify({
+        customerCode: "C001",
+        items: [{ code: "P001", qty: 2 }],
+      }),
+    });
+    const { order_id: orderId } = await submit.json();
+
+    // Bad ?from → 400.
+    let response = await fetch(
+      `${app.baseUrl}/api/admin/order-submissions?from=2026-13-40`,
+      { headers: { Cookie: cookie } },
+    );
+    assert.equal(response.status, 400);
+    await response.arrayBuffer();
+
+    // Archive it → leaves the default view, comes back under ?archived=1.
+    response = await fetch(
+      `${app.baseUrl}/api/admin/order-submissions/archive`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify({ ids: [orderId] }),
+      },
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { archived: 1, skipped: [] });
+
+    response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: cookie },
+    });
+    assert.equal((await response.json()).items.length, 0);
+
+    response = await fetch(
+      `${app.baseUrl}/api/admin/order-submissions?archived=1`,
+      { headers: { Cookie: cookie } },
+    );
+    assert.equal((await response.json()).items[0].id, orderId);
+
+    // Unarchive → back in the default view.
+    response = await fetch(
+      `${app.baseUrl}/api/admin/order-submissions/unarchive`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify({ ids: [orderId] }),
+      },
+    );
+    assert.deepEqual(await response.json(), { unarchived: 1 });
+
+    response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+      headers: { Cookie: cookie },
+    });
+    assert.equal((await response.json()).items[0].id, orderId);
   } finally {
     await app.close();
   }

@@ -24,6 +24,8 @@ test("orders carries the ES1 writer lifecycle columns", async () => {
       "es1_write_attempts",
       // The exact branch code the ΠΑΡ writer resolves the ES1 delivery site from.
       "customer_substore_code",
+      // Reversible soft-archive for the admin panel's "Clear".
+      "archived_at",
     ]) {
       assert.ok(byName.has(name), `orders.${name} should exist`);
     }

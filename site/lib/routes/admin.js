@@ -273,20 +273,70 @@ export function registerAdminCustomerRoutes(app, context) {
 }
 
 export function registerAdminOrderSubmissionRoutes(app, context) {
-  const { requireOwnerAdmin, db, listOrderSubmissions, logRouteError } = context;
+  const {
+    requireOwnerAdmin,
+    db,
+    listOrderSubmissions,
+    archiveOrderSubmissions,
+    unarchiveOrderSubmissions,
+    validateListFilterDate,
+    logRouteError,
+  } = context;
 
-  // Read-only. The approve/reject routes were removed with the approval step - a
-  // captured order now flows straight to the viomes_db ΠΑΡ writer, which owns every
-  // status transition on the DB itself. This endpoint just exposes the pipeline.
+  // Read-only feed. The approve/reject routes were removed with the approval step - a
+  // captured order flows straight to the viomes_db ΠΑΡ writer, which owns every status
+  // transition on the DB itself. This endpoint just exposes the pipeline, with optional
+  // ?from=YYYY-MM-DD&to=YYYY-MM-DD date-range and ?archived=1 (the un-archive view).
   app.get("/api/admin/order-submissions", requireOwnerAdmin, async (req, res) => {
     try {
-      const items = await listOrderSubmissions(db);
+      const from = validateListFilterDate(req.query.from, "Από ημερομηνία");
+      const to = validateListFilterDate(req.query.to, "Έως ημερομηνία");
+      const archived = ["1", "true", "yes"].includes(
+        String(req.query.archived || "").toLowerCase(),
+      );
+      const items = await listOrderSubmissions(db, { from, to, archived });
       res.json({ items });
     } catch (error) {
       logRouteError(error);
-      res.status(500).json({ error: String(error) });
+      res
+        .status(error.status || 500)
+        .json({ error: error.message || String(error) });
     }
   });
+
+  // Soft-archive (reversible). Body { ids: number[] }. 'writing' / 'written' rows are
+  // refused and returned in `skipped`; there is no hard-delete endpoint.
+  app.post(
+    "/api/admin/order-submissions/archive",
+    requireOwnerAdmin,
+    async (req, res) => {
+      try {
+        const result = await archiveOrderSubmissions(db, req.body?.ids);
+        res.json(result);
+      } catch (error) {
+        logRouteError(error);
+        res
+          .status(error.status || 500)
+          .json({ error: error.message || String(error) });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/order-submissions/unarchive",
+    requireOwnerAdmin,
+    async (req, res) => {
+      try {
+        const result = await unarchiveOrderSubmissions(db, req.body?.ids);
+        res.json(result);
+      } catch (error) {
+        logRouteError(error);
+        res
+          .status(error.status || 500)
+          .json({ error: error.message || String(error) });
+      }
+    },
+  );
 }
 
 export function registerAdminRoutes(app, context) {

@@ -850,6 +850,17 @@ export async function initDatabaseSchema({ db, kind }) {
     "es1_write_attempts",
     `es1_write_attempts ${typeInt} NOT NULL DEFAULT 0`,
   );
+  // Soft-archive for the admin "Νέες παραγγελίες πωλητών" panel. "Clear" there is
+  // reversible: an owner-admin sets archived_at to hide test / stale rows from the
+  // default view (and the viomes_db ΠΑΡ writer skips archived rows once its own probe
+  // for this column passes); un-archive clears it again. Never a hard DELETE.
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "archived_at",
+    `archived_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
   await ensureColumn(
     db,
     kind,
@@ -922,6 +933,15 @@ export async function initDatabaseSchema({ db, kind }) {
     "orders",
     "idx_orders_status_submitted_at",
     "(status, submitted_at)",
+  );
+  // The admin panel's default query is status IN (…) AND archived_at IS NULL ordered
+  // by submitted_at; the writer's claim is status='ready' AND archived_at IS NULL.
+  await ensureIndex(
+    db,
+    kind,
+    "orders",
+    "idx_orders_status_archived_submitted",
+    "(status, archived_at, submitted_at)",
   );
   await ensureColumn(
     db,

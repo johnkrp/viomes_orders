@@ -28,6 +28,51 @@ export const WRITER_LIFECYCLE_STATUSES = [
   "held",
 ];
 
+// Statuses whose rows the admin panel may soft-archive. A row the writer is mid-flight
+// on ('writing') or has already turned into a real ΠΑΡ ('written') is never archivable
+// from here — archiving 'written' would hide a document that can only be cancelled in
+// ES1 (transition 157), not here.
+export const ARCHIVABLE_STATUSES = ["ready", "write_failed", "held"];
+
+// Filter-date validator for the admin panel's από/έως inputs. Unlike
+// validateOptionalOrderDate this has NO ±day window — filtering months back is
+// legitimate — it only rejects a value that isn't a real YYYY-MM-DD date.
+export function validateListFilterDate(value, label) {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const error = new Error(`${label} must be a date in YYYY-MM-DD format.`);
+    error.status = 400;
+    throw error;
+  }
+  const parsed = new Date(`${text}T00:00:00Z`);
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== text
+  ) {
+    const error = new Error(`${label} is not a real date.`);
+    error.status = 400;
+    throw error;
+  }
+  return text;
+}
+
+function nextDayString(dateStr) {
+  const date = new Date(`${dateStr}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function normalizeIdList(ids) {
+  if (!Array.isArray(ids)) return [];
+  const seen = new Set();
+  for (const raw of ids) {
+    const numeric = Number(raw);
+    if (Number.isInteger(numeric) && numeric > 0) seen.add(numeric);
+  }
+  return [...seen];
+}
+
 /**
  * Normalized signature of an order's lines: the sorted "code:qty" list joined with "|".
  * Line order and object identity do not matter - two submissions with the same set of
@@ -391,22 +436,44 @@ export async function createOrderSubmission(db, submission, { pricingClient } = 
  * action here any more - it shows where each captured order sits in the ES1 writer
  * lifecycle (ready / writing / written / write_failed / held). Bounded so it cannot grow
  * without limit as 'written' rows accumulate.
+ *
+ * Options:
+ *   from / to  — inclusive YYYY-MM-DD bounds on submitted_at; `to` is expanded to an
+ *                exclusive next-day boundary so from === to selects that single day.
+ *   archived   — false (default) lists live rows (archived_at IS NULL); true lists the
+ *                soft-archived rows for the un-archive view.
  */
-export async function listOrderSubmissions(db) {
+export async function listOrderSubmissions(
+  db,
+  { from = null, to = null, archived = false } = {},
+) {
   const statusPlaceholders = WRITER_LIFECYCLE_STATUSES.map(() => "?").join(", ");
+  const conditions = [`status IN (${statusPlaceholders})`];
+  const params = [...WRITER_LIFECYCLE_STATUSES];
+
+  conditions.push(archived ? "archived_at IS NOT NULL" : "archived_at IS NULL");
+  if (from) {
+    conditions.push("submitted_at >= ?");
+    params.push(from);
+  }
+  if (to) {
+    conditions.push("submitted_at < ?");
+    params.push(nextDayString(to));
+  }
+
   const orders = await db.all(
     `
     SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
            desired_delivery_date, dispatch_date, es1_order_channel_code,
            total_qty_pieces, total_net_value, needs_manual_price_review, status,
            es1_document_code, es1_written_at, es1_write_error, es1_write_attempts,
-           submitted_by, submitted_by_role, submitted_at
+           archived_at, submitted_by, submitted_by_role, submitted_at
     FROM orders
-    WHERE status IN (${statusPlaceholders})
+    WHERE ${conditions.join(" AND ")}
     ORDER BY submitted_at DESC
     LIMIT 200
   `,
-    WRITER_LIFECYCLE_STATUSES,
+    params,
   );
 
   if (!orders.length) return [];
@@ -464,3 +531,69 @@ export async function listOrderSubmissions(db) {
 // approveOrderSubmission / rejectOrderSubmission / setOrderSubmissionStatus were removed
 // with the approval step. Orders now move ready -> writing -> written / write_failed
 // under the viomes_db ΠΑΡ writer, which owns those transitions on the DB directly.
+
+/**
+ * Soft-archive rows for the admin panel's reversible "Clear". Every requested id is
+ * classified: archivable ids get archived_at stamped; the rest come back in `skipped`
+ * with the reason (a 'writing'/'written' row is refused, a missing id is reported, an
+ * already-archived id is a no-op). Never a DELETE.
+ */
+export async function archiveOrderSubmissions(db, ids) {
+  const cleanIds = normalizeIdList(ids);
+  if (!cleanIds.length) return { archived: 0, skipped: [] };
+
+  const placeholders = cleanIds.map(() => "?").join(", ");
+  const rows = await db.all(
+    `SELECT id, status, archived_at FROM orders WHERE id IN (${placeholders})`,
+    cleanIds,
+  );
+  const byId = new Map(rows.map((row) => [Number(row.id), row]));
+
+  const archivable = [];
+  const skipped = [];
+  for (const id of cleanIds) {
+    const row = byId.get(id);
+    if (!row) {
+      skipped.push({ id, status: null, reason: "not_found" });
+    } else if (row.archived_at) {
+      skipped.push({ id, status: row.status, reason: "already_archived" });
+    } else if (!ARCHIVABLE_STATUSES.includes(row.status)) {
+      skipped.push({ id, status: row.status, reason: "status_not_archivable" });
+    } else {
+      archivable.push(id);
+    }
+  }
+
+  if (archivable.length) {
+    const archivablePlaceholders = archivable.map(() => "?").join(", ");
+    const statusPlaceholders = ARCHIVABLE_STATUSES.map(() => "?").join(", ");
+    await db.run(
+      `
+        UPDATE orders
+        SET archived_at = ?
+        WHERE id IN (${archivablePlaceholders})
+          AND archived_at IS NULL
+          AND status IN (${statusPlaceholders})
+      `,
+      [new Date().toISOString(), ...archivable, ...ARCHIVABLE_STATUSES],
+    );
+  }
+
+  return { archived: archivable.length, skipped };
+}
+
+/**
+ * Reverse of archiveOrderSubmissions — clears archived_at so the row returns to the
+ * default panel view (and the ΠΑΡ writer can pick it up again). Owner-admin only.
+ */
+export async function unarchiveOrderSubmissions(db, ids) {
+  const cleanIds = normalizeIdList(ids);
+  if (!cleanIds.length) return { unarchived: 0 };
+
+  const placeholders = cleanIds.map(() => "?").join(", ");
+  const result = await db.run(
+    `UPDATE orders SET archived_at = NULL WHERE id IN (${placeholders}) AND archived_at IS NOT NULL`,
+    cleanIds,
+  );
+  return { unarchived: result?.changes ?? 0 };
+}

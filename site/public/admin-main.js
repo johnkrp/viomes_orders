@@ -34,8 +34,12 @@ import {
   openSelectedOrderInOrderForm as openSelectedOrderInOrderFormModule,
 } from "./admin-handoff.js";
 import {
+  archiveOrderSubmission as archiveOrderSubmissionModule,
+  archiveSelectedOrderSubmissions as archiveSelectedOrderSubmissionsModule,
   fetchOrderSubmissions as fetchOrderSubmissionsModule,
   toggleOrderSubmissionDetails as toggleOrderSubmissionDetailsModule,
+  toggleOrderSubmissionSelection as toggleOrderSubmissionSelectionModule,
+  unarchiveOrderSubmission as unarchiveOrderSubmissionModule,
 } from "./admin-orders.js";
 import {
   getBranchOptionLabel as getBranchOptionLabelModule,
@@ -90,6 +94,10 @@ assertAdminDomContract(elements);
 const state = {
   currentOrderSubmissions: [],
   expandedOrderSubmissionIds: new Set(),
+  orderSubmissionsSelectedIds: new Set(),
+  orderSubmissionsStale: false,
+  orderSubmissionsLastFetchAt: 0,
+  orderSubmissionsFetchInFlight: false,
   currentDetailedOrders: [],
   currentDetailedOpenOrders: [],
   currentDetailedPreApprovalOrders: [],
@@ -800,10 +808,14 @@ function getPreApprovalOrdersForTable() {
 }
 
 async function handleLogin(event) {
-  return handleLoginModule(moduleContext, event);
+  const result = await handleLoginModule(moduleContext, event);
+  // No-op unless the owner panel is now visible (module already did the first fetch).
+  startOrderSubmissionsAutoRefresh();
+  return result;
 }
 
 async function handleLogout() {
+  stopOrderSubmissionsAutoRefresh();
   return handleLogoutModule(moduleContext);
 }
 
@@ -880,13 +892,138 @@ function openRankedOrderForm() {
   return openRankedOrderFormModule(moduleContext);
 }
 
-function fetchOrderSubmissions() {
-  return fetchOrderSubmissionsModule(moduleContext);
+function fetchOrderSubmissions(options) {
+  return fetchOrderSubmissionsModule(moduleContext, options);
 }
 
 function toggleOrderSubmissionDetails(orderId) {
   return toggleOrderSubmissionDetailsModule(moduleContext, orderId);
 }
+
+function toggleOrderSubmissionSelection(orderId, checked) {
+  return toggleOrderSubmissionSelectionModule(moduleContext, orderId, checked);
+}
+
+function archiveOrderSubmission(orderId) {
+  return archiveOrderSubmissionModule(moduleContext, orderId);
+}
+
+function unarchiveOrderSubmission(orderId) {
+  return unarchiveOrderSubmissionModule(moduleContext, orderId);
+}
+
+function archiveSelectedOrderSubmissions() {
+  return archiveSelectedOrderSubmissionsModule(moduleContext);
+}
+
+// ── Order-submissions panel: date-range persistence, auto-refresh, freshness ──────
+const ORDER_SUBMISSIONS_RANGE_KEY = "viomes.admin.orders.range.v1";
+const ORDER_SUBMISSIONS_POLL_MS = 12_000;
+let orderSubmissionsPollTimer = null;
+let orderSubmissionsFreshnessTimer = null;
+
+function loadOrderSubmissionsRange() {
+  try {
+    const raw = window.localStorage.getItem(ORDER_SUBMISSIONS_RANGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed?.from && elements.orderSubmissionsFromDate) {
+      elements.orderSubmissionsFromDate.value = parsed.from;
+    }
+    if (parsed?.to && elements.orderSubmissionsToDate) {
+      elements.orderSubmissionsToDate.value = parsed.to;
+    }
+  } catch (_error) {
+    // A malformed/absent value just means "no saved range".
+  }
+  syncOrderSubmissionsFilterUi();
+}
+
+function saveOrderSubmissionsRange() {
+  try {
+    window.localStorage.setItem(
+      ORDER_SUBMISSIONS_RANGE_KEY,
+      JSON.stringify({
+        from: elements.orderSubmissionsFromDate?.value || "",
+        to: elements.orderSubmissionsToDate?.value || "",
+      }),
+    );
+  } catch (_error) {
+    // Storage disabled — the range just won't survive a reload.
+  }
+}
+
+function syncOrderSubmissionsFilterUi() {
+  const hasFilter = Boolean(
+    elements.orderSubmissionsFromDate?.value ||
+      elements.orderSubmissionsToDate?.value,
+  );
+  if (elements.orderSubmissionsClearFilterBtn) {
+    elements.orderSubmissionsClearFilterBtn.hidden = !hasFilter;
+  }
+}
+
+function refreshOrderSubmissionsFreshness() {
+  const el = elements.orderSubmissionsFreshness;
+  if (!el) return;
+  if (state.orderSubmissionsStale) {
+    el.textContent = "⚠ δεν ανανεώθηκε";
+    el.classList.add("is-stale");
+    return;
+  }
+  el.classList.remove("is-stale");
+  const at = state.orderSubmissionsLastFetchAt;
+  if (!at) {
+    el.textContent = "";
+    return;
+  }
+  const secs = Math.max(0, Math.round((Date.now() - at) / 1000));
+  el.textContent =
+    secs < 5 ? "Ενημερώθηκε μόλις τώρα" : `Ενημερώθηκε πριν ${secs} δευτ.`;
+}
+
+function orderSubmissionsPanelActive() {
+  return Boolean(
+    elements.orderSubmissionsPanel &&
+      !elements.orderSubmissionsPanel.hidden &&
+      document.visibilityState === "visible",
+  );
+}
+
+function startOrderSubmissionsAutoRefresh() {
+  stopOrderSubmissionsAutoRefresh();
+  if (!orderSubmissionsPanelActive()) return;
+  orderSubmissionsPollTimer = window.setInterval(() => {
+    if (!orderSubmissionsPanelActive()) return;
+    void fetchOrderSubmissions({ silent: true });
+  }, ORDER_SUBMISSIONS_POLL_MS);
+  orderSubmissionsFreshnessTimer = window.setInterval(
+    refreshOrderSubmissionsFreshness,
+    1000,
+  );
+}
+
+function stopOrderSubmissionsAutoRefresh() {
+  if (orderSubmissionsPollTimer) {
+    window.clearInterval(orderSubmissionsPollTimer);
+    orderSubmissionsPollTimer = null;
+  }
+  if (orderSubmissionsFreshnessTimer) {
+    window.clearInterval(orderSubmissionsFreshnessTimer);
+    orderSubmissionsFreshnessTimer = null;
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    if (orderSubmissionsPanelActive()) {
+      void fetchOrderSubmissions({ silent: true });
+      startOrderSubmissionsAutoRefresh();
+    }
+  } else {
+    stopOrderSubmissionsAutoRefresh();
+  }
+});
 
 const moduleContext = {
   apiBase: API_BASE,
@@ -925,6 +1062,8 @@ const moduleContext = {
   loadLatestImportMessage,
   normalizeSalesTimeRange,
   performCustomerSearch,
+  promptConfirm: (message) => window.prompt(message),
+  refreshOrderSubmissionsFreshness,
   renderLoadingNotice,
   renderSearchResults,
   renderStats,
@@ -980,10 +1119,42 @@ elements.detailedOrdersList?.addEventListener("click", (event) => {
   openSelectedOrderInOrderForm(trigger.getAttribute("data-open-order-form"));
 });
 
-elements.refreshOrderSubmissionsBtn?.addEventListener(
+elements.refreshOrderSubmissionsBtn?.addEventListener("click", () => {
+  void fetchOrderSubmissions();
+});
+
+function applyOrderSubmissionsFilter() {
+  saveOrderSubmissionsRange();
+  syncOrderSubmissionsFilterUi();
+  void fetchOrderSubmissions();
+}
+
+elements.orderSubmissionsApplyFilterBtn?.addEventListener(
   "click",
-  fetchOrderSubmissions,
+  applyOrderSubmissionsFilter,
 );
+elements.orderSubmissionsFromDate?.addEventListener(
+  "change",
+  applyOrderSubmissionsFilter,
+);
+elements.orderSubmissionsToDate?.addEventListener(
+  "change",
+  applyOrderSubmissionsFilter,
+);
+elements.orderSubmissionsClearFilterBtn?.addEventListener("click", () => {
+  if (elements.orderSubmissionsFromDate) {
+    elements.orderSubmissionsFromDate.value = "";
+  }
+  if (elements.orderSubmissionsToDate) elements.orderSubmissionsToDate.value = "";
+  applyOrderSubmissionsFilter();
+});
+elements.orderSubmissionsShowArchivedToggle?.addEventListener("change", () => {
+  state.orderSubmissionsSelectedIds?.clear?.();
+  void fetchOrderSubmissions();
+});
+elements.orderSubmissionsArchiveSelectedBtn?.addEventListener("click", () => {
+  void archiveSelectedOrderSubmissions();
+});
 
 elements.orderSubmissionsBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-action]");
@@ -991,10 +1162,22 @@ elements.orderSubmissionsBody?.addEventListener("click", (event) => {
   const orderId = button.getAttribute("data-order-id");
   const action = button.getAttribute("data-action");
   if (!orderId) return;
-  // Expand/collapse the line detail is the only action left on this read-only panel.
   if (action === "toggle") {
     toggleOrderSubmissionDetails(orderId);
+  } else if (action === "archive") {
+    void archiveOrderSubmission(orderId);
+  } else if (action === "unarchive") {
+    void unarchiveOrderSubmission(orderId);
   }
+});
+
+elements.orderSubmissionsBody?.addEventListener("change", (event) => {
+  const box = event.target.closest("[data-archive-select]");
+  if (!box) return;
+  toggleOrderSubmissionSelection(
+    box.getAttribute("data-order-id"),
+    box.checked,
+  );
 });
 
 elements.productSalesMetric?.addEventListener("change", () => {
@@ -1246,14 +1429,17 @@ if (restoredAdminState?.authenticatedLikely) {
   restoreAdminStateView(restoredAdminState);
 }
 
+loadOrderSubmissionsRange();
+
 refreshSession({ silent: false }).then((me) => {
   if (me.authenticated) {
     restoreAdminStateView(restoredAdminState);
     focusPrimarySearchField();
     if (me.is_owner) {
-      void fetchOrderSubmissions();
+      void fetchOrderSubmissions().then(() => startOrderSubmissionsAutoRefresh());
     }
   } else {
+    stopOrderSubmissionsAutoRefresh();
     resetStats();
     resetSearchResults();
     clearAdminState();

@@ -113,7 +113,37 @@
                   γίνεται πλέον στο ES1 (Πιστωτικός Έλεγχος).
                 </p>
               </div>
-              <div class="admin-inline-controls">
+              <div class="admin-inline-controls admin-order-controls">
+                <label class="admin-order-filter-field">
+                  <span>Από</span>
+                  <input id="orderSubmissionsFromDate" type="date" />
+                </label>
+                <label class="admin-order-filter-field">
+                  <span>Έως</span>
+                  <input id="orderSubmissionsToDate" type="date" />
+                </label>
+                <button
+                  id="orderSubmissionsApplyFilterBtn"
+                  type="button"
+                  class="btn ghost"
+                >
+                  Εφαρμογή
+                </button>
+                <button
+                  id="orderSubmissionsClearFilterBtn"
+                  type="button"
+                  class="btn ghost admin-order-clear-filter"
+                  hidden
+                >
+                  Καθαρισμός φίλτρου
+                </button>
+                <label class="admin-order-archived-toggle">
+                  <input
+                    id="orderSubmissionsShowArchivedToggle"
+                    type="checkbox"
+                  />
+                  <span>Αρχειοθετημένες</span>
+                </label>
                 <button
                   id="refreshOrderSubmissionsBtn"
                   type="button"
@@ -121,7 +151,28 @@
                 >
                   Ανανέωση
                 </button>
+                <span
+                  id="orderSubmissionsFreshness"
+                  class="admin-order-freshness muted"
+                  role="status"
+                  aria-live="polite"
+                ></span>
               </div>
+            </div>
+
+            <div
+              id="orderSubmissionsBulkBar"
+              class="admin-order-bulk-bar"
+              hidden
+            >
+              <span id="orderSubmissionsSelectionInfo">0 επιλεγμένες</span>
+              <button
+                id="orderSubmissionsArchiveSelectedBtn"
+                type="button"
+                class="btn ghost"
+              >
+                Αρχειοθέτηση επιλεγμένων
+              </button>
             </div>
 
             <div class="admin-table-wrap">
@@ -137,11 +188,12 @@
                     <th>Επιθυμητή παραλαβή</th>
                     <th>Υποβλήθηκε</th>
                     <th>Κατάσταση ES1</th>
+                    <th class="admin-order-actions-col">Ενέργειες</th>
                   </tr>
                 </thead>
                 <tbody id="orderSubmissionsBody">
                   <tr>
-                    <td colspan="9" class="admin-table-empty">
+                    <td colspan="10" class="admin-table-empty">
                       Δεν υπάρχουν παραγγελίες προς καταχώρηση.
                     </td>
                   </tr>

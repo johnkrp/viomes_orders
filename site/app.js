@@ -30,9 +30,12 @@ import {
 import { createPricingServiceClient } from "./lib/pricing-client.js";
 import { createPricingUrlSource } from "./lib/pricing-url-source.js";
 import {
+  archiveOrderSubmissions,
   createOrderSubmission,
   listOrderSubmissions,
   resolveOrderSubmissionIdentity,
+  unarchiveOrderSubmissions,
+  validateListFilterDate,
   validateOrderSubmission,
 } from "./lib/order-submissions.js";
 import {
@@ -779,6 +782,9 @@ export function createApp({
     requireOwnerAdmin,
     db,
     listOrderSubmissions,
+    archiveOrderSubmissions,
+    unarchiveOrderSubmissions,
+    validateListFilterDate,
     logRouteError,
   });
 
