@@ -11,29 +11,53 @@ function normalizeBaseUrl(value) {
 }
 
 /**
- * Returns null (not a throwing factory) when no base URL is configured, so callers can
- * treat "pricing service not set up" (dev/test, or before SRV2019 deployment) as a
- * distinct, expected case from "pricing service configured but unreachable" - the two
- * must NOT be handled the same way. See order-value-estimate.js.
+ * Returns null (not a throwing factory) when no base URL is configured and no dynamic
+ * `urlSource` was given either, so callers can treat "pricing service not set up"
+ * (dev/test, or before deployment) as a distinct, expected case from "pricing service
+ * configured but unreachable" - the two must NOT be handled the same way. See
+ * order-value-estimate.js.
+ *
+ * `options.urlSource`, when given (see pricing-url-source.js), is an object with an
+ * async `getUrl()` re-resolved on every call instead of a `baseUrl` fixed at
+ * construction time - this is what lets the live process pick up a changed pricing
+ * service URL without a restart. When the resolved URL is currently empty (file not
+ * written yet, tunnel not up), `priceLines` throws an error tagged
+ * `code: "PRICING_NOT_CONFIGURED"` rather than attempting a request - callers use that
+ * to fall back to the heuristic estimate exactly as they would for a null client.
  */
 export function createPricingServiceClient(options = {}) {
-  const baseUrl = normalizeBaseUrl(options.baseUrl);
-  if (!baseUrl) return null;
+  const urlSource = options.urlSource || null;
+  const staticBaseUrl = normalizeBaseUrl(options.baseUrl);
+  if (!urlSource && !staticBaseUrl) return null;
 
   const config = {
-    baseUrl,
     apiKey: String(options.apiKey || "").trim(),
     timeoutMs: Math.max(Number(options.timeoutMs || 8000), 1000),
   };
 
+  async function resolveBaseUrl() {
+    if (urlSource) return normalizeBaseUrl(await urlSource.getUrl());
+    return staticBaseUrl;
+  }
+
   return {
     name: "pricing-service",
+    async isConfigured() {
+      return Boolean(await resolveBaseUrl());
+    },
     async priceLines(customerCode, items) {
+      const baseUrl = await resolveBaseUrl();
+      if (!baseUrl) {
+        const error = new Error("Pricing service is not currently configured.");
+        error.code = "PRICING_NOT_CONFIGURED";
+        throw error;
+      }
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
       try {
-        const response = await fetch(`${config.baseUrl}/price-lines`, {
+        const response = await fetch(`${baseUrl}/price-lines`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

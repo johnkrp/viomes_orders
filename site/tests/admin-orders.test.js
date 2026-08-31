@@ -183,7 +183,38 @@ test("empty queue renders the placeholder across all columns", () => {
   const context = buildContext([]);
   renderOrderSubmissions(context);
 
-  // 9 since the queue gained an "Επιθυμητή παραλαβή" column.
+  // 9 columns: the last one is now the read-only "Κατάσταση ES1", not the actions cell.
   assert.match(context.body.innerHTML, /colspan="9"/);
-  assert.match(context.body.innerHTML, /Δεν υπάρχουν εκκρεμείς παραγγελίες/);
+  assert.match(context.body.innerHTML, /Δεν υπάρχουν παραγγελίες προς καταχώρηση/);
+});
+
+test("the row shows the ES1 writer status and never an approve/reject control", () => {
+  const context = buildContext([{ ...sampleOrder, status: "ready" }]);
+  renderOrderSubmissions(context);
+
+  assert.match(context.body.innerHTML, /Έτοιμη για ES1/);
+  assert.doesNotMatch(context.body.innerHTML, /data-action="approve"/);
+  assert.doesNotMatch(context.body.innerHTML, /data-action="reject"/);
+  assert.doesNotMatch(context.body.innerHTML, /data-dispatch-input/);
+});
+
+test("a written order shows its ES1 document code; a failed one shows the error as a tooltip", () => {
+  const written = {
+    ...sampleOrder,
+    status: "written",
+    es1_document_code: "ΠΑΡ-Μ-37411",
+  };
+  const failed = {
+    ...sampleOrder,
+    id: 8,
+    status: "write_failed",
+    es1_write_error: "customer GID not found",
+  };
+  const context = buildContext([written, failed]);
+  renderOrderSubmissions(context);
+
+  assert.match(context.body.innerHTML, /ΠΑΡ-Μ-37411/);
+  assert.match(context.body.innerHTML, /admin-order-status-written/);
+  assert.match(context.body.innerHTML, /admin-order-status-write-failed/);
+  assert.match(context.body.innerHTML, /title="customer GID not found"/);
 });

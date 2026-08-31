@@ -37,7 +37,7 @@ export function registerPublicRoutes(app, context) {
       db_client: dbClient?.kind || null,
       customer_stats_provider: customerStatsProvider?.name || null,
       customer_stats_provider_mode: customerStatsProvider?.mode || null,
-      pricing_source: pricingClient ? "live" : "heuristic",
+      pricing_source: (await pricingClient?.isConfigured()) ? "live" : "heuristic",
       db_architecture: {
         raw_fact_table: IMPORTED_SALES_ARCHITECTURE.rawFactTable,
         projection_tables: IMPORTED_SALES_ARCHITECTURE.projectionTables,

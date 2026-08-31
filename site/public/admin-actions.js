@@ -19,6 +19,7 @@ export async function handleLogin(context, event) {
       body: JSON.stringify({ username, password }),
     });
 
+    context.clearAdminState();
     context.setAuthenticatedUI(result);
     void context.loadLatestImportMessage(result);
     if (result.is_owner) {

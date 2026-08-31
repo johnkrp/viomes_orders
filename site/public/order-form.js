@@ -32,6 +32,7 @@ let customerPickerSearchToken = 0;
 let customerBranches = [];
 const NO_SUBSTORE_OPTION = {
   value: "",
+  code: "",
   label: "— Χωρίς υποκατάστημα —",
   text: "— Χωρίς υποκατάστημα —",
 };
@@ -251,7 +252,9 @@ function buildCustomerSubstoreOptions(branches) {
     const text = branch.branch_code && branch.branch_code !== label
       ? `${label} · ${branch.branch_code}`
       : label;
-    options.push({ value: label, label, text });
+    // branch_code is byte-identical to ES1's ESGOSites.Code and is what the ΠΑΡ writer
+    // resolves the delivery site from (the free-text label alone only resolves ~85%).
+    options.push({ value: label, code: branch.branch_code || "", label, text });
   }
   return options;
 }
@@ -1731,6 +1734,7 @@ async function submitOrderToBackend(meta) {
             : "",
         customerName: meta.payload.customer_name,
         customerSubstore: meta.payload.customer_substore,
+        customerSubstoreCode: meta.payload.customer_substore_code,
         customerEmail: meta.payload.customer_email,
         notes: meta.payload.notes,
         desiredDeliveryDate: meta.payload.desired_delivery_date,
@@ -1778,6 +1782,12 @@ function prepareOrderMeta() {
     document.getElementById("customerName")?.value?.trim() || "";
   const customerSubstore =
     document.getElementById("customerSubstore")?.value?.trim() || "";
+  // The exact branch_code of the picked substore option, for the ΠΑΡ writer's
+  // delivery-site resolver. Re-derived from the selected label so a restored draft
+  // (which only stores the label) still carries it.
+  const customerSubstoreCode =
+    customerSubstoreOptions.find((opt) => opt.value === customerSubstore)?.code ||
+    "";
   const customerEmail =
     document.getElementById("customerEmail")?.value?.trim() || "";
   const notes = els.notes?.value?.trim() || "";
@@ -1790,6 +1800,7 @@ function prepareOrderMeta() {
     payload: {
       customer_name: customerName,
       customer_substore: customerSubstore,
+      customer_substore_code: customerSubstoreCode,
       customer_email: customerEmail,
       notes,
       desired_delivery_date: desiredDeliveryDate,
@@ -1818,18 +1829,18 @@ async function submitOrderDirectlyToAdmin() {
   if (!meta) return;
 
   const confirmed = window.confirm(
-    "Η παραγγελία θα καταχωρηθεί απευθείας στην ουρά έγκρισης. Θέλετε να συνεχίσετε;",
+    "Η παραγγελία θα καταχωρηθεί για καταχώρηση στο ES1. Θέλετε να συνεχίσετε;",
   );
   if (!confirmed) return;
 
   if (els.submitToAdminBtn) els.submitToAdminBtn.disabled = true;
-  els.submitStatus.textContent = "Καταχώρηση παραγγελίας στο Admin...";
+  els.submitStatus.textContent = "Καταχώρηση παραγγελίας...";
 
   try {
     const submission = await submitOrderToBackend(meta);
     els.submitStatus.textContent = submission.ok
-      ? `Καταχωρήθηκε η παραγγελία (#${submission.orderId}) στο Admin.`
-      : `Σφάλμα: δεν καταχωρήθηκε η παραγγελία στο Admin (${submission.error?.message || "σφάλμα"}).`;
+      ? `Καταχωρήθηκε η παραγγελία (#${submission.orderId}).`
+      : `Σφάλμα: δεν καταχωρήθηκε η παραγγελία (${submission.error?.message || "σφάλμα"}).`;
   } finally {
     if (els.submitToAdminBtn) els.submitToAdminBtn.disabled = false;
   }

@@ -174,10 +174,6 @@ function createDbFixture() {
             }
           : undefined;
       }
-      if (sql.includes("SELECT id, status FROM orders WHERE id = ?")) {
-        const order = orders.get(Number(params[0]));
-        return order ? { id: order.id, status: order.status } : undefined;
-      }
       throw new Error(`Unexpected db.get SQL: ${sql}`);
     },
     async all(sql, params = []) {
@@ -191,13 +187,41 @@ function createDbFixture() {
             pieces_per_package: product.pieces_per_package ?? 0,
           }));
       }
-      if (
-        sql.includes("FROM orders") &&
-        sql.includes("WHERE status = 'pending'")
-      ) {
+      // Read-only pipeline feed: WHERE status IN (ready, writing, written, write_failed, held)
+      if (sql.includes("FROM orders") && sql.includes("WHERE status IN")) {
+        const wanted = new Set(params);
         return [...orders.values()]
-          .filter((order) => order.status === "pending")
-          .sort((a, b) => (a.submitted_at < b.submitted_at ? 1 : -1));
+          .filter((order) => wanted.has(order.status))
+          .sort((a, b) => (a.submitted_at < b.submitted_at ? 1 : -1))
+          .slice(0, 200);
+      }
+      // Double-submit guard: recent lines for one customer, joined to products.
+      if (
+        sql.includes("FROM orders o") &&
+        sql.includes("JOIN order_lines ol ON ol.order_id = o.id")
+      ) {
+        const [customerCode, cutoff] = params;
+        const matchingOrderIds = new Set(
+          [...orders.values()]
+            .filter(
+              (order) =>
+                order.customer_code === customerCode &&
+                String(order.submitted_at) >= String(cutoff),
+            )
+            .map((order) => order.id),
+        );
+        return orderLines
+          .filter((line) => matchingOrderIds.has(line.order_id))
+          .map((line) => {
+            const product = [...products.values()].find(
+              (candidate) => candidate.id === line.product_id,
+            );
+            return {
+              order_id: line.order_id,
+              qty_pieces: line.qty_pieces,
+              code: product?.code,
+            };
+          });
       }
       if (
         sql.includes("FROM order_lines ol") &&
@@ -251,6 +275,7 @@ function createDbFixture() {
           customerEmail,
           customerCode,
           customerSubstore,
+          customerSubstoreCode,
           notes,
           desiredDeliveryDate,
           es1OrderChannelCode,
@@ -269,6 +294,7 @@ function createDbFixture() {
           customer_email: customerEmail,
           customer_code: customerCode,
           customer_substore: customerSubstore,
+          customer_substore_code: customerSubstoreCode,
           notes,
           desired_delivery_date: desiredDeliveryDate,
           dispatch_date: null,
@@ -276,13 +302,15 @@ function createDbFixture() {
           total_qty_pieces: totalQtyPieces,
           total_net_value: totalNetValue,
           needs_manual_price_review: needsManualPriceReview,
-          status: "pending",
+          status: "ready",
           submitted_by: submittedBy,
           submitted_by_role: submittedByRole,
           submitted_at: submittedAt,
           created_at: createdAt,
-          approved_by: null,
-          approved_at: null,
+          es1_document_code: null,
+          es1_written_at: null,
+          es1_write_error: null,
+          es1_write_attempts: 0,
         });
         return { changes: 1, lastID: id };
       }
@@ -307,17 +335,6 @@ function createDbFixture() {
           price_source: priceSource,
         });
         return { changes: 1, lastID: nextOrderLineId - 1 };
-      }
-      if (sql.includes("UPDATE orders") && sql.includes("SET status = ?")) {
-        const [status, approvedBy, approvedAt, dispatchDate, orderId] = params;
-        const order = orders.get(Number(orderId));
-        if (order) {
-          order.status = status;
-          order.approved_by = approvedBy;
-          order.approved_at = approvedAt;
-          order.dispatch_date = dispatchDate;
-        }
-        return { changes: order ? 1 : 0, lastID: 0 };
       }
       throw new Error(`Unexpected db.run SQL: ${sql} :: ${JSON.stringify(params)}`);
     },
@@ -388,7 +405,7 @@ async function startTestApp() {
   };
 }
 
-test("order submission endpoint validates and persists a pending order", async () => {
+test("order submission endpoint validates and persists a writer-ready order", async () => {
   const app = await startTestApp();
 
   try {
@@ -443,7 +460,8 @@ test("order submission endpoint validates and persists a pending order", async (
       headers: { "Content-Type": "application/json", Cookie: cookie },
       body: JSON.stringify({
         customerCode: "C001",
-        customerSubstore: "Branch 1",
+        customerSubstore: "ΤΟΜΠΑΖΗ - (040)",
+        customerSubstoreCode: "5040",
         customerEmail: "buyer@example.com",
         notes: "Please ship fast",
         items: [
@@ -460,7 +478,13 @@ test("order submission endpoint validates and persists a pending order", async (
     const order = app.db.orders.get(payload.order_id);
     assert.equal(order.customer_name, "Alpha Store");
     assert.equal(order.customer_code, "C001");
-    assert.equal(order.status, "pending");
+    // No approval step: a captured order is immediately 'ready' for the ΠΑΡ writer.
+    assert.equal(order.status, "ready");
+    // The free-text label and the exact branch code both persist - the writer resolves
+    // the ES1 delivery site from the code, since big chains label a store with a
+    // different number than its real code.
+    assert.equal(order.customer_substore, "ΤΟΜΠΑΖΗ - (040)");
+    assert.equal(order.customer_substore_code, "5040");
     assert.equal(order.total_qty_pieces, 5);
     assert.equal(order.submitted_by, "admin");
     assert.equal(order.submitted_by_role, "staff");
@@ -500,7 +524,7 @@ test("order submission endpoint stamps the session's real customer_code even if 
   }
 });
 
-test("admin order-submission routes require auth and support list/approve/reject", async () => {
+test("the admin order-submissions feed is owner-gated and read-only", async () => {
   const app = await startTestApp();
 
   try {
@@ -526,6 +550,10 @@ test("admin order-submission routes require auth and support list/approve/reject
     const listPayload = await response.json();
     assert.equal(listPayload.items.length, 1);
     assert.equal(listPayload.items[0].id, orderId);
+    // Fresh order sits in 'ready' with no ES1 write recorded yet.
+    assert.equal(listPayload.items[0].status, "ready");
+    assert.equal(listPayload.items[0].es1_document_code, null);
+    assert.equal(listPayload.items[0].es1_write_attempts, 0);
     assert.deepEqual(listPayload.items[0].lines, [
       {
         code: "P001",
@@ -541,67 +569,81 @@ test("admin order-submission routes require auth and support list/approve/reject
     assert.equal(listPayload.items[0].total_net_value, 0);
     assert.equal(listPayload.items[0].value_is_partial, true);
 
-    response = await fetch(
-      `${app.baseUrl}/api/admin/order-submissions/${orderId}/approve`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Cookie: cookie },
-      },
-    );
-    assert.equal(response.status, 200);
+    // The approve/reject endpoints are gone entirely.
+    for (const action of ["approve", "reject"]) {
+      response = await fetch(
+        `${app.baseUrl}/api/admin/order-submissions/${orderId}/${action}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Cookie: cookie },
+        },
+      );
+      assert.equal(response.status, 404, `${action} should 404`);
+      await response.arrayBuffer();
+    }
 
-    const approvedOrder = app.db.orders.get(orderId);
-    assert.equal(approvedOrder.status, "approved");
-    assert.equal(approvedOrder.approved_by, "admin");
-
-    response = await fetch(
-      `${app.baseUrl}/api/admin/order-submissions/${orderId}/approve`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Cookie: cookie },
-        body: JSON.stringify({}),
-      },
-    );
-    assert.equal(response.status, 409);
-
+    // The order is still there, untouched.
     response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
       headers: { Cookie: cookie },
     });
-    const emptyListPayload = await response.json();
-    assert.equal(emptyListPayload.items.length, 0);
+    const stillListed = await response.json();
+    assert.equal(stillListed.items.length, 1);
+    assert.equal(stillListed.items[0].status, "ready");
   } finally {
     await app.close();
   }
 });
 
-test("admin order-submission reject sets status to rejected", async () => {
+test("a genuine double-submit is rejected with 409, a different order is not", async () => {
   const app = await startTestApp();
 
   try {
     const cookie = await app.loginCookie();
-
-    const submitResponse = await fetch(`${app.baseUrl}/api/orders/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Cookie: cookie },
-      body: JSON.stringify({
-        customerCode: "C002",
-        items: [{ code: "P002", qty: 1 }],
-      }),
-    });
-    const { order_id: orderId } = await submitResponse.json();
-
-    const response = await fetch(
-      `${app.baseUrl}/api/admin/order-submissions/${orderId}/reject`,
-      {
+    const body = {
+      customerCode: "C001",
+      items: [
+        { code: "P001", qty: 3 },
+        { code: "P002", qty: 6 },
+      ],
+    };
+    const post = (payload) =>
+      fetch(`${app.baseUrl}/api/orders/submit`, {
         method: "POST",
-        headers: { Cookie: cookie },
-      },
-    );
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify(payload),
+      });
+
+    let response = await post(body);
     assert.equal(response.status, 200);
 
-    const rejectedOrder = app.db.orders.get(orderId);
-    assert.equal(rejectedOrder.status, "rejected");
-    assert.equal(rejectedOrder.approved_by, "admin");
+    // Same customer, same lines (order and object shape irrelevant) within the window.
+    response = await post({
+      customerCode: "C001",
+      items: [
+        { code: "P002", qty: 6 },
+        { code: "P001", qty: 3 },
+      ],
+    });
+    assert.equal(response.status, 409);
+    const payload = await response.json();
+    assert.match(payload.error, /μόλις υποβλήθηκε/);
+
+    // A changed quantity makes it a different order - must go through.
+    response = await post({
+      customerCode: "C001",
+      items: [
+        { code: "P001", qty: 3 },
+        { code: "P002", qty: 12 },
+      ],
+    });
+    assert.equal(response.status, 200);
+
+    // Same lines but a different customer is also a different order.
+    response = await post({ ...body, customerCode: "C002" });
+    assert.equal(response.status, 200);
+
+    // Only the first and the two distinct follow-ups persisted; the dup did not.
+    assert.equal(app.db.orders.size, 3);
   } finally {
     await app.close();
   }
@@ -673,7 +715,7 @@ test("order value estimate uses last-invoiced customer price, falls back to any-
   }
 });
 
-test("the desired delivery date round-trips, and the dispatch date is set at approval", async () => {
+test("the customer's desired delivery date round-trips; dispatch date is left for ES1", async () => {
   const app = await startTestApp();
 
   try {
@@ -692,34 +734,15 @@ test("the desired delivery date round-trips, and the dispatch date is set at app
       }),
     });
     assert.equal(submitResponse.status, 200);
-    const { order_id: orderId } = await submitResponse.json();
 
-    let response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+    const response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
       headers: { Cookie: cookie },
     });
-    let { items } = await response.json();
+    const { items } = await response.json();
     assert.equal(items[0].desired_delivery_date, inTenDays);
-    // Nobody has scheduled dispatch yet.
+    // dispatch_date is never set by this app any more - the office fills it in ES1
+    // after the order lands in step 1. ΑΡΧΙΚΟ.
     assert.equal(items[0].dispatch_date, null);
-
-    const dispatchOn = new Date(Date.now() + 3 * 86400000)
-      .toISOString()
-      .slice(0, 10);
-    response = await fetch(
-      `${app.baseUrl}/api/admin/order-submissions/${orderId}/approve`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Cookie: cookie },
-        body: JSON.stringify({ dispatch_date: dispatchOn }),
-      },
-    );
-    assert.equal(response.status, 200);
-
-    const approved = app.db.orders.get(orderId);
-    assert.equal(approved.status, "approved");
-    assert.equal(approved.dispatch_date, dispatchOn);
-    // The customer's requested date must survive approval untouched.
-    assert.equal(approved.desired_delivery_date, inTenDays);
   } finally {
     await app.close();
   }
@@ -730,13 +753,16 @@ test("bad order dates are rejected, and an absent date is fine", async () => {
 
   try {
     const cookie = await app.loginCookie();
+    // qty varies per call so the double-submit guard never fires - this test is about
+    // date validation, not deduplication.
+    let qty = 0;
     const post = (body) =>
       fetch(`${app.baseUrl}/api/orders/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Cookie: cookie },
         body: JSON.stringify({
           customerCode: "C001",
-          items: [{ code: "P001", qty: 1 }],
+          items: [{ code: "P001", qty: ++qty }],
           ...body,
         }),
       });
@@ -969,35 +995,16 @@ test("order-submission routes are forbidden for a non-owner admin (salesman) log
     });
     const { order_id: orderId } = await submitResponse.json();
 
-    let response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+    const response0 = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
       headers: { Cookie: salespersonCookie },
     });
-    assert.equal(response.status, 403);
-
-    response = await fetch(
-      `${app.baseUrl}/api/admin/order-submissions/${orderId}/approve`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Cookie: salespersonCookie },
-        body: JSON.stringify({}),
-      },
-    );
-    assert.equal(response.status, 403);
-
-    response = await fetch(
-      `${app.baseUrl}/api/admin/order-submissions/${orderId}/reject`,
-      {
-        method: "POST",
-        headers: { Cookie: salespersonCookie },
-      },
-    );
-    assert.equal(response.status, 403);
+    assert.equal(response0.status, 403);
 
     const untouchedOrder = app.db.orders.get(orderId);
-    assert.equal(untouchedOrder.status, "pending");
+    assert.equal(untouchedOrder.status, "ready");
 
     const ownerCookie = await app.loginCookie();
-    response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
+    const response = await fetch(`${app.baseUrl}/api/admin/order-submissions`, {
       headers: { Cookie: ownerCookie },
     });
     assert.equal(response.status, 200);

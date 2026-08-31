@@ -611,12 +611,12 @@ button.success:active,
 }
 
 .stepBtn {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  padding: 0;
+  width: 80px;
+  height: 36px;
+  min-width: 80px;
+  padding: 6px 10px;
   border-radius: var(--radius-pill);
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
   display: inline-flex;
@@ -626,17 +626,18 @@ button.success:active,
 }
 
 /* Discreet treatment so the steppers support the row rather than compete with
-   "Προσθήκη". Sizing is left as authored. */
+   "Προσθήκη" — but with enough of a tinted fill + border to separate them from
+   the near-white row background. Sizing is left as authored. */
 .stepBtn {
-  background: transparent;
+  background: rgba(76, 67, 38, 0.06);
   color: var(--viomes-dark);
-  border-color: var(--viomes-surface);
+  border-color: rgba(76, 67, 38, 0.38);
 }
 
 .stepBtn:hover {
   transform: none;
   box-shadow: none;
-  background: rgba(76, 67, 38, 0.1);
+  background: rgba(76, 67, 38, 0.14);
   border-color: var(--viomes-dark);
 }
 
@@ -650,14 +651,15 @@ button.success:active,
     width: 130px;
   }
 
-  /* Discreet, but not below a usable click target — 30px clears WCAG 2.5.8's
-     24px minimum. The old 12px here never actually applied (it was overridden
-     by `.qty-inline button`), so this is not a size regression in practice. */
+  /* Restored to the old production footprint (80x36 filled-width pills) at the
+     user's request — they preferred the larger target. Discreet styling
+     (transparent fill, outline) is kept below so they still sit behind
+     "Προσθήκη" in the hierarchy. */
   .stepBtn {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-    font-size: 15px;
+    width: 80px;
+    height: 36px;
+    min-width: 80px;
+    font-size: 12px;
     border-radius: var(--radius-pill);
   }
 
@@ -2265,28 +2267,37 @@ button.success:active,
   text-align: center !important;
 }
 
-.admin-order-submission-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+/* Read-only ES1 writer status. Neutral by default; only failure gets a loud colour. */
+.admin-order-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-input);
+  background: #efece4;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-/* Date input takes the full row on its own so the two buttons underneath
-   have the whole column width to sit side by side instead of stacking. */
-.admin-order-submission-actions .order-submission-dispatch {
-  flex: 1 1 100%;
+.admin-order-status-written {
+  background: #e2efe3;
+  color: #1f5b2b;
 }
 
-.admin-order-submission-actions .btn {
-  padding: 5px 10px;
-  font-size: 12px;
-  flex: 0 0 auto;
+.admin-order-status-write-failed {
+  background: #fde3df;
+  color: #7a1f10;
+  cursor: help;
+}
+
+.admin-order-status-held {
+  background: #f3e7cf;
+  color: #6b4e16;
 }
 
 .admin-order-submissions-table th:last-child,
 .admin-order-submissions-table td:last-child {
-  width: 190px;
+  width: 150px;
 }
 
 /* Detail rows sit between summary rows, so nth-child striping would band the
@@ -2441,14 +2452,6 @@ button.success:active,
   font-weight: 700;
   font-size: 11px;
   cursor: help;
-}
-
-.order-submission-dispatch {
-  width: 140px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-input);
-  font-size: 12px;
 }
 
 .admin-order-detail-notes h4 {

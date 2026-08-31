@@ -28,11 +28,10 @@ import {
   LATEST_IMPORT_RUN_SQL,
 } from "./lib/imported-sales.js";
 import { createPricingServiceClient } from "./lib/pricing-client.js";
+import { createPricingUrlSource } from "./lib/pricing-url-source.js";
 import {
-  approveOrderSubmission,
   createOrderSubmission,
-  listPendingOrderSubmissions,
-  rejectOrderSubmission,
+  listOrderSubmissions,
   resolveOrderSubmissionIdentity,
   validateOrderSubmission,
 } from "./lib/order-submissions.js";
@@ -412,8 +411,17 @@ export async function initializeRuntimeState({ settings }) {
     env: settings.env,
   });
 
+  // Hot-reloadable: backend/pricing-url.txt is polled (with a short TTL cache) instead
+  // of only reading env.PRICING_SERVICE_URL once at boot, so the viomes_db-side tunnel
+  // automation can push a new URL (the Cloudflare quick tunnel's URL isn't stable) and
+  // have this already-running process pick it up without a Plesk restart. See
+  // PRICING_URL_HOT_RELOAD_TASK.md.
+  const pricingUrlSource = createPricingUrlSource({
+    backendDir: settings.backendDir,
+    envUrl: settings.pricingServiceUrl,
+  });
   const pricingClient = createPricingServiceClient({
-    baseUrl: settings.pricingServiceUrl,
+    urlSource: pricingUrlSource,
     apiKey: settings.pricingServiceApiKey,
     timeoutMs: settings.pricingServiceTimeoutMs,
   });
@@ -725,9 +733,7 @@ export function createApp({
   registerAdminOrderSubmissionRoutes(app, {
     requireOwnerAdmin,
     db,
-    listPendingOrderSubmissions,
-    approveOrderSubmission,
-    rejectOrderSubmission,
+    listOrderSubmissions,
     logRouteError,
   });
 

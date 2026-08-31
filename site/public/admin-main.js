@@ -34,7 +34,6 @@ import {
   openSelectedOrderInOrderForm as openSelectedOrderInOrderFormModule,
 } from "./admin-handoff.js";
 import {
-  decideOrderSubmission as decideOrderSubmissionModule,
   fetchOrderSubmissions as fetchOrderSubmissionsModule,
   toggleOrderSubmissionDetails as toggleOrderSubmissionDetailsModule,
 } from "./admin-orders.js";
@@ -885,10 +884,6 @@ function fetchOrderSubmissions() {
   return fetchOrderSubmissionsModule(moduleContext);
 }
 
-function decideOrderSubmission(orderId, action) {
-  return decideOrderSubmissionModule(moduleContext, orderId, action);
-}
-
 function toggleOrderSubmissionDetails(orderId) {
   return toggleOrderSubmissionDetailsModule(moduleContext, orderId);
 }
@@ -996,12 +991,10 @@ elements.orderSubmissionsBody?.addEventListener("click", (event) => {
   const orderId = button.getAttribute("data-order-id");
   const action = button.getAttribute("data-action");
   if (!orderId) return;
+  // Expand/collapse the line detail is the only action left on this read-only panel.
   if (action === "toggle") {
     toggleOrderSubmissionDetails(orderId);
-    return;
   }
-  if (!["approve", "reject"].includes(action)) return;
-  void decideOrderSubmission(orderId, action);
 });
 
 elements.productSalesMetric?.addEventListener("change", () => {
@@ -1261,6 +1254,9 @@ refreshSession({ silent: false }).then((me) => {
       void fetchOrderSubmissions();
     }
   } else {
+    resetStats();
+    resetSearchResults();
+    clearAdminState();
     elements.username.focus();
   }
   saveAdminState();

@@ -1,5 +1,3 @@
-import { validateOptionalOrderDate } from "../order-submissions.js";
-
 export function registerAdminImportRoutes(app, context) {
   const {
     express,
@@ -275,83 +273,20 @@ export function registerAdminCustomerRoutes(app, context) {
 }
 
 export function registerAdminOrderSubmissionRoutes(app, context) {
-  const {
-    requireOwnerAdmin,
-    db,
-    listPendingOrderSubmissions,
-    approveOrderSubmission,
-    rejectOrderSubmission,
-    logRouteError,
-  } = context;
+  const { requireOwnerAdmin, db, listOrderSubmissions, logRouteError } = context;
 
+  // Read-only. The approve/reject routes were removed with the approval step - a
+  // captured order now flows straight to the viomes_db ΠΑΡ writer, which owns every
+  // status transition on the DB itself. This endpoint just exposes the pipeline.
   app.get("/api/admin/order-submissions", requireOwnerAdmin, async (req, res) => {
     try {
-      const items = await listPendingOrderSubmissions(db);
+      const items = await listOrderSubmissions(db);
       res.json({ items });
     } catch (error) {
       logRouteError(error);
       res.status(500).json({ error: String(error) });
     }
   });
-
-  app.post(
-    "/api/admin/order-submissions/:id/approve",
-    requireOwnerAdmin,
-    async (req, res) => {
-      try {
-        const orderId = Number(req.params.id);
-        if (!Number.isInteger(orderId) || orderId <= 0) {
-          res.status(400).json({ error: "Invalid order id." });
-          return;
-        }
-
-        // Ημ/νία Παράδοσης από Έδρα — our own dispatch scheduling, decided here rather
-        // than by the customer at order entry.
-        const dispatchDate = validateOptionalOrderDate(
-          req.body?.dispatch_date,
-          "Ημερομηνία παράδοσης από έδρα",
-        );
-        await approveOrderSubmission(
-          db,
-          orderId,
-          req.admin?.username || "unknown",
-          { dispatchDate },
-        );
-        res.json({ ok: true });
-      } catch (error) {
-        logRouteError(error);
-        res
-          .status(error.status || 500)
-          .json({ error: error.message || String(error) });
-      }
-    },
-  );
-
-  app.post(
-    "/api/admin/order-submissions/:id/reject",
-    requireOwnerAdmin,
-    async (req, res) => {
-      try {
-        const orderId = Number(req.params.id);
-        if (!Number.isInteger(orderId) || orderId <= 0) {
-          res.status(400).json({ error: "Invalid order id." });
-          return;
-        }
-
-        await rejectOrderSubmission(
-          db,
-          orderId,
-          req.admin?.username || "unknown",
-        );
-        res.json({ ok: true });
-      } catch (error) {
-        logRouteError(error);
-        res
-          .status(error.status || 500)
-          .json({ error: error.message || String(error) });
-      }
-    },
-  );
 }
 
 export function registerAdminRoutes(app, context) {

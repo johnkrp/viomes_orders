@@ -774,12 +774,28 @@ export async function initDatabaseSchema({ db, kind }) {
     "customer_substore",
     `customer_substore ${typeText}`,
   );
+  // The picked branch's exact code (== ES1 ESGOSites.Code). The viomes_db ΠΑΡ writer
+  // resolves the delivery site from this - the free-text customer_substore label alone
+  // only resolves ~85% because big chains label a store with a different number than
+  // its real code. Nullable: retail / no-branch orders leave it blank.
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "customer_substore_code",
+    `customer_substore_code ${typeText}`,
+  );
+  // Writer lifecycle, not an approval state: a submitted order is 'ready' for the
+  // viomes_db ΠΑΡ writer to pick up (there is no human approval step any more - ES1's
+  // own '100. Πιστωτικός Έλεγχος' is the gate). The writer moves it ready -> writing ->
+  // written / write_failed; an owner-admin can park a row as 'held'. The default only
+  // bites on brand-new databases - createOrderSubmission always sets 'ready' explicitly.
   await ensureColumn(
     db,
     kind,
     "orders",
     "status",
-    `status ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"} NOT NULL DEFAULT 'pending'`,
+    `status ${kind === "mysql" ? "VARCHAR(32)" : "TEXT"} NOT NULL DEFAULT 'ready'`,
   );
   await ensureColumn(
     db,
@@ -809,6 +825,31 @@ export async function initDatabaseSchema({ db, kind }) {
     "es1_document_code",
     `es1_document_code ${typeText}`,
   );
+  // Filled by the viomes_db ΠΑΡ writer, not by this app. es1_document_code carries the
+  // resulting ES1 code (e.g. ΠΑΡ-Μ-37411) on success; es1_write_error carries the failure
+  // string on 'write_failed'; es1_write_attempts counts tries so a poison row can be
+  // spotted and parked. This app only ever reads these, for the read-only admin view.
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "es1_written_at",
+    `es1_written_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "es1_write_error",
+    `es1_write_error TEXT`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "es1_write_attempts",
+    `es1_write_attempts ${typeInt} NOT NULL DEFAULT 0`,
+  );
   await ensureColumn(
     db,
     kind,
@@ -822,8 +863,10 @@ export async function initDatabaseSchema({ db, kind }) {
   //   desired_delivery_date — Ημ/νία Επιθυμητής Παραλαβής, stated by the CUSTOMER at
   //     order entry. Populated on 100% of THE MART's orders, 99.6% of DEDEMAN's and
   //     79.5% of Σκλαβενίτης's, so it matters most on exactly the accounts that matter.
-  //   dispatch_date — Ημ/νία Παράδοσης από Έδρα, a scheduling decision made by US at
-  //     approval. Not derivable: only 25% land on the order date itself.
+  //   dispatch_date — Ημ/νία Παράδοσης από Έδρα, a scheduling decision made by the office
+  //     directly in ES1 after the order lands in step 1. ΑΡΧΙΚΟ. No longer written here
+  //     (it was only ever set at the approval step, which is gone); the column stays
+  //     nullable and unused so old rows keep validating.
   await ensureColumn(
     db,
     kind,

@@ -239,8 +239,10 @@ function mapLivePricedLine(item, result) {
  * - Configured and reachable: authoritative per-line prices from `pricingClient`,
  *   individual unpriceable lines (unknown item, VAT-included, etc.) marked but not
  *   fatal to the rest of the order.
- * - Not configured at all (dev/test, or before the service is deployed): falls back to
- *   the older last-invoiced-price heuristic, unchanged.
+ * - Not configured at all (dev/test, or before the service is deployed), including a
+ *   dynamically-resolved `pricingClient` whose URL source (pricing-url-source.js)
+ *   currently has nothing to resolve: falls back to the older last-invoiced-price
+ *   heuristic, unchanged.
  * - Configured but the REQUEST fails (network error, timeout, bad response shape): does
  *   NOT silently fall back to the heuristic - that was explicitly rejected in favor of
  *   flagging the whole order `needsManualPriceReview` for a human to price at approval.
@@ -255,7 +257,15 @@ export async function estimateOrderValue(db, { customerCode, items, pricingClien
   let results;
   try {
     results = await pricingClient.priceLines(customerCode, items);
-  } catch {
+  } catch (error) {
+    // A dynamically-resolved pricingClient (see pricing-url-source.js) can go from
+    // "configured" to "no URL currently resolved" between calls, e.g. before the
+    // viomes_db-side tunnel automation has ever run. That's the same "not configured"
+    // case as a null pricingClient, not a request failure - it must fall back to the
+    // heuristic, not trip needsManualPriceReview.
+    if (error?.code === "PRICING_NOT_CONFIGURED") {
+      return estimateOrderValueFromHistory(db, { customerCode, items });
+    }
     const lines = items.map((item) => ({
       code: item.code,
       qty: item.qty,

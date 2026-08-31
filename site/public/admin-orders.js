@@ -1,6 +1,34 @@
 const ORDER_SUBMISSION_COLUMNS = 9;
 const NOTES_PREVIEW_LENGTH = 60;
 
+// orders.status values the viomes_db ΠΑΡ writer moves a captured order through. There
+// is no approve/reject here any more - this panel is read-only.
+const ORDER_STATUS_LABELS = {
+  ready: "Έτοιμη για ES1",
+  writing: "Καταχώρηση…",
+  written: "Καταχωρήθηκε",
+  write_failed: "Αποτυχία καταχώρησης",
+  held: "Σε αναμονή",
+};
+
+function buildStatusHtml(order, escapeHtml) {
+  const status = String(order.status || "ready");
+  const label = ORDER_STATUS_LABELS[status] || status;
+  const cls = `admin-order-status admin-order-status-${status.replace(/_/g, "-")}`;
+
+  if (status === "written" && order.es1_document_code) {
+    return `<span class="${cls}" title="Καταχωρήθηκε στο ES1">${escapeHtml(
+      order.es1_document_code,
+    )}</span>`;
+  }
+  if (status === "write_failed" && order.es1_write_error) {
+    return `<span class="${cls}" title="${escapeHtml(
+      order.es1_write_error,
+    )}">⚠ ${escapeHtml(label)}</span>`;
+  }
+  return `<span class="${cls}">${escapeHtml(label)}</span>`;
+}
+
 function getExpandedIds(state) {
   if (!(state.expandedOrderSubmissionIds instanceof Set)) {
     state.expandedOrderSubmissionIds = new Set();
@@ -236,7 +264,7 @@ export function renderOrderSubmissions(context) {
   const orders = state.currentOrderSubmissions || [];
   if (!orders.length) {
     elements.orderSubmissionsBody.innerHTML = `
-      <tr><td colspan="${ORDER_SUBMISSION_COLUMNS}" class="admin-table-empty">Δεν υπάρχουν εκκρεμείς παραγγελίες.</td></tr>
+      <tr><td colspan="${ORDER_SUBMISSION_COLUMNS}" class="admin-table-empty">Δεν υπάρχουν παραγγελίες προς καταχώρηση.</td></tr>
     `;
     return;
   }
@@ -280,22 +308,7 @@ export function renderOrderSubmissions(context) {
           <td><div class="admin-order-notes-preview">${buildNotesPreview(order.notes, escapeHtml)}</div></td>
           <td>${formatOrderDate(order.desired_delivery_date)}</td>
           <td>${formatTimestamp(order.submitted_at)}${submittedByHtml}</td>
-          <td>
-            <div class="admin-order-submission-actions">
-              <input
-                type="date"
-                class="order-submission-dispatch"
-                title="Ημ/νία παράδοσης από έδρα — καταχωρείται με την έγκριση"
-                data-dispatch-input
-              />
-              <button type="button" class="btn" data-action="approve" data-order-id="${order.id}">
-                Έγκριση
-              </button>
-              <button type="button" class="btn ghost" data-action="reject" data-order-id="${order.id}">
-                Απόρριψη
-              </button>
-            </div>
-          </td>
+          <td>${buildStatusHtml(order, escapeHtml)}</td>
         </tr>
       `;
 
@@ -304,28 +317,5 @@ export function renderOrderSubmissions(context) {
     .join("");
 }
 
-export async function decideOrderSubmission(context, orderId, action) {
-  const row = context.elements.orderSubmissionsBody?.querySelector(
-    `tr[data-order-id="${orderId}"]`,
-  );
-  const dispatchDate =
-    row?.querySelector("[data-dispatch-input]")?.value?.trim() || "";
-
-  try {
-    await context.apiFetch(`/api/admin/order-submissions/${orderId}/${action}`, {
-      method: "POST",
-      ...(action === "approve" && dispatchDate
-        ? { body: JSON.stringify({ dispatch_date: dispatchDate }) }
-        : {}),
-    });
-    context.setStatus(
-      action === "approve"
-        ? "Η παραγγελία εγκρίθηκε."
-        : "Η παραγγελία απορρίφθηκε.",
-      "ok",
-    );
-    await fetchOrderSubmissions(context);
-  } catch (error) {
-    context.setStatus(`Σφάλμα: ${error.message}`, "error");
-  }
-}
+// decideOrderSubmission (approve/reject) was removed with the approval step. The panel
+// is now read-only: orders advance ready -> written under the viomes_db ΠΑΡ writer.

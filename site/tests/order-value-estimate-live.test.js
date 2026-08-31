@@ -90,6 +90,31 @@ test("estimateOrderValue prices from the live pricing service when a pricingClie
   }
 });
 
+test("estimateOrderValue falls back to the heuristic (not manual review) when a dynamic pricingClient currently has no URL resolved", async () => {
+  // Mirrors what pricing-client.js's createPricingServiceClient throws when its
+  // urlSource (pricing-url-source.js) has nothing to resolve right now - e.g. before
+  // backend/pricing-url.txt has ever been written. This must behave exactly like a
+  // null pricingClient, not like a reachable-but-failing one.
+  const pricingClient = {
+    async priceLines() {
+      const error = new Error("Pricing service is not currently configured.");
+      error.code = "PRICING_NOT_CONFIGURED";
+      throw error;
+    },
+  };
+
+  const noHistoryDb = { async get() { return undefined; } };
+
+  const result = await estimateOrderValue(noHistoryDb, {
+    customerCode: "121.1.047",
+    items: [{ code: "155-60", qty: 12 }],
+    pricingClient,
+  });
+
+  assert.equal(result.needsManualPriceReview, false);
+  assert.equal(result.pricingSource, "heuristic");
+});
+
 test("estimateOrderValue flags the whole order for manual review when the pricing service is unreachable, never falling back to the heuristic", async () => {
   const pricingClient = {
     async priceLines() {

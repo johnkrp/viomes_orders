@@ -9,6 +9,37 @@ const MAX_QTY_PER_LINE = 1000000;
 const MAX_TEXT_LENGTH = 500;
 const MAX_NOTES_LENGTH = 4000;
 
+// With the approval step gone, a submitted order goes straight to the writer-ready
+// state and a double-submit (double-click, retry after a slow response) would become
+// two real ΠΑΡ documents in ES1 instead of two harmless pending rows. This window is
+// how far back createOrderSubmission looks for an identical order from the same
+// customer before rejecting the second one with 409.
+const DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
+
+// Order lifecycle on orders.status. There is no approval state any more: ES1's own
+// "100. Πιστωτικός Έλεγχος" transition is the human gate. The viomes_db ΠΑΡ writer
+// polls for 'ready', claims a row as 'writing', then sets 'written' or 'write_failed';
+// an owner-admin can park a row as 'held' so the writer skips it.
+export const WRITER_LIFECYCLE_STATUSES = [
+  "ready",
+  "writing",
+  "written",
+  "write_failed",
+  "held",
+];
+
+/**
+ * Normalized signature of an order's lines: the sorted "code:qty" list joined with "|".
+ * Line order and object identity do not matter - two submissions with the same set of
+ * {code, qty} pairs produce the same string. Used only for the double-submit guard.
+ */
+export function orderLineSignature(items) {
+  return (items || [])
+    .map((item) => `${item.code}:${item.qty}`)
+    .sort()
+    .join("|");
+}
+
 function sanitizeText(value, maxLength) {
   return String(value ?? "")
     .trim()
@@ -95,6 +126,9 @@ export function validateOrderSubmission(body) {
     body?.customerSubstore,
     MAX_TEXT_LENGTH,
   );
+  // Exact branch code (== ES1 ESGOSites.Code) for the ΠΑΡ writer's delivery-site
+  // resolver. Optional - blank for retail / no-branch orders.
+  const customerSubstoreCode = sanitizeText(body?.customerSubstoreCode, 128);
   const customerEmail = sanitizeText(body?.customerEmail, MAX_TEXT_LENGTH);
   const notes = sanitizeText(body?.notes, MAX_NOTES_LENGTH);
   const desiredDeliveryDate = validateOptionalOrderDate(
@@ -154,6 +188,7 @@ export function validateOrderSubmission(body) {
     customerName,
     customerCode,
     customerSubstore,
+    customerSubstoreCode,
     customerEmail,
     notes,
     desiredDeliveryDate,
@@ -178,6 +213,7 @@ export async function resolveOrderSubmissionIdentity(
       customerCode: customer.code,
       customerName: customer.name,
       customerSubstore: submission.customerSubstore || null,
+      customerSubstoreCode: submission.customerSubstoreCode || null,
       submittedBy: actor.username || null,
       submittedByRole: "customer",
     };
@@ -202,6 +238,7 @@ export async function resolveOrderSubmissionIdentity(
     customerCode: customer.code,
     customerName: customer.name,
     customerSubstore: submission.customerSubstore || null,
+    customerSubstoreCode: submission.customerSubstoreCode || null,
     submittedBy: actor?.username || null,
     submittedByRole: actor?.role || null,
   };
@@ -248,6 +285,40 @@ export async function createOrderSubmission(db, submission, { pricingClient } = 
     throw error;
   }
 
+  // Double-submit guard. Only a customer-coded order can be matched reliably (a
+  // walk-in with no code is left alone). Reject - do not silently succeed - so the
+  // form surfaces it instead of the salesman ending up with two ΠΑΡ documents.
+  if (submission.customerCode) {
+    const cutoff = new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString();
+    const recentLines = await db.all(
+      `
+        SELECT o.id AS order_id, ol.qty_pieces, p.code
+        FROM orders o
+        JOIN order_lines ol ON ol.order_id = o.id
+        JOIN products p ON p.id = ol.product_id
+        WHERE o.customer_code = ?
+          AND o.submitted_at >= ?
+        ORDER BY o.id
+      `,
+      [submission.customerCode, cutoff],
+    );
+    const partsByOrder = new Map();
+    for (const row of recentLines) {
+      if (!partsByOrder.has(row.order_id)) partsByOrder.set(row.order_id, []);
+      partsByOrder.get(row.order_id).push(`${row.code}:${row.qty_pieces}`);
+    }
+    const incomingSignature = orderLineSignature(submission.items);
+    for (const parts of partsByOrder.values()) {
+      if (parts.sort().join("|") === incomingSignature) {
+        const error = new Error(
+          "Αυτή η παραγγελία μόλις υποβλήθηκε (ίδιος πελάτης και ίδιες γραμμές, τελευταία 5 λεπτά). Ελέγξτε τις καταχωρημένες παραγγελίες πριν υποβάλετε ξανά.",
+        );
+        error.status = 409;
+        throw error;
+      }
+    }
+  }
+
   const valueEstimate = await estimateOrderValue(db, {
     customerCode: submission.customerCode || null,
     items: submission.items,
@@ -266,18 +337,20 @@ export async function createOrderSubmission(db, submission, { pricingClient } = 
   const { lastID: orderId } = await db.run(
     `
       INSERT INTO orders(
-        customer_name, customer_email, customer_code, customer_substore, notes,
+        customer_name, customer_email, customer_code, customer_substore,
+        customer_substore_code, notes,
         desired_delivery_date, es1_order_channel_code, total_qty_pieces,
         total_net_value, needs_manual_price_review, status, submitted_by,
         submitted_by_role, submitted_at, created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready', ?, ?, ?, ?)
     `,
     [
       submission.customerName,
       submission.customerEmail || null,
       submission.customerCode || null,
       submission.customerSubstore || null,
+      submission.customerSubstoreCode || null,
       submission.notes || null,
       submission.desiredDeliveryDate || null,
       ES1_ORDER_CHANNEL_PLATFORM,
@@ -313,16 +386,28 @@ export async function createOrderSubmission(db, submission, { pricingClient } = 
   return { orderId, valueEstimate };
 }
 
-export async function listPendingOrderSubmissions(db) {
-  const orders = await db.all(`
+/**
+ * Read-only feed for the admin "Νέες παραγγελίες πωλητών" panel. There is nothing to
+ * action here any more - it shows where each captured order sits in the ES1 writer
+ * lifecycle (ready / writing / written / write_failed / held). Bounded so it cannot grow
+ * without limit as 'written' rows accumulate.
+ */
+export async function listOrderSubmissions(db) {
+  const statusPlaceholders = WRITER_LIFECYCLE_STATUSES.map(() => "?").join(", ");
+  const orders = await db.all(
+    `
     SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
            desired_delivery_date, dispatch_date, es1_order_channel_code,
            total_qty_pieces, total_net_value, needs_manual_price_review, status,
+           es1_document_code, es1_written_at, es1_write_error, es1_write_attempts,
            submitted_by, submitted_by_role, submitted_at
     FROM orders
-    WHERE status = 'pending'
+    WHERE status IN (${statusPlaceholders})
     ORDER BY submitted_at DESC
-  `);
+    LIMIT 200
+  `,
+    WRITER_LIFECYCLE_STATUSES,
+  );
 
   if (!orders.length) return [];
 
@@ -365,7 +450,8 @@ export async function listPendingOrderSubmissions(db) {
       value_is_partial: orderLines.some((line) => Number(line.unit_price) === 0),
       // Priced from another customer's invoice (heuristic model) or from a live-pricing
       // branch flagged "verified_with_caveats" - both are a weaker signal than the
-      // customer's own confirmed history, and the approver has to be able to tell them apart.
+      // customer's own confirmed history. The writer copies this onto the ΠΑΡ as a
+      // Σχόλιο note so the ES1 "100" operator can tell them apart.
       value_has_fallback: orderLines.some(
         (line) =>
           line.price_source === "last_invoice_any_customer" ||
@@ -375,56 +461,6 @@ export async function listPendingOrderSubmissions(db) {
   });
 }
 
-async function setOrderSubmissionStatus(
-  db,
-  orderId,
-  status,
-  adminUsername,
-  { dispatchDate } = {},
-) {
-  const order = await db.get(`SELECT id, status FROM orders WHERE id = ?`, [
-    orderId,
-  ]);
-  if (!order) {
-    const error = new Error("Order not found.");
-    error.status = 404;
-    throw error;
-  }
-  if (order.status !== "pending") {
-    const error = new Error(
-      `Order is already "${order.status}", not pending.`,
-    );
-    error.status = 409;
-    throw error;
-  }
-
-  await db.run(
-    `
-      UPDATE orders
-      SET status = ?, approved_by = ?, approved_at = ?, dispatch_date = ?
-      WHERE id = ?
-    `,
-    [
-      status,
-      adminUsername,
-      new Date().toISOString(),
-      dispatchDate || null,
-      orderId,
-    ],
-  );
-}
-
-export async function approveOrderSubmission(
-  db,
-  orderId,
-  adminUsername,
-  { dispatchDate } = {},
-) {
-  await setOrderSubmissionStatus(db, orderId, "approved", adminUsername, {
-    dispatchDate,
-  });
-}
-
-export async function rejectOrderSubmission(db, orderId, adminUsername) {
-  await setOrderSubmissionStatus(db, orderId, "rejected", adminUsername);
-}
+// approveOrderSubmission / rejectOrderSubmission / setOrderSubmissionStatus were removed
+// with the approval step. Orders now move ready -> writing -> written / write_failed
+// under the viomes_db ΠΑΡ writer, which owns those transitions on the DB directly.
