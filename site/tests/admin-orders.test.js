@@ -5,7 +5,6 @@ import {
   pruneExpandedOrderSubmissions,
   renderOrderSubmissions,
   toggleOrderSubmissionDetails,
-  toggleOrderSubmissionSelection,
 } from "../public/admin-orders.js";
 
 function escapeHtml(value) {
@@ -20,35 +19,22 @@ function escapeHtml(value) {
   });
 }
 
-function buildContext(
-  orders,
-  { expandedIds = [], selectedIds = [], showArchived = false } = {},
-) {
+function buildContext(orders, { expandedIds = [], showArchived = false } = {}) {
   const body = { innerHTML: "" };
-  const bulkBar = { hidden: true };
-  const selectionInfo = { textContent: "" };
-  const archiveSelectedBtn = { textContent: "" };
   return {
     elements: {
       orderSubmissionsBody: body,
       orderSubmissionsShowArchivedToggle: { checked: showArchived },
-      orderSubmissionsBulkBar: bulkBar,
-      orderSubmissionsSelectionInfo: selectionInfo,
-      orderSubmissionsArchiveSelectedBtn: archiveSelectedBtn,
     },
     state: {
       currentOrderSubmissions: orders,
       expandedOrderSubmissionIds: new Set(expandedIds),
-      orderSubmissionsSelectedIds: new Set(selectedIds),
     },
     escapeHtml,
     formatDate: (value) => String(value ?? "-"),
     formatDateTime: (value) => `${value} 10:30`,
     formatMoney: (value) => `${Number(value || 0).toFixed(2)} €`,
     body,
-    bulkBar,
-    selectionInfo,
-    archiveSelectedBtn,
   };
 }
 
@@ -247,7 +233,7 @@ test("a written order shows its ES1 document code; a failed one shows the error 
   assert.match(context.body.innerHTML, /title="customer GID not found"/);
 });
 
-test("archivable rows get a checkbox + archive button; writing/written rows get neither", () => {
+test("archivable rows get an archive button; writing/written rows get none", () => {
   const context = buildContext([
     { ...sampleOrder, id: 1, status: "ready" },
     { ...sampleOrder, id: 2, status: "write_failed" },
@@ -263,14 +249,11 @@ test("archivable rows get a checkbox + archive button; writing/written rows get 
       html,
       new RegExp(`data-action="archive" data-order-id="${id}"`),
     );
-    assert.match(
-      html,
-      new RegExp(`data-archive-select data-order-id="${id}"`),
-    );
   }
-  assert.doesNotMatch(html, /data-order-id="4"[^>]*>\s*Αρχειοθέτηση/);
-  assert.doesNotMatch(html, /data-archive-select data-order-id="4"/);
-  assert.doesNotMatch(html, /data-archive-select data-order-id="5"/);
+  assert.doesNotMatch(html, /data-action="archive" data-order-id="4"/);
+  assert.doesNotMatch(html, /data-action="archive" data-order-id="5"/);
+  // The select-to-archive checkbox is gone entirely — one button per row is all.
+  assert.doesNotMatch(html, /data-archive-select/);
 });
 
 test("the archived view swaps in a restore control instead of archive", () => {
@@ -282,34 +265,5 @@ test("the archived view swaps in a restore control instead of archive", () => {
 
   assert.match(context.body.innerHTML, /data-action="unarchive"/);
   assert.match(context.body.innerHTML, /Επαναφορά/);
-  assert.doesNotMatch(context.body.innerHTML, /data-archive-select/);
-});
-
-test("selecting rows drives the bulk bar count and visibility", () => {
-  const context = buildContext([
-    { ...sampleOrder, id: 1, status: "ready" },
-    { ...sampleOrder, id: 2, status: "write_failed" },
-  ]);
-  renderOrderSubmissions(context);
-  assert.equal(context.bulkBar.hidden, true);
-
-  toggleOrderSubmissionSelection(context, 1, true);
-  toggleOrderSubmissionSelection(context, 2, true);
-  assert.equal(context.bulkBar.hidden, false);
-  assert.match(context.selectionInfo.textContent, /2 επιλεγμένες/);
-  assert.match(context.archiveSelectedBtn.textContent, /\(2\)/);
-
-  toggleOrderSubmissionSelection(context, 1, false);
-  assert.match(context.archiveSelectedBtn.textContent, /\(1\)/);
-});
-
-test("a selected row that is no longer archivable is pruned from the selection", () => {
-  const context = buildContext([{ ...sampleOrder, id: 1, status: "ready" }], {
-    selectedIds: ["1", "2"],
-  });
-  // #2 is not in the current list at all; #1 is still ready.
-  renderOrderSubmissions(context);
-
-  assert.ok(context.state.orderSubmissionsSelectedIds.has("1"));
-  assert.ok(!context.state.orderSubmissionsSelectedIds.has("2"));
+  assert.doesNotMatch(context.body.innerHTML, /data-action="archive"/);
 });

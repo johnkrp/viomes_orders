@@ -35,10 +35,8 @@ import {
 } from "./admin-handoff.js";
 import {
   archiveOrderSubmission as archiveOrderSubmissionModule,
-  archiveSelectedOrderSubmissions as archiveSelectedOrderSubmissionsModule,
   fetchOrderSubmissions as fetchOrderSubmissionsModule,
   toggleOrderSubmissionDetails as toggleOrderSubmissionDetailsModule,
-  toggleOrderSubmissionSelection as toggleOrderSubmissionSelectionModule,
   unarchiveOrderSubmission as unarchiveOrderSubmissionModule,
 } from "./admin-orders.js";
 import {
@@ -94,7 +92,6 @@ assertAdminDomContract(elements);
 const state = {
   currentOrderSubmissions: [],
   expandedOrderSubmissionIds: new Set(),
-  orderSubmissionsSelectedIds: new Set(),
   orderSubmissionsStale: false,
   orderSubmissionsLastFetchAt: 0,
   orderSubmissionsFetchInFlight: false,
@@ -900,20 +897,12 @@ function toggleOrderSubmissionDetails(orderId) {
   return toggleOrderSubmissionDetailsModule(moduleContext, orderId);
 }
 
-function toggleOrderSubmissionSelection(orderId, checked) {
-  return toggleOrderSubmissionSelectionModule(moduleContext, orderId, checked);
-}
-
 function archiveOrderSubmission(orderId) {
   return archiveOrderSubmissionModule(moduleContext, orderId);
 }
 
 function unarchiveOrderSubmission(orderId) {
   return unarchiveOrderSubmissionModule(moduleContext, orderId);
-}
-
-function archiveSelectedOrderSubmissions() {
-  return archiveSelectedOrderSubmissionsModule(moduleContext);
 }
 
 // ── Order-submissions panel: date-range persistence, auto-refresh, freshness ──────
@@ -1062,7 +1051,6 @@ const moduleContext = {
   loadLatestImportMessage,
   normalizeSalesTimeRange,
   performCustomerSearch,
-  promptConfirm: (message) => window.prompt(message),
   refreshOrderSubmissionsFreshness,
   renderLoadingNotice,
   renderSearchResults,
@@ -1149,11 +1137,7 @@ elements.orderSubmissionsClearFilterBtn?.addEventListener("click", () => {
   applyOrderSubmissionsFilter();
 });
 elements.orderSubmissionsShowArchivedToggle?.addEventListener("change", () => {
-  state.orderSubmissionsSelectedIds?.clear?.();
   void fetchOrderSubmissions();
-});
-elements.orderSubmissionsArchiveSelectedBtn?.addEventListener("click", () => {
-  void archiveSelectedOrderSubmissions();
 });
 
 elements.orderSubmissionsBody?.addEventListener("click", (event) => {
@@ -1169,15 +1153,6 @@ elements.orderSubmissionsBody?.addEventListener("click", (event) => {
   } else if (action === "unarchive") {
     void unarchiveOrderSubmission(orderId);
   }
-});
-
-elements.orderSubmissionsBody?.addEventListener("change", (event) => {
-  const box = event.target.closest("[data-archive-select]");
-  if (!box) return;
-  toggleOrderSubmissionSelection(
-    box.getAttribute("data-order-id"),
-    box.checked,
-  );
 });
 
 elements.productSalesMetric?.addEventListener("change", () => {
