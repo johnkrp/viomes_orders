@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="el">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Σύνδεση · Φόρμα Παραγγελίας</title>
+    <link rel="icon" href="/images/favicon.ico" />
+    <link rel="stylesheet" href="styles.css?v=20260729-viomes2" />
+  </head>
+
+  <body>
+    <header>
+      <div class="wrap">
+        <div class="header-bar">
+          <div class="header-slot" aria-hidden="true"></div>
+          <div class="brand">
+            <img
+              class="brand-logo"
+              src="/images/viomes-logo.png"
+              alt="VIOMES"
+              onerror="this.style.display = 'none'"
+            />
+          </div>
+          <div class="header-actions"></div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <section class="panel admin-panel admin-login-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Σύνδεση</h2>
+              <p>Απαιτείται σύνδεση για την πρόσβαση στη φόρμα παραγγελίας.</p>
+            </div>
+          </div>
+
+          <form id="loginForm" class="admin-form-grid">
+            <label class="field">
+              <span>Όνομα χρήστη</span>
+              <input
+                id="loginUsername"
+                type="text"
+                autocomplete="username"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span>Κωδικός πρόσβασης</span>
+              <input
+                id="loginPassword"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+
+            <div class="admin-login-actions">
+              <button id="loginBtn" type="submit">Σύνδεση</button>
+            </div>
+            <div
+              id="loginStatus"
+              class="status"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      // Standalone login page. No catalog, no order-form.js — a logged-out browser
+      // is sent here by the server-side gate on "/" before any app HTML/JS is served.
+      (function () {
+        const form = document.getElementById("loginForm");
+        const statusEl = document.getElementById("loginStatus");
+        const btn = document.getElementById("loginBtn");
+
+        function setStatus(message, kind) {
+          statusEl.textContent = message || "";
+          statusEl.className = kind ? "status " + kind : "status";
+        }
+
+        // Only a same-origin absolute path is an acceptable post-login destination:
+        // one leading slash followed by a non-slash, non-backslash char (so "//host"
+        // and "/\host" — both protocol-relative in some browsers — are rejected), or
+        // exactly "/". Anything else falls back to the order form.
+        function safeNext(raw) {
+          if (!raw || raw === "/") return "/";
+          if (!/^\/[^/\\]/.test(raw)) return "/";
+          return raw;
+        }
+
+        function post(url, body) {
+          return fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify(body),
+          });
+        }
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const username = document
+            .getElementById("loginUsername")
+            .value.trim();
+          const password = document.getElementById("loginPassword").value;
+          if (!username || !password) return;
+
+          btn.disabled = true;
+          setStatus("Σύνδεση...", "");
+          try {
+            // Same order as the app's checkAuthState: try staff, then customer.
+            let response = await post("/api/admin/login", { username, password });
+            if (response.status !== 200) {
+              response = await post("/api/customer/login", {
+                username,
+                password,
+              });
+            }
+            if (response.status !== 200) {
+              setStatus("Λάθος στοιχεία σύνδεσης.", "error");
+              btn.disabled = false;
+              return;
+            }
+            const params = new URLSearchParams(location.search);
+            location.href = safeNext(params.get("next"));
+          } catch (_error) {
+            setStatus("Σφάλμα σύνδεσης. Προσπαθήστε ξανά.", "error");
+            btn.disabled = false;
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

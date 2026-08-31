@@ -4,8 +4,6 @@ import { availableBranchRow } from "../customer-stats/shared.js";
 export function registerPublicRoutes(app, context) {
   const {
     db,
-    path,
-    settings,
     normGr,
     APP_NAME,
     dbClient,
@@ -21,7 +19,8 @@ export function registerPublicRoutes(app, context) {
     getImportedCustomerByCode,
   } = context;
 
-  app.get("/", (req, res) => res.sendFile(path.join(settings.publicDir, "index.html")));
+  // "/" and "/index.html" are served by the auth-gated handler registered in
+  // createApp (app.js) before express.static, so there is no plain "/" route here.
 
   app.get("/api/health", async (req, res) => {
     let latestImportRun = null;

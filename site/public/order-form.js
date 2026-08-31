@@ -85,11 +85,36 @@ const submitModal = document.getElementById("submitModal");
 const sendGmailBtn = document.getElementById("sendGmailBtn");
 const sendMailtoBtn = document.getElementById("sendMailtoBtn");
 
+// A 401 on these is an expected answer, not "your session died": the login
+// endpoints 401 while probing staff-vs-customer credentials, and the /me
+// endpoints answer 200 { authenticated: false } (never 401) — but list them
+// too so a future change can't accidentally bounce the auth check itself.
+const NO_BOUNCE_ON_401 = new Set([
+  "/api/admin/login",
+  "/api/customer/login",
+  "/api/admin/me",
+  "/api/customer/me",
+]);
+
+// The session expired while the tab was open. Send the browser to the login
+// page (which the server also gates) rather than letting the failed call
+// surface as an inline "σφάλμα". Returns true if it initiated a navigation.
+function bounceIfUnauthorized(response, requestUrl) {
+  if (response.status !== 401) return false;
+  if (NO_BOUNCE_ON_401.has(requestUrl)) return false;
+  const next = encodeURIComponent(location.pathname + location.search);
+  window.location.assign(`/login?next=${next}`);
+  return true;
+}
+
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, {
     credentials: "same-origin",
     ...options,
   });
+  if (bounceIfUnauthorized(response, url)) {
+    return { ok: false, status: 401, payload: null };
+  }
   let payload = null;
   try {
     payload = await response.json();
@@ -944,6 +969,7 @@ async function loadCatalog(page = 1, query = "") {
 
   try {
     const response = await fetch(`catalog.json?ts=${Date.now()}`);
+    if (bounceIfUnauthorized(response, "/catalog.json")) return;
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const data = await response.json();
@@ -1745,6 +1771,9 @@ async function submitOrderToBackend(meta) {
       }),
     });
 
+    if (bounceIfUnauthorized(response, `${API_BASE}/api/orders/submit`)) {
+      return { ok: false, error: new Error("Session expired.") };
+    }
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
       throw new Error(payload?.error || `HTTP ${response.status}`);
@@ -2030,10 +2059,17 @@ function startApp() {
 
 async function bootstrapApp() {
   const actor = await checkAuthState();
-  applyRoleUi(actor);
-  if (actor.role) {
-    startApp();
+  // The server gate on "/" means a logged-out browser never gets here. The only
+  // way role is null now is a session that died between that gate and this
+  // check — treat it the same as an in-session expiry and go to the login page
+  // instead of showing the vestigial #loginPanel.
+  if (!actor.role) {
+    const next = encodeURIComponent(location.pathname + location.search);
+    window.location.assign(`/login?next=${next}`);
+    return;
   }
+  applyRoleUi(actor);
+  startApp();
 }
 
 bootstrapApp();

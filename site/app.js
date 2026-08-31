@@ -478,7 +478,52 @@ export function createApp({
     res.sendFile(path.join(settings.publicDir, "catalog.json"));
   });
   app.use("/images", express.static(settings.imagesDir));
-  app.use(express.static(settings.publicDir));
+
+  // Auth gate for the order-form shell. A logged-out browser must never receive
+  // index.html / order-form.js at all — otherwise it flashes the app frame before
+  // the client-side check can hide it. getAuthenticatedAdmin / getAuthenticatedCustomer
+  // are hoisted function declarations below, so they are callable from here.
+  async function currentActor(req) {
+    return (
+      (await getAuthenticatedAdmin(req)) || (await getAuthenticatedCustomer(req))
+    );
+  }
+
+  app.get(["/", "/index.html"], async (req, res) => {
+    let actor = null;
+    try {
+      actor = await currentActor(req);
+    } catch (error) {
+      logRouteError(error);
+      res.status(500).send("Authentication check failed.");
+      return;
+    }
+    if (!actor) {
+      const next = encodeURIComponent(req.originalUrl || "/");
+      res.redirect(302, `/login?next=${next}`);
+      return;
+    }
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.sendFile(path.join(settings.publicDir, "index.html"));
+  });
+
+  app.get("/login", async (req, res) => {
+    try {
+      if (await currentActor(req)) {
+        res.redirect(302, "/");
+        return;
+      }
+    } catch (error) {
+      logRouteError(error);
+      // Fall through and serve the login page rather than 500 the entry point.
+    }
+    res.setHeader("Cache-Control", "no-store");
+    res.sendFile(path.join(settings.publicDir, "login.html"));
+  });
+
+  // index: false so a bare GET / is never auto-answered with index.html behind the
+  // gate's back — the explicit handler above owns "/" and "/index.html".
+  app.use(express.static(settings.publicDir, { index: false }));
 
   async function getAuthenticatedAdmin(req) {
     const bearerToken = String(req.headers.authorization || "")

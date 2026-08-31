@@ -293,6 +293,69 @@ for (const routeCase of [
   });
 }
 
+test("GET / redirects a logged-out browser to /login before serving any app HTML", async () => {
+  const app = await startTestApp();
+
+  try {
+    let response = await fetch(`${app.baseUrl}/`, { redirect: "manual" });
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get("location"), "/login?next=%2F");
+    await response.arrayBuffer();
+
+    // The explicit /index.html path is gated the same way (static must not answer it).
+    response = await fetch(`${app.baseUrl}/index.html`, { redirect: "manual" });
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get("location"), "/login?next=%2Findex.html");
+    await response.arrayBuffer();
+  } finally {
+    await app.close();
+  }
+});
+
+test("GET / serves the SPA (no-store) for a staff or customer session", async () => {
+  const app = await startTestApp();
+
+  try {
+    for (const cookie of [await app.adminCookie(), await app.customerCookie()]) {
+      const response = await fetch(`${app.baseUrl}/`, {
+        headers: { Cookie: cookie },
+        redirect: "manual",
+      });
+      assert.equal(response.status, 200);
+      assert.match(
+        response.headers.get("cache-control") || "",
+        /no-store/,
+      );
+      const body = await response.text();
+      assert.match(body, /Φόρμα Παραγγελίας/);
+    }
+  } finally {
+    await app.close();
+  }
+});
+
+test("GET /login serves the login page when logged out, redirects to / when logged in", async () => {
+  const app = await startTestApp();
+
+  try {
+    let response = await fetch(`${app.baseUrl}/login`, { redirect: "manual" });
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    assert.match(body, /id="loginForm"/);
+
+    const adminCookie = await app.adminCookie();
+    response = await fetch(`${app.baseUrl}/login`, {
+      headers: { Cookie: adminCookie },
+      redirect: "manual",
+    });
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get("location"), "/");
+    await response.arrayBuffer();
+  } finally {
+    await app.close();
+  }
+});
+
 test("the branches endpoint gives a customer only its own branches, whatever code the URL asks for", async () => {
   const app = await startTestApp();
 
