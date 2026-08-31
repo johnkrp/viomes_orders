@@ -16,9 +16,12 @@ import { openDatabase } from "../lib/db/client.js";
 import { rebuildImportedSalesData } from "../lib/imported-sales.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// override: true — match server.js. site/.env is the source of truth for the DB
+// connection; a machine may also have stale MYSQL_* vars exported in the shell
+// (e.g. pointing at a local instance) that must not win.
 dotenv.config({
   path: path.join(__dirname, "..", ".env"),
-  override: false,
+  override: true,
   quiet: true,
 });
 
