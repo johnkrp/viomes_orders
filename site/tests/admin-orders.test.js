@@ -178,6 +178,17 @@ test("expansion state for orders that left the queue is pruned", () => {
   assert.ok(!context.state.expandedOrderSubmissionIds.has("99"));
 });
 
+test("each row shows the submitting salesman's username under the timestamp", () => {
+  const context = buildContext([
+    { ...sampleOrder, submitted_by: "g.papadopoulos", submitted_by_role: "staff" },
+  ]);
+  renderOrderSubmissions(context);
+
+  assert.match(context.body.innerHTML, /g\.papadopoulos/);
+  // A staff username renders plainly — the "(πελάτης)" tag is customer-only.
+  assert.doesNotMatch(context.body.innerHTML, /g\.papadopoulos<\/span>\s*\(πελάτης\)/);
+});
+
 test("escaping still applies to customer and line text", () => {
   const context = buildContext(
     [

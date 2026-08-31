@@ -1052,6 +1052,12 @@ test("order-submission routes are forbidden for a non-owner admin (salesman) log
     });
     const { order_id: orderId } = await submitResponse.json();
 
+    // Per-salesman identity: the logged-in account's username is what lands in
+    // orders.submitted_by (the salesman-logins handoff relies on this — no display
+    // name, the username itself is the label shown in the admin table).
+    assert.equal(app.db.orders.get(orderId).submitted_by, "salesperson1");
+    assert.equal(app.db.orders.get(orderId).submitted_by_role, "staff");
+
     for (const path of [
       "/api/admin/order-submissions",
       "/api/admin/order-submissions/archive",
@@ -1080,6 +1086,8 @@ test("order-submission routes are forbidden for a non-owner admin (salesman) log
     assert.equal(response.status, 200);
     const listPayload = await response.json();
     assert.equal(listPayload.items.length, 1);
+    // …and it is carried through the panel feed the owner sees.
+    assert.equal(listPayload.items[0].submitted_by, "salesperson1");
   } finally {
     await app.close();
   }
