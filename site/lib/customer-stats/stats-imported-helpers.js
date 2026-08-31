@@ -5,6 +5,7 @@ import {
   buildCustomerActivityFilter,
   buildEffectivePiecesExpression,
   buildEffectiveRevenueExpression,
+  buildQtyBaseExpression,
 } from "../document-type-rules.js";
 
 export async function hasImportedData(db) {
@@ -133,6 +134,10 @@ export function buildImportedAnalyticsExpressions(alias = "") {
     customerActivityFilter: buildCustomerActivityFilter(alias),
     effectiveRevenue: buildEffectiveRevenueExpression(alias),
     effectivePieces: buildEffectivePiecesExpression(alias),
+    // Raw base-quantity with the qty fallback (qty_base is 0 on every row since the
+    // 2026-01 Entersoft export change) — for the pending-order tables that sum the
+    // shipped quantity without a document-type multiplier.
+    qtyBase: buildQtyBaseExpression(alias),
     countInOrderTotals: buildCountInOrderTotalsCase(alias),
   };
 }

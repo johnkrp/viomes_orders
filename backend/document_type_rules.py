@@ -61,9 +61,16 @@ def build_effective_revenue_expression(alias: str = "") -> str:
     return f"({prefix}net_value * ({build_revenue_multiplier_case(alias)}))"
 
 
-def build_effective_pieces_expression(alias: str = "") -> str:
+def build_qty_base_expression(alias: str = "") -> str:
+    # Entersoft's export dropped the "Ποσότητα σε βασική ΜΜ" column around 2026-01, so
+    # imported_sales_lines.qty_base is 0 on every row since; it always mirrored qty when
+    # present, so qty is the exact fallback.
     prefix = f"{alias}." if alias else ""
-    return f"({prefix}qty_base * ({build_pieces_multiplier_case(alias)}))"
+    return f"COALESCE(NULLIF({prefix}qty_base, 0), {prefix}qty, 0)"
+
+
+def build_effective_pieces_expression(alias: str = "") -> str:
+    return f"({build_qty_base_expression(alias)} * ({build_pieces_multiplier_case(alias)}))"
 
 
 def build_analytics_line_filter(alias: str = "") -> str:

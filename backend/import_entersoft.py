@@ -13,6 +13,7 @@ from document_type_rules import (
     build_customer_activity_filter,
     build_effective_pieces_expression,
     build_effective_revenue_expression,
+    build_qty_base_expression,
 )
 from factual_lifecycle import (
     EXECUTED_ORDER_DOCUMENT_TYPES,
@@ -45,14 +46,16 @@ LEGACY_DORMANT_TABLES = [
     "customer_receivables",
 ]
 
-IMPORTED_DISCOUNT_PERCENT_EXPRESSION = """
+_QB = build_qty_base_expression()
+
+IMPORTED_DISCOUNT_PERCENT_EXPRESSION = f"""
 CASE
   WHEN COALESCE(discount_pct_total, 0) <> 0 THEN discount_pct_total
-  WHEN COALESCE(qty_base, 0) > 0 AND COALESCE(unit_price, 0) > 0 THEN
+  WHEN {_QB} > 0 AND COALESCE(unit_price, 0) > 0 THEN
     CASE
-      WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) < 0 THEN 0
-      WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) > 100 THEN 100
-      ELSE (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100))
+      WHEN (100 - ((ABS(net_value) / (ABS({_QB}) * ABS(unit_price))) * 100)) < 0 THEN 0
+      WHEN (100 - ((ABS(net_value) / (ABS({_QB}) * ABS(unit_price))) * 100)) > 100 THEN 100
+      ELSE (100 - ((ABS(net_value) / (ABS({_QB}) * ABS(unit_price))) * 100))
     END
   ELSE 0
 END
@@ -791,7 +794,7 @@ def rebuild_sales_aggregates(cur) -> None:
             MAX(customer_name) AS customer_name,
             order_date AS created_at,
             COUNT(*) AS total_lines,
-            COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+            COALESCE(SUM({_QB}), 0) AS total_pieces,
             COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
             COALESCE(AVG({IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
             COALESCE(MAX(NULLIF(progress_step, '')), '') AS progress_step,
@@ -820,7 +823,7 @@ def rebuild_sales_aggregates(cur) -> None:
                             document_no,
                             order_date,
                             COUNT(*) AS total_lines,
-                            COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+                            COALESCE(SUM({_QB}), 0) AS total_pieces,
                             COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
                         FROM imported_sales_lines
                         WHERE {build_count_in_order_totals_case()} = 1
@@ -842,7 +845,7 @@ def rebuild_sales_aggregates(cur) -> None:
                         customer_code,
                         order_date AS created_at,
                         COUNT(*) AS total_lines,
-                        COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+                        COALESCE(SUM({_QB}), 0) AS total_pieces,
                         COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
                         COALESCE(MAX({OPEN_ORDER_REF_EXPRESSION}), '') AS order_ref
                     FROM imported_sales_lines
@@ -958,6 +961,11 @@ def import_sales_lines(cur, sales_files, import_mode: str, replace_sales_year: O
                     qty_base = parse_decimal(
                         get_row_value(row, "Ποσότητα σε βασική ΜΜ", "Ξ ΞΏΟƒΟΟ„Ξ·Ο„Ξ± ΟƒΞµ Ξ²Ξ±ΟƒΞΉΞΊΞ® ΞΞ")
                     )
+                    # Entersoft stopped exporting the base-MM quantity column around 2026-01;
+                    # it always equalled the sales quantity when present, so fall back to it
+                    # instead of storing 0 (which zeroes every pieces / discount metric).
+                    if not qty_base:
+                        qty_base = qty
                     unit_price = parse_decimal(get_row_value(row, "Τιμή", "Ξ¤ΞΉΞΌΞ®"))
                     net_value = parse_decimal(get_row_value(row, "Καθαρή  αξία ", "ΞΞ±ΞΈΞ±ΟΞ®  Ξ±ΞΎΞ―Ξ± "))
                     customer_name = str(

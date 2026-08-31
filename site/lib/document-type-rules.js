@@ -70,9 +70,17 @@ export function buildEffectiveRevenueExpression(alias = "") {
   return `(${prefix}net_value * (${buildRevenueMultiplierCase(alias)}))`;
 }
 
-export function buildEffectivePiecesExpression(alias = "") {
+// Entersoft's export dropped the "Ποσότητα σε βασική ΜΜ" column around 2026-01, so
+// imported_sales_lines.qty_base is 0 on every row since. In the whole back-catalogue
+// that had it, qty_base was byte-identical to qty, so qty is the exact fallback — not
+// an approximation. Use this everywhere qty_base is read as a quantity.
+export function buildQtyBaseExpression(alias = "") {
   const prefix = alias ? `${alias}.` : "";
-  return `(${prefix}qty_base * (${buildPiecesMultiplierCase(alias)}))`;
+  return `COALESCE(NULLIF(${prefix}qty_base, 0), ${prefix}qty, 0)`;
+}
+
+export function buildEffectivePiecesExpression(alias = "") {
+  return `(${buildQtyBaseExpression(alias)} * (${buildPiecesMultiplierCase(alias)}))`;
 }
 
 export function buildAnalyticsLineFilter(alias = "") {

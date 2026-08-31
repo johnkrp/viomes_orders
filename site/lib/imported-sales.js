@@ -5,20 +5,27 @@ import {
   buildEffectivePiecesExpression,
   buildEffectiveRevenueExpression,
   buildKnownDocumentTypesSqlList,
+  buildQtyBaseExpression,
 } from "./document-type-rules.js";
 import {
   FACTUAL_LIFECYCLE_RULES,
   buildDocumentTypeSqlList,
 } from "./factual-lifecycle.js";
 
+// qty_base has been 0 on every imported row since Entersoft's export dropped its
+// base-MU quantity column (2026-01); it always mirrored qty when present, so qty is
+// the exact fallback. Anything summing pieces or deriving a discount must go through
+// this, not bare qty_base.
+export const IMPORTED_QTY_BASE_EXPRESSION = buildQtyBaseExpression();
+
 export const IMPORTED_DISCOUNT_PERCENT_EXPRESSION = `
   CASE
     WHEN COALESCE(discount_pct_total, 0) <> 0 THEN discount_pct_total
-    WHEN COALESCE(qty_base, 0) > 0 AND COALESCE(unit_price, 0) > 0 THEN
+    WHEN ${IMPORTED_QTY_BASE_EXPRESSION} > 0 AND COALESCE(unit_price, 0) > 0 THEN
       CASE
-        WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) < 0 THEN 0
-        WHEN (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100)) > 100 THEN 100
-        ELSE (100 - ((ABS(net_value) / (ABS(qty_base) * ABS(unit_price))) * 100))
+        WHEN (100 - ((ABS(net_value) / (ABS(${IMPORTED_QTY_BASE_EXPRESSION}) * ABS(unit_price))) * 100)) < 0 THEN 0
+        WHEN (100 - ((ABS(net_value) / (ABS(${IMPORTED_QTY_BASE_EXPRESSION}) * ABS(unit_price))) * 100)) > 100 THEN 100
+        ELSE (100 - ((ABS(net_value) / (ABS(${IMPORTED_QTY_BASE_EXPRESSION}) * ABS(unit_price))) * 100))
       END
     ELSE 0
   END
@@ -315,7 +322,7 @@ export const REBUILD_IMPORTED_OPEN_ORDERS_SQL = `
       MAX(customer_name) AS customer_name,
       order_date AS created_at,
       COUNT(*) AS total_lines,
-      COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+      COALESCE(SUM(${IMPORTED_QTY_BASE_EXPRESSION}), 0) AS total_pieces,
       COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
       COALESCE(AVG(${IMPORTED_DISCOUNT_PERCENT_EXPRESSION}), 0) AS average_discount_pct,
       MAX(ordered_at) AS ordered_at,
@@ -343,7 +350,7 @@ export const REBUILD_IMPORTED_OPEN_ORDERS_SQL = `
         document_no,
         order_date,
         COUNT(*) AS total_lines,
-        COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+        COALESCE(SUM(${IMPORTED_QTY_BASE_EXPRESSION}), 0) AS total_pieces,
         COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value
       FROM imported_sales_lines
       WHERE ${buildCountInOrderTotalsCase()} = 1
@@ -365,7 +372,7 @@ export const REBUILD_IMPORTED_OPEN_ORDERS_SQL = `
       customer_code,
       order_date AS created_at,
       COUNT(*) AS total_lines,
-      COALESCE(SUM(COALESCE(qty_base, 0)), 0) AS total_pieces,
+      COALESCE(SUM(${IMPORTED_QTY_BASE_EXPRESSION}), 0) AS total_pieces,
       COALESCE(SUM(COALESCE(net_value, 0)), 0) AS total_net_value,
       COALESCE(MAX(${OPEN_ORDER_REF_EXPRESSION}), '') AS order_ref
     FROM imported_sales_lines
