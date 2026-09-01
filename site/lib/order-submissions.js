@@ -16,16 +16,19 @@ const MAX_NOTES_LENGTH = 4000;
 // customer before rejecting the second one with 409.
 const DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
 
-// Order lifecycle on orders.status. There is no approval state any more: ES1's own
-// "100. Πιστωτικός Έλεγχος" transition is the human gate. The viomes_db ΠΑΡ writer
-// polls for 'ready', claims a row as 'writing', then sets 'written' or 'write_failed';
-// an owner-admin can park a row as 'held' so the writer skips it.
+// Order lifecycle on orders.status, as shown in the admin panel. ES1's own
+// "100. Πιστωτικός Έλεγχος" is the general human gate; there is no approval state for
+// the ordinary flow. The viomes_db ΠΑΡ writer polls for 'ready', claims a row as
+// 'writing', then sets 'written' or 'write_failed'. Denylist-only exceptions: the
+// poller parks a denylisted customer's order as 'held', and an owner-admin here either
+// approves it back to 'ready' (with writer_override=1) or moves it to 'rejected'.
 export const WRITER_LIFECYCLE_STATUSES = [
   "ready",
   "writing",
   "written",
   "write_failed",
   "held",
+  "rejected",
 ];
 
 // Statuses whose rows the admin panel may soft-archive. A row the writer is mid-flight
@@ -467,7 +470,9 @@ export async function listOrderSubmissions(
            desired_delivery_date, dispatch_date, es1_order_channel_code,
            total_qty_pieces, total_net_value, needs_manual_price_review, status,
            es1_document_code, es1_written_at, es1_write_error, es1_write_attempts,
-           archived_at, submitted_by, submitted_by_role, submitted_at
+           archived_at, writer_override, held_reason,
+           approved_by, approved_at, rejected_by, rejected_at,
+           submitted_by, submitted_by_role, submitted_at
     FROM orders
     WHERE ${conditions.join(" AND ")}
     ORDER BY submitted_at DESC
@@ -514,6 +519,7 @@ export async function listOrderSubmissions(
       ...order,
       lines: orderLines,
       needs_manual_price_review: Boolean(Number(order.needs_manual_price_review)),
+      writer_override: Boolean(Number(order.writer_override)),
       value_is_partial: orderLines.some((line) => Number(line.unit_price) === 0),
       // Priced from another customer's invoice (heuristic model) or from a live-pricing
       // branch flagged "verified_with_caveats" - both are a weaker signal than the
@@ -596,4 +602,86 @@ export async function unarchiveOrderSubmissions(db, ids) {
     cleanIds,
   );
   return { unarchived: result?.changes ?? 0 };
+}
+
+function assertOrderId(id) {
+  const orderId = Number(id);
+  if (!Number.isInteger(orderId) || orderId <= 0) {
+    const error = new Error("Invalid order id.");
+    error.status = 400;
+    throw error;
+  }
+  return orderId;
+}
+
+function assertOneHeldRowChanged(result) {
+  if ((result?.changes ?? 0) !== 1) {
+    const error = new Error(
+      "Η παραγγελία δεν είναι σε αναμονή (έχει ήδη εγκριθεί, απορριφθεί ή καταχωρηθεί).",
+    );
+    error.status = 409;
+    throw error;
+  }
+}
+
+/**
+ * Denylist "held for approval": an owner-admin releases a poller-held order back to the
+ * writer. status → 'ready' with writer_override=1, so the poller writes it that one
+ * time even though the customer is on its denylist. Only a 'held' row is actionable —
+ * the WHERE guard is the whole safety story; anything else → 409.
+ */
+export async function approveHeldOrderSubmission(db, id, adminUsername) {
+  const orderId = assertOrderId(id);
+  const who = adminUsername || "unknown";
+  const now = new Date().toISOString();
+  const result = await db.run(
+    `
+      UPDATE orders
+      SET status = 'ready', writer_override = 1, es1_write_error = NULL,
+          approved_by = ?, approved_at = ?
+      WHERE id = ? AND status = 'held'
+    `,
+    [who, now, orderId],
+  );
+  assertOneHeldRowChanged(result);
+  return {
+    ok: true,
+    id: orderId,
+    status: "ready",
+    writer_override: true,
+    approved_by: who,
+    approved_at: now,
+  };
+}
+
+/**
+ * Denylist "held for approval": an owner-admin declines a poller-held order. status →
+ * 'rejected'; the writer never touches a rejected row. Optional free-text reason is
+ * folded into es1_write_error so it shows in the admin table like any other hold note.
+ */
+export async function rejectHeldOrderSubmission(db, id, adminUsername, reason = "") {
+  const orderId = assertOrderId(id);
+  const who = adminUsername || "unknown";
+  const cleanReason = sanitizeText(reason, MAX_TEXT_LENGTH);
+  const now = new Date().toISOString();
+  const errText = cleanReason
+    ? `rejected by ${who}: ${cleanReason}`
+    : `rejected by ${who}`;
+  const result = await db.run(
+    `
+      UPDATE orders
+      SET status = 'rejected', rejected_by = ?, rejected_at = ?, es1_write_error = ?
+      WHERE id = ? AND status = 'held'
+    `,
+    [who, now, errText, orderId],
+  );
+  assertOneHeldRowChanged(result);
+  return {
+    ok: true,
+    id: orderId,
+    status: "rejected",
+    rejected_by: who,
+    rejected_at: now,
+    es1_write_error: errText,
+  };
 }

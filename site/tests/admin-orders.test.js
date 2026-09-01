@@ -233,27 +233,71 @@ test("a written order shows its ES1 document code; a failed one shows the error 
   assert.match(context.body.innerHTML, /title="customer GID not found"/);
 });
 
-test("archivable rows get an archive button; writing/written rows get none", () => {
+test("ready / write_failed rows get an archive button; writing/written/rejected get none", () => {
   const context = buildContext([
     { ...sampleOrder, id: 1, status: "ready" },
     { ...sampleOrder, id: 2, status: "write_failed" },
-    { ...sampleOrder, id: 3, status: "held" },
     { ...sampleOrder, id: 4, status: "writing" },
     { ...sampleOrder, id: 5, status: "written", es1_document_code: "ΠΑΡ-Μ-1" },
+    { ...sampleOrder, id: 6, status: "rejected" },
   ]);
   renderOrderSubmissions(context);
   const html = context.body.innerHTML;
 
-  for (const id of [1, 2, 3]) {
+  for (const id of [1, 2]) {
     assert.match(
       html,
       new RegExp(`data-action="archive" data-order-id="${id}"`),
     );
   }
-  assert.doesNotMatch(html, /data-action="archive" data-order-id="4"/);
-  assert.doesNotMatch(html, /data-action="archive" data-order-id="5"/);
+  for (const id of [4, 5, 6]) {
+    assert.doesNotMatch(
+      html,
+      new RegExp(`data-action="archive" data-order-id="${id}"`),
+    );
+  }
   // The select-to-archive checkbox is gone entirely — one button per row is all.
   assert.doesNotMatch(html, /data-archive-select/);
+});
+
+test("a held row shows Approve + Reject instead of the archive button", () => {
+  const context = buildContext([
+    {
+      ...sampleOrder,
+      id: 3,
+      status: "held",
+      held_reason: "customer requires manual approval before ES1 import",
+    },
+  ]);
+  renderOrderSubmissions(context);
+  const html = context.body.innerHTML;
+
+  assert.match(html, /data-action="approve" data-order-id="3"/);
+  assert.match(html, /data-action="reject" data-order-id="3"/);
+  assert.doesNotMatch(html, /data-action="archive" data-order-id="3"/);
+  // held_reason surfaces both in the status badge tooltip and the detail row.
+  assert.match(html, /Σε αναμονή έγκρισης/);
+  assert.match(html, /customer requires manual approval/);
+});
+
+test("a rejected row shows the rejection note and no action button", () => {
+  const context = buildContext([
+    {
+      ...sampleOrder,
+      id: 9,
+      status: "rejected",
+      es1_write_error: "rejected by owner: duplicate of ΠΑΡ-Μ-1",
+      rejected_by: "owner",
+      rejected_at: "2026-09-01",
+    },
+  ]);
+  renderOrderSubmissions(context);
+  const html = context.body.innerHTML;
+
+  assert.match(html, /admin-order-status-rejected/);
+  assert.match(html, /Απορρίφθηκε/);
+  assert.match(html, /Απορρίφθηκε από owner/);
+  assert.match(html, /<td class="admin-order-actions"><\/td>/);
 });
 
 test("the archived view swaps in a restore control instead of archive", () => {

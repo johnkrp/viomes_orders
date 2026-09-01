@@ -190,8 +190,10 @@ function createDbFixture() {
       // Read-only pipeline feed: WHERE status IN (…) AND archived_at IS [NOT] NULL,
       // optionally AND submitted_at >= ? AND submitted_at < ?
       if (sql.includes("FROM orders") && sql.includes("status IN")) {
-        const statuses = params.slice(0, 5);
-        const rest = params.slice(5);
+        // Leading params are the lifecycle status list; any trailing YYYY-MM-DD
+        // values are the from/to bounds.
+        const statuses = params.filter((p) => !/^\d{4}-\d{2}-\d{2}$/.test(p));
+        const rest = params.filter((p) => /^\d{4}-\d{2}-\d{2}$/.test(p));
         const wantArchived = sql.includes("archived_at IS NOT NULL");
         const from = sql.includes("submitted_at >= ?") ? rest.shift() : null;
         const to = sql.includes("submitted_at < ?") ? rest.shift() : null;
@@ -370,6 +372,35 @@ function createDbFixture() {
           }
         }
         return { changes };
+      }
+      // Denylist approve: SET status='ready', writer_override=1, … WHERE id=? AND status='held'
+      if (
+        sql.includes("UPDATE orders") &&
+        sql.includes("status = 'ready', writer_override = 1")
+      ) {
+        const [approvedBy, approvedAt, id] = params;
+        const order = orders.get(Number(id));
+        if (!order || order.status !== "held") return { changes: 0 };
+        order.status = "ready";
+        order.writer_override = 1;
+        order.es1_write_error = null;
+        order.approved_by = approvedBy;
+        order.approved_at = approvedAt;
+        return { changes: 1 };
+      }
+      // Denylist reject: SET status='rejected', … WHERE id=? AND status='held'
+      if (
+        sql.includes("UPDATE orders") &&
+        sql.includes("status = 'rejected', rejected_by = ?")
+      ) {
+        const [rejectedBy, rejectedAt, errText, id] = params;
+        const order = orders.get(Number(id));
+        if (!order || order.status !== "held") return { changes: 0 };
+        order.status = "rejected";
+        order.rejected_by = rejectedBy;
+        order.rejected_at = rejectedAt;
+        order.es1_write_error = errText;
+        return { changes: 1 };
       }
       if (sql.includes("INSERT INTO order_lines(")) {
         const [
@@ -626,7 +657,8 @@ test("the admin order-submissions feed is owner-gated and read-only", async () =
     assert.equal(listPayload.items[0].total_net_value, 0);
     assert.equal(listPayload.items[0].value_is_partial, true);
 
-    // The approve/reject endpoints are gone entirely.
+    // approve/reject exist (denylist "held" flow) but act ONLY on a status='held'
+    // row — a fresh 'ready' order is not actionable → 409, nothing changes.
     for (const action of ["approve", "reject"]) {
       response = await fetch(
         `${app.baseUrl}/api/admin/order-submissions/${orderId}/${action}`,
@@ -635,7 +667,7 @@ test("the admin order-submissions feed is owner-gated and read-only", async () =
           headers: { "Content-Type": "application/json", Cookie: cookie },
         },
       );
-      assert.equal(response.status, 404, `${action} should 404`);
+      assert.equal(response.status, 409, `${action} on a ready order should 409`);
       await response.arrayBuffer();
     }
 
@@ -1062,6 +1094,8 @@ test("order-submission routes are forbidden for a non-owner admin (salesman) log
       "/api/admin/order-submissions",
       "/api/admin/order-submissions/archive",
       "/api/admin/order-submissions/unarchive",
+      `/api/admin/order-submissions/${orderId}/approve`,
+      `/api/admin/order-submissions/${orderId}/reject`,
     ]) {
       const method = path.endsWith("submissions") ? "GET" : "POST";
       const forbidden = await fetch(`${app.baseUrl}${path}`, {

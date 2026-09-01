@@ -279,6 +279,8 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
     listOrderSubmissions,
     archiveOrderSubmissions,
     unarchiveOrderSubmissions,
+    approveHeldOrderSubmission,
+    rejectHeldOrderSubmission,
     validateListFilterDate,
     logRouteError,
   } = context;
@@ -328,6 +330,51 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
     async (req, res) => {
       try {
         const result = await unarchiveOrderSubmissions(db, req.body?.ids);
+        res.json(result);
+      } catch (error) {
+        logRouteError(error);
+        res
+          .status(error.status || 500)
+          .json({ error: error.message || String(error) });
+      }
+    },
+  );
+
+  // Denylist "held for approval" — owner-admin releases / declines a poller-held
+  // order. Only status='held' rows are actionable (enforced in the SQL WHERE);
+  // anything else → 409. This is a denylist-only gate, NOT the old general approval
+  // step ("let the robot write this", not "approve the order").
+  app.post(
+    "/api/admin/order-submissions/:id/approve",
+    requireOwnerAdmin,
+    async (req, res) => {
+      try {
+        const result = await approveHeldOrderSubmission(
+          db,
+          req.params.id,
+          req.admin?.username,
+        );
+        res.json(result);
+      } catch (error) {
+        logRouteError(error);
+        res
+          .status(error.status || 500)
+          .json({ error: error.message || String(error) });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/order-submissions/:id/reject",
+    requireOwnerAdmin,
+    async (req, res) => {
+      try {
+        const result = await rejectHeldOrderSubmission(
+          db,
+          req.params.id,
+          req.admin?.username,
+          req.body?.reason,
+        );
         res.json(result);
       } catch (error) {
         logRouteError(error);

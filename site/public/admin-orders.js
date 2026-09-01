@@ -2,17 +2,20 @@ const ORDER_SUBMISSION_COLUMNS = 10;
 const NOTES_PREVIEW_LENGTH = 60;
 
 // Rows in these statuses can be soft-archived from the panel (mirrors the server's
-// ARCHIVABLE_STATUSES). A 'writing' / 'written' row gets no archive button.
+// ARCHIVABLE_STATUSES). A 'held' row shows Approve/Reject instead (handled first in
+// buildActionsCell); 'writing' / 'written' / 'rejected' get no button.
 const ARCHIVABLE_CLIENT_STATUSES = new Set(["ready", "write_failed", "held"]);
 
-// orders.status values the viomes_db ΠΑΡ writer moves a captured order through. There
-// is no approve/reject here any more - this panel is read-only.
+// orders.status as shown in the admin panel. The general flow is read-only (the ES1
+// "100" check is the human gate); the only actions here are the denylist-only
+// Approve / Reject on a poller-'held' order.
 const ORDER_STATUS_LABELS = {
   ready: "Έτοιμη για ES1",
   writing: "Καταχώρηση…",
   written: "Καταχωρήθηκε",
   write_failed: "Αποτυχία καταχώρησης",
-  held: "Σε αναμονή",
+  held: "Σε αναμονή έγκρισης",
+  rejected: "Απορρίφθηκε",
 };
 
 function buildStatusHtml(order, escapeHtml) {
@@ -29,6 +32,22 @@ function buildStatusHtml(order, escapeHtml) {
     return `<span class="${cls}" title="${escapeHtml(
       order.es1_write_error,
     )}">⚠ ${escapeHtml(label)}</span>`;
+  }
+  if (status === "held" && order.held_reason) {
+    return `<span class="${cls}" title="${escapeHtml(
+      order.held_reason,
+    )}">⏸ ${escapeHtml(label)}</span>`;
+  }
+  if (status === "rejected") {
+    const why = String(order.es1_write_error || "").trim();
+    return `<span class="${cls}"${why ? ` title="${escapeHtml(why)}"` : ""}>${escapeHtml(
+      label,
+    )}</span>`;
+  }
+  if (status === "written" && order.writer_override) {
+    return `<span class="${cls}" title="Καταχωρήθηκε αυτόματα μετά από έγκριση">${escapeHtml(
+      label,
+    )}</span>`;
   }
   return `<span class="${cls}">${escapeHtml(label)}</span>`;
 }
@@ -60,7 +79,17 @@ function buildActionsCell(order, escapeHtml, showArchived) {
   if (showArchived) {
     return `<td class="admin-order-actions"><button type="button" class="btn ghost admin-order-action-btn" data-action="unarchive" data-order-id="${order.id}">Επαναφορά</button></td>`;
   }
-  if (!ARCHIVABLE_CLIENT_STATUSES.has(String(order.status || ""))) {
+  const status = String(order.status || "");
+  // A poller-held (denylisted) order: approve back to the writer, or reject it.
+  if (status === "held") {
+    return (
+      `<td class="admin-order-actions">` +
+      `<button type="button" class="btn success admin-order-action-btn" data-action="approve" data-order-id="${order.id}">Έγκριση</button>` +
+      `<button type="button" class="btn ghost admin-order-action-btn admin-order-action-reject" data-action="reject" data-order-id="${order.id}">Απόρριψη</button>` +
+      `</td>`
+    );
+  }
+  if (!ARCHIVABLE_CLIENT_STATUSES.has(status)) {
     return `<td class="admin-order-actions"></td>`;
   }
   return `<td class="admin-order-actions"><button type="button" class="btn ghost admin-order-action-btn" data-action="archive" data-order-id="${order.id}">Αρχειοθέτηση</button></td>`;
@@ -217,6 +246,29 @@ function buildDetailRow(order, context, { isExpanded }) {
     ? `<p class="admin-order-detail-meta">${metaParts.join(" · ")}</p>`
     : "";
 
+  const formatTimestamp = context.formatDateTime || context.formatDate;
+  const approvalParts = [];
+  if (order.status === "held" && order.held_reason) {
+    approvalParts.push(`Σε αναμονή: ${escapeHtml(order.held_reason)}`);
+  }
+  if (order.approved_by) {
+    approvalParts.push(
+      `Εγκρίθηκε από ${escapeHtml(order.approved_by)}${
+        order.approved_at ? ` (${escapeHtml(formatTimestamp(order.approved_at))})` : ""
+      }`,
+    );
+  }
+  if (order.rejected_by) {
+    approvalParts.push(
+      `Απορρίφθηκε από ${escapeHtml(order.rejected_by)}${
+        order.rejected_at ? ` (${escapeHtml(formatTimestamp(order.rejected_at))})` : ""
+      }`,
+    );
+  }
+  const approvalHtml = approvalParts.length
+    ? `<p class="admin-order-detail-approval">${approvalParts.join(" · ")}</p>`
+    : "";
+
   return `
     <tr
       class="admin-order-detail-row"
@@ -226,6 +278,7 @@ function buildDetailRow(order, context, { isExpanded }) {
       <td colspan="${ORDER_SUBMISSION_COLUMNS}">
         <div class="admin-order-detail">
           ${metaHtml}
+          ${approvalHtml}
           ${buildLinesTable(order, context)}
           ${notesHtml}
         </div>
@@ -425,4 +478,54 @@ export function archiveOrderSubmission(context, orderId) {
 // Per-row "Επαναφορά" from the archived view.
 export function unarchiveOrderSubmission(context, orderId) {
   return runArchiveCall(context, "unarchive", orderId, { verb: "Επαναφέρθηκαν" });
+}
+
+async function runHeldDecision(context, orderId, endpoint, body, okMessage) {
+  const id = Number(orderId);
+  if (!Number.isInteger(id) || id <= 0) return;
+  try {
+    await context.apiFetch(`/api/admin/order-submissions/${id}/${endpoint}`, {
+      method: "POST",
+      body: JSON.stringify(body || {}),
+    });
+    context.setStatus(okMessage, "ok");
+  } catch (error) {
+    context.setStatus(`Σφάλμα: ${error.message}`, "error");
+  }
+  await fetchOrderSubmissions(context);
+}
+
+// Per-row "Έγκριση" on a poller-held order — release it back to the ΠΑΡ writer.
+export function approveHeldOrderSubmission(context, orderId) {
+  const proceed =
+    typeof context.confirm === "function"
+      ? context.confirm(
+          "Έγκριση: η παραγγελία θα σταλεί στο ES1 από τον writer. Συνέχεια;",
+        )
+      : true;
+  if (!proceed) return Promise.resolve();
+  return runHeldDecision(
+    context,
+    orderId,
+    "approve",
+    {},
+    `Η παραγγελία #${orderId} εγκρίθηκε και επιστρέφει στην ουρά καταχώρησης.`,
+  );
+}
+
+// Per-row "Απόρριψη" on a poller-held order — decline it (optional reason).
+export function rejectHeldOrderSubmission(context, orderId) {
+  const reason =
+    typeof context.promptReason === "function"
+      ? context.promptReason("Λόγος απόρριψης (προαιρετικό):")
+      : "";
+  // A null return from the prompt means the admin cancelled the dialog.
+  if (reason === null) return Promise.resolve();
+  return runHeldDecision(
+    context,
+    orderId,
+    "reject",
+    { reason: reason || "" },
+    `Η παραγγελία #${orderId} απορρίφθηκε.`,
+  );
 }

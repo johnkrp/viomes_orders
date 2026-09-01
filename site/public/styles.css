@@ -2350,6 +2350,23 @@ button.success:active,
 .admin-order-status-held {
   background: #f3e7cf;
   color: #6b4e16;
+  cursor: help;
+}
+
+.admin-order-status-rejected {
+  background: #ede9e3;
+  color: #5c5346;
+  text-decoration: line-through;
+}
+
+.admin-order-detail-approval {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-order-action-reject {
+  color: #7a1f10;
 }
 
 .admin-order-submissions-table th:last-child,

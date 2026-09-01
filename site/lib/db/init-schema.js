@@ -861,6 +861,40 @@ export async function initDatabaseSchema({ db, kind }) {
     "archived_at",
     `archived_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
   );
+  // Denylist "held for approval" flow. The viomes_db ΠΑΡ writer runs allow-all minus a
+  // denylist it keeps in its own .env; this app never sees the list. When the poller
+  // parks a denylisted order it sets status='held' (+ held_reason). An owner-admin here
+  // then Approves (status back to 'ready' + writer_override=1, so the poller writes it
+  // that one time) or Rejects (status='rejected'). writer_override is the switch: the
+  // poller's hold step only engages once this column exists.
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "writer_override",
+    `writer_override ${kind === "mysql" ? "TINYINT(1)" : "INTEGER"} NOT NULL DEFAULT 0`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "held_reason",
+    `held_reason ${kind === "mysql" ? "VARCHAR(255)" : "TEXT"}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "rejected_by",
+    `rejected_by ${typeText}`,
+  );
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "rejected_at",
+    `rejected_at ${kind === "mysql" ? "VARCHAR(64)" : "TEXT"}`,
+  );
   await ensureColumn(
     db,
     kind,

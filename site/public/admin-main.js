@@ -34,8 +34,10 @@ import {
   openSelectedOrderInOrderForm as openSelectedOrderInOrderFormModule,
 } from "./admin-handoff.js";
 import {
+  approveHeldOrderSubmission as approveHeldOrderSubmissionModule,
   archiveOrderSubmission as archiveOrderSubmissionModule,
   fetchOrderSubmissions as fetchOrderSubmissionsModule,
+  rejectHeldOrderSubmission as rejectHeldOrderSubmissionModule,
   toggleOrderSubmissionDetails as toggleOrderSubmissionDetailsModule,
   unarchiveOrderSubmission as unarchiveOrderSubmissionModule,
 } from "./admin-orders.js";
@@ -905,6 +907,14 @@ function unarchiveOrderSubmission(orderId) {
   return unarchiveOrderSubmissionModule(moduleContext, orderId);
 }
 
+function approveHeldOrderSubmission(orderId) {
+  return approveHeldOrderSubmissionModule(moduleContext, orderId);
+}
+
+function rejectHeldOrderSubmission(orderId) {
+  return rejectHeldOrderSubmissionModule(moduleContext, orderId);
+}
+
 // ── Order-submissions panel: date-range persistence, auto-refresh, freshness ──────
 const ORDER_SUBMISSIONS_RANGE_KEY = "viomes.admin.orders.range.v1";
 const ORDER_SUBMISSIONS_POLL_MS = 12_000;
@@ -1051,6 +1061,8 @@ const moduleContext = {
   loadLatestImportMessage,
   normalizeSalesTimeRange,
   performCustomerSearch,
+  confirm: (message) => window.confirm(message),
+  promptReason: (message) => window.prompt(message, ""),
   refreshOrderSubmissionsFreshness,
   renderLoadingNotice,
   renderSearchResults,
@@ -1152,6 +1164,10 @@ elements.orderSubmissionsBody?.addEventListener("click", (event) => {
     void archiveOrderSubmission(orderId);
   } else if (action === "unarchive") {
     void unarchiveOrderSubmission(orderId);
+  } else if (action === "approve") {
+    void approveHeldOrderSubmission(orderId);
+  } else if (action === "reject") {
+    void rejectHeldOrderSubmission(orderId);
   }
 });
 
