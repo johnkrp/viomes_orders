@@ -112,5 +112,83 @@ export function createPricingServiceClient(options = {}) {
         clearTimeout(timeout);
       }
     },
+
+    /**
+     * Current stock ("Απόθεμα") for a batch of item codes, for the order form's catalog
+     * column. Same guards as priceLines: throws `code: "PRICING_NOT_CONFIGURED"` when the
+     * resolved URL is empty (dev/test, tunnel down), and `status`-tagged errors on
+     * non-2xx / timeout / bad shape. Returns `payload.levels` (an array of
+     * `{ itemCode, available, onHand101, onHandCompany, isMixedContent, fulfillmentCode }`;
+     * unknown codes are simply absent). The caller degrades the column to "—" on any throw.
+     */
+    async stockLevels(itemCodes) {
+      const baseUrl = await resolveBaseUrl();
+      if (!baseUrl) {
+        const error = new Error("Pricing service is not currently configured.");
+        error.code = "PRICING_NOT_CONFIGURED";
+        throw error;
+      }
+
+      const codes = [
+        ...new Set((itemCodes || []).map((c) => String(c || "").trim()).filter(Boolean)),
+      ];
+      if (codes.length === 0) return [];
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+
+      try {
+        const response = await fetch(`${baseUrl}/stock-levels`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "X-Pricing-Api-Key": config.apiKey,
+          },
+          body: JSON.stringify({ itemCodes: codes }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          let detail = `Pricing service responded with HTTP ${response.status}`;
+          try {
+            const payload = await response.json();
+            detail = payload?.detail || payload?.error || detail;
+          } catch {
+            // Keep the generic message when the upstream body is not JSON.
+          }
+          const error = new Error(detail);
+          error.status = 502;
+          throw error;
+        }
+
+        const payload = await response.json();
+        if (!Array.isArray(payload?.levels)) {
+          const error = new Error(
+            "Pricing service returned an unexpected payload shape (missing levels[]).",
+          );
+          error.status = 502;
+          throw error;
+        }
+
+        return payload.levels;
+      } catch (error) {
+        if (error?.status) throw error;
+        if (error?.name === "AbortError") {
+          const timeoutError = new Error(
+            `Pricing service timed out after ${config.timeoutMs}ms.`,
+          );
+          timeoutError.status = 504;
+          throw timeoutError;
+        }
+        const wrapped = new Error(
+          `Pricing service request failed: ${error.message || String(error)}`,
+        );
+        wrapped.status = 502;
+        throw wrapped;
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
   };
 }

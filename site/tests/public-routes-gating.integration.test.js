@@ -160,7 +160,7 @@ function createDbFixture() {
   };
 }
 
-async function startTestApp() {
+async function startTestApp({ pricingClient } = {}) {
   const db = createDbFixture();
   const backendDir = await mkdtemp(
     path.join(os.tmpdir(), "viomes-public-gating-"),
@@ -189,6 +189,7 @@ async function startTestApp() {
     db,
     dbClient: { kind: "mysql", description: "test" },
     customerStatsProvider: { name: "test-provider", mode: "test" },
+    pricingClient,
   });
 
   const server = http.createServer(app);
@@ -254,6 +255,7 @@ for (const routeCase of [
     url: "/api/order/export-xlsx",
     body: EXPORT_XLSX_PAYLOAD,
   },
+  { label: "GET /api/stock", method: "GET", url: "/api/stock?codes=P001" },
 ]) {
   test(`${routeCase.label} is gated: 401 unauthenticated, 200 for staff and customer sessions`, async () => {
     const app = await startTestApp();
@@ -351,6 +353,70 @@ test("GET /login serves the login page when logged out, redirects to / when logg
     assert.equal(response.status, 302);
     assert.equal(response.headers.get("location"), "/");
     await response.arrayBuffer();
+  } finally {
+    await app.close();
+  }
+});
+
+test("GET /api/stock degrades to { unavailable: true } when no pricing client is wired up", async () => {
+  const app = await startTestApp(); // no pricingClient
+
+  try {
+    const cookie = await app.adminCookie();
+    const response = await fetch(`${app.baseUrl}/api/stock?codes=101-14,102-50`, {
+      headers: { Cookie: cookie },
+    });
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.deepEqual(payload.levels, []);
+    assert.equal(payload.unavailable, true);
+  } finally {
+    await app.close();
+  }
+});
+
+test("GET /api/stock returns levels, dedupes/caps codes, and caches per code", async () => {
+  const calls = [];
+  const pricingClient = {
+    async isConfigured() {
+      return true;
+    },
+    async stockLevels(codes) {
+      calls.push(codes);
+      return codes.map((code) => ({
+        itemCode: code,
+        available: 7,
+        onHand101: 9,
+        onHandCompany: 20,
+        isMixedContent: false,
+        fulfillmentCode: code,
+      }));
+    },
+  };
+  const app = await startTestApp({ pricingClient });
+
+  try {
+    const cookie = await app.adminCookie();
+
+    let response = await fetch(
+      `${app.baseUrl}/api/stock?codes=101-14,%20101-14%20,102-50,`,
+      { headers: { Cookie: cookie } },
+    );
+    assert.equal(response.status, 200);
+    let payload = await response.json();
+    assert.equal(payload.levels.length, 2);
+    assert.ok(payload.asOf);
+    // Blank + duplicate collapsed before the client was asked.
+    assert.deepEqual(calls, [["101-14", "102-50"]]);
+
+    // Second call for one cached + one new code: only the new code reaches the client.
+    response = await fetch(`${app.baseUrl}/api/stock?codes=101-14,999-99`, {
+      headers: { Cookie: cookie },
+    });
+    assert.equal(response.status, 200);
+    payload = await response.json();
+    assert.equal(payload.levels.length, 2);
+    assert.deepEqual(calls[1], ["999-99"]);
   } finally {
     await app.close();
   }

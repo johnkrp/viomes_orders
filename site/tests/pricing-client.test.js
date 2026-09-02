@@ -145,6 +145,120 @@ test("createPricingServiceClient with only a urlSource (no static baseUrl) is no
   assert.notEqual(client, null);
 });
 
+test("stockLevels posts itemCodes[] with the API key header and returns levels[]", async () => {
+  const originalFetch = globalThis.fetch;
+  let captured;
+
+  globalThis.fetch = async (url, options = {}) => {
+    captured = { url, options };
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return {
+          levels: [
+            {
+              itemCode: "66-50",
+              available: 3,
+              onHand101: 5,
+              onHandCompany: 12,
+              isMixedContent: true,
+              fulfillmentCode: "66-51",
+            },
+          ],
+          asOf: "2026-09-02T10:00:00.000Z",
+        };
+      },
+    };
+  };
+
+  try {
+    const client = createPricingServiceClient({
+      baseUrl: "http://srv2019:4100/",
+      apiKey: "secret-key",
+    });
+
+    // Duplicates and blanks are collapsed before the request goes out.
+    const levels = await client.stockLevels(["66-50", " 66-50 ", "", "101-14"]);
+
+    assert.equal(captured.url, "http://srv2019:4100/stock-levels");
+    assert.equal(captured.options.method, "POST");
+    assert.equal(captured.options.headers["X-Pricing-Api-Key"], "secret-key");
+    assert.deepEqual(JSON.parse(captured.options.body), {
+      itemCodes: ["66-50", "101-14"],
+    });
+    assert.equal(levels.length, 1);
+    assert.equal(levels[0].isMixedContent, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("stockLevels short-circuits to [] for an all-blank code list (no fetch)", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new Error("fetch should not be called");
+  };
+  try {
+    const client = createPricingServiceClient({ baseUrl: "http://srv2019:4100" });
+    assert.deepEqual(await client.stockLevels(["", "   ", null, undefined]), []);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("stockLevels throws a 502 on a non-2xx response", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 503,
+    async json() {
+      return { error: "stock_not_configured" };
+    },
+  });
+  try {
+    const client = createPricingServiceClient({ baseUrl: "http://srv2019:4100" });
+    await assert.rejects(() => client.stockLevels(["X"]), /stock_not_configured/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("stockLevels throws when the payload is missing levels[]", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    async json() {
+      return { asOf: "2026-09-02T10:00:00.000Z" };
+    },
+  });
+  try {
+    const client = createPricingServiceClient({ baseUrl: "http://srv2019:4100" });
+    await assert.rejects(() => client.stockLevels(["X"]), /unexpected payload shape/i);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("stockLevels throws PRICING_NOT_CONFIGURED when the urlSource resolves nothing", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new Error("fetch should not be called when no URL is resolved");
+  };
+  try {
+    const client = createPricingServiceClient({
+      urlSource: { async getUrl() { return null; } },
+    });
+    await assert.rejects(
+      () => client.stockLevels(["X"]),
+      (error) => error.code === "PRICING_NOT_CONFIGURED",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("pricing client throws a timeout error when the request hangs past timeoutMs", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (url, { signal } = {}) =>

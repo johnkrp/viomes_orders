@@ -1,6 +1,15 @@
 import { loadImportedCustomerBranches } from "../customer-stats/stats-imported-helpers.js";
 import { availableBranchRow } from "../customer-stats/shared.js";
 
+// GET /api/stock cache. The catalog only asks for the ~20 codes on the current page,
+// but paginating back and forth re-asks for the same codes constantly - a short TTL
+// keeps that from re-hitting the pricing tunnel. Misses are cached too (as null) so an
+// unknown code isn't retried on every page flip. Module-scoped: shared across requests,
+// which is the point.
+const STOCK_ROUTE_CACHE_TTL_MS = 45_000;
+const STOCK_ROUTE_CODE_CAP = 200;
+const stockRouteCache = new Map(); // code -> { level: object|null, expiresAt: number }
+
 export function registerPublicRoutes(app, context) {
   const {
     db,
@@ -37,6 +46,7 @@ export function registerPublicRoutes(app, context) {
       customer_stats_provider: customerStatsProvider?.name || null,
       customer_stats_provider_mode: customerStatsProvider?.mode || null,
       pricing_source: (await pricingClient?.isConfigured()) ? "live" : "heuristic",
+      stock_source: (await pricingClient?.isConfigured()) ? "live" : "unavailable",
       db_architecture: {
         raw_fact_table: IMPORTED_SALES_ARCHITECTURE.rawFactTable,
         projection_tables: IMPORTED_SALES_ARCHITECTURE.projectionTables,
@@ -113,6 +123,65 @@ export function registerPublicRoutes(app, context) {
     } catch (error) {
       logRouteError(error);
       res.status(500).json({ error: String(error) });
+    }
+  });
+
+  // GET /api/stock?codes=101-14,102-50,... - the catalog's "Απόθεμα" column.
+  //
+  // Informational only: it never gates a submit. Any failure (pricing service not
+  // configured, tunnel down, SQL error) resolves 200 with `unavailable: true` and
+  // whatever was already cached, so the column degrades to "—" and the form stays
+  // fully usable. Codes not in the response are simply omitted (the client renders
+  // "—" for those too).
+  app.get("/api/stock", requireStaffOrCustomer, async (req, res) => {
+    const codes = [
+      ...new Set(
+        String(req.query.codes || "")
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean),
+      ),
+    ].slice(0, STOCK_ROUTE_CODE_CAP);
+
+    if (codes.length === 0) {
+      res.json({ levels: [], asOf: null });
+      return;
+    }
+
+    const now = Date.now();
+    const resolved = [];
+    const missing = [];
+    for (const code of codes) {
+      const hit = stockRouteCache.get(code);
+      if (hit && hit.expiresAt > now) {
+        if (hit.level) resolved.push(hit.level);
+      } else {
+        missing.push(code);
+      }
+    }
+
+    if (missing.length === 0) {
+      res.json({ levels: resolved, asOf: new Date().toISOString() });
+      return;
+    }
+
+    try {
+      const levels = await pricingClient?.stockLevels(missing);
+      if (!Array.isArray(levels)) {
+        // No pricing client wired up at all (dev/test before the tunnel exists).
+        throw new Error("stock levels unavailable");
+      }
+      const byCode = new Map(levels.map((l) => [l.itemCode, l]));
+      for (const code of missing) {
+        const level = byCode.get(code) || null;
+        stockRouteCache.set(code, { level, expiresAt: now + STOCK_ROUTE_CACHE_TTL_MS });
+        if (level) resolved.push(level);
+      }
+      res.json({ levels: resolved, asOf: new Date().toISOString() });
+    } catch {
+      // Quiet by design - a missing stock number is not an error worth logging on
+      // every catalog page load. The client shows "—".
+      res.json({ levels: resolved, unavailable: true });
     }
   });
 

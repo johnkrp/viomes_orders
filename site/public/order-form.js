@@ -48,6 +48,8 @@ const els = {
   cart: document.getElementById("cart"),
   countPill: document.getElementById("countPill"),
   catalogStatus: document.getElementById("catalogStatus"),
+  stockRefreshBtn: document.getElementById("stockRefreshBtn"),
+  stockAsOf: document.getElementById("stockAsOf"),
   notes: document.getElementById("notes"),
   desiredDeliveryDate: document.getElementById("desiredDeliveryDate"),
   customerName: document.getElementById("customerName"),
@@ -967,6 +969,7 @@ function applyCatalogView(page = 1, query = "") {
   catalog = items.slice(start, start + PAGE_SIZE);
 
   renderCatalog(catalog);
+  hydrateStockColumn(catalog);
   renderPager({ page: safePage, pages, total });
   els.countPill.textContent = `${total} προϊόντα`;
   saveOrderFormState();
@@ -1262,6 +1265,9 @@ function createCatalogRow(product) {
         />
       </td>
       <td class="td-bundle"><span class="bundle-pill">${product.pieces_per_package} τεμ.</span></td>
+      <td class="td-stock" data-code="${escapeHtml(product.code)}">
+        <span class="stock-cell stock-loading" title="Φόρτωση αποθέματος…">·</span>
+      </td>
       <td class="td-packs">
         <input class="packsInput" type="number" min="1" step="1" inputmode="numeric" data-ppp="${product.pieces_per_package}" />
       </td>
@@ -1290,12 +1296,13 @@ function renderCatalog(items) {
           <th class="th-desc">ΠΕΡΙΓΡΑΦΗ</th>
           <th class="th-pack">ΕΙΔΟΣ</th>
           <th class="th-bundle">ΤΕΜ./ΣΥΣΚ.</th>
+          <th class="th-stock">ΑΠΟΘΕΜΑ</th>
           <th class="th-packs">ΣΥΣΚΕΥΑΣΙΕΣ</th>
           <th class="th-qty">ΤΕΜΑΧΙΑ</th>
         </tr>
       </thead>
       <tbody>
-        ${rows || `<tr><td colspan="6" style="padding:14px; color:#6b6b6b;">Δεν βρέθηκαν προϊόντα.</td></tr>`}
+        ${rows || `<tr><td colspan="7" style="padding:14px; color:#6b6b6b;">Δεν βρέθηκαν προϊόντα.</td></tr>`}
       </tbody>
     </table>
   `;
@@ -1456,6 +1463,181 @@ function renderCatalog(items) {
 
   els.countPill.textContent = `${items.length} προϊόντα`;
   updatePreparedAddButton();
+}
+
+// --- "Απόθεμα" catalog column ---------------------------------------------------
+// Informational stock figure per catalog row. Never gates a submit: any failure
+// leaves the cell as a muted "—" and the form stays fully usable.
+//
+// Per-code session cache (90s TTL) so paging back and forth doesn't re-fetch. A
+// cached value of `null` means the endpoint answered but had no row for that code
+// (obsolete/unknown code) - we render "—" and stop asking until the TTL lapses.
+const STOCK_CACHE_TTL_MS = 90_000;
+const stockCache = new Map(); // code -> { level: object|null, at: number }
+let stockHydrateTimer = null;
+let stockHydrateSeq = 0;
+let latestStockAsOf = null;
+
+function stockCacheGet(code) {
+  const hit = stockCache.get(code);
+  if (!hit) return undefined;
+  if (Date.now() - hit.at > STOCK_CACHE_TTL_MS) {
+    stockCache.delete(code);
+    return undefined;
+  }
+  return hit;
+}
+
+function fmtStockNumber(value) {
+  const n = Number(value) || 0;
+  // ES1 stock is usually whole pieces but can be fractional for weighed items.
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function renderStockCell(cell, level, qtyValue) {
+  if (!cell) return;
+  let span = cell.querySelector(".stock-cell");
+  if (!span) {
+    span = document.createElement("span");
+    cell.appendChild(span);
+  }
+
+  if (!level) {
+    span.className = "stock-cell stock-none";
+    span.textContent = "—";
+    span.title = "Απόθεμα μη διαθέσιμο";
+    return;
+  }
+
+  const avail = Number(level.available) || 0;
+  const qty = Number.parseInt(qtyValue, 10);
+  const hasQty = Number.isFinite(qty) && qty > 0;
+
+  let state = "neutral";
+  if (avail <= 0) state = "bad";
+  else if (hasQty && avail < qty) state = "warn";
+  else if (hasQty && avail >= qty) state = "good";
+
+  span.className = `stock-cell stock-${state}`;
+  const shown = fmtStockNumber(avail);
+  span.textContent = level.isMixedContent ? `≈ ${shown}` : shown;
+
+  const tip = [
+    `Διαθέσιμο (αποθ. 101): ${fmtStockNumber(avail)}`,
+    `Φυσικό υπόλοιπο 101: ${fmtStockNumber(level.onHand101)}`,
+    `Σύνολο εταιρείας: ${fmtStockNumber(level.onHandCompany)}`,
+  ];
+  if (level.isMixedContent && level.fulfillmentCode) {
+    tip.push(`από συγγενικό κωδικό ${level.fulfillmentCode}`);
+  }
+  span.title = tip.join(" · ");
+}
+
+// Paint td-stock cells from `levelByCode` (this batch's fresh values); for codes not
+// in it, fall back to the session cache. Cells whose code is neither known nor cached
+// keep the loading dot.
+function applyStockLevelsToDom(levelByCode) {
+  if (!els.catalog) return;
+  els.catalog.querySelectorAll("td.td-stock").forEach((cell) => {
+    const code = cell.getAttribute("data-code");
+    if (!code) return;
+    const row = cell.closest("tr[data-id]");
+    const qtyInput = row?.querySelector(".qty-inline input");
+
+    let level;
+    if (levelByCode.has(code)) {
+      level = levelByCode.get(code);
+    } else {
+      const cached = stockCacheGet(code);
+      if (!cached) return;
+      level = cached.level;
+    }
+    renderStockCell(cell, level, qtyInput?.value);
+  });
+}
+
+function updateStockAsOfLabel() {
+  if (!els.stockAsOf) return;
+  if (!latestStockAsOf) {
+    els.stockAsOf.textContent = "";
+    return;
+  }
+  const d = new Date(latestStockAsOf);
+  if (Number.isNaN(d.getTime())) {
+    els.stockAsOf.textContent = "";
+    return;
+  }
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  els.stockAsOf.textContent = `απόθεμα ${hh}:${mm}`;
+}
+
+function hydrateStockColumn(items) {
+  const codes = (Array.isArray(items) ? items : [])
+    .map((it) => String(it?.code || "").trim())
+    .filter(Boolean);
+  if (codes.length === 0) return;
+
+  // Paint anything already cached right away so paging back doesn't flash a dot.
+  const cachedByCode = new Map();
+  const missing = [];
+  for (const code of codes) {
+    const hit = stockCacheGet(code);
+    if (hit) cachedByCode.set(code, hit.level);
+    else missing.push(code);
+  }
+  if (cachedByCode.size) applyStockLevelsToDom(cachedByCode);
+  if (missing.length === 0) return;
+
+  clearTimeout(stockHydrateTimer);
+  const seq = ++stockHydrateSeq;
+  stockHydrateTimer = setTimeout(async () => {
+    try {
+      const params = new URLSearchParams({ codes: missing.join(",") });
+      const res = await fetch(`/api/stock?${params.toString()}`, {
+        headers: { Accept: "application/json" },
+      });
+      if (seq !== stockHydrateSeq) return; // a newer page superseded this fetch
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const levels = Array.isArray(data?.levels) ? data.levels : [];
+
+      const byCode = new Map();
+      for (const lvl of levels) {
+        if (lvl?.itemCode) byCode.set(String(lvl.itemCode).trim(), lvl);
+      }
+      // Cache every code we asked about: a hit as its level, a miss as null.
+      for (const code of missing) {
+        const level = byCode.has(code) ? byCode.get(code) : null;
+        byCode.set(code, level);
+        stockCache.set(code, { level, at: Date.now() });
+      }
+      if (data?.asOf && !data?.unavailable) {
+        latestStockAsOf = data.asOf;
+        updateStockAsOfLabel();
+      }
+      applyStockLevelsToDom(byCode);
+    } catch {
+      if (seq !== stockHydrateSeq) return;
+      // Endpoint down / unreachable: show "—" for the codes we were waiting on, but
+      // do NOT cache the failure - a refresh or a later page revisit retries.
+      const failed = new Map();
+      for (const code of missing) failed.set(code, null);
+      applyStockLevelsToDom(failed);
+    }
+  }, 150);
+}
+
+function refreshStockColumn() {
+  stockCache.clear();
+  latestStockAsOf = null;
+  updateStockAsOfLabel();
+  els.catalog?.querySelectorAll("td.td-stock .stock-cell").forEach((span) => {
+    span.className = "stock-cell stock-loading";
+    span.textContent = "·";
+    span.title = "Φόρτωση αποθέματος…";
+  });
+  hydrateStockColumn(catalog);
 }
 
 function renderCart() {
@@ -2048,6 +2230,22 @@ els.reloadBtn?.addEventListener("click", clearTopFilters);
 els.reloadBtn?.addEventListener("pointerup", clearTopFilters);
 els.reloadBtn?.addEventListener("touchend", clearTopFilters, {
   passive: false,
+});
+
+els.stockRefreshBtn?.addEventListener("click", refreshStockColumn);
+
+// Recolour a row's "Απόθεμα" cell as its quantity input changes (red/amber/green vs
+// available). Delegated on the catalog container, which survives innerHTML swaps.
+els.catalog?.addEventListener("input", (event) => {
+  const input = event.target.closest?.(".qty-inline input");
+  if (!input) return;
+  const row = input.closest("tr[data-id]");
+  const cell = row?.querySelector("td.td-stock");
+  const code = cell?.getAttribute("data-code");
+  if (!code) return;
+  const hit = stockCacheGet(code);
+  if (hit === undefined) return; // not loaded yet - leave the dot
+  renderStockCell(cell, hit.level, input.value);
 });
 window.addEventListener("pagehide", saveOrderFormState);
 window.addEventListener("beforeunload", saveOrderFormState);

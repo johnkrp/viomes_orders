@@ -504,6 +504,9 @@ button.success:active,
 .th-bundle {
   width: 120px;
 }
+.th-stock {
+  width: 88px;
+}
 .th-packs {
   width: 170px;
 }
@@ -566,9 +569,49 @@ button.success:active,
 .td-pack,
 .td-color,
 .td-bundle,
+.td-stock,
 .td-packs,
 .td-qty {
   text-align: center;
+}
+
+/* "Απόθεμα" cell. Informational only — colour tracks the row's quantity vs what's
+   available (same grey/amber/green hues as the order-history badges, plus red for
+   nothing free), never blocks anything. */
+.stock-cell {
+  display: inline-block;
+  min-width: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.stock-cell.stock-loading,
+.stock-cell.stock-none {
+  color: #c2bcae;
+  font-weight: 500;
+}
+.stock-cell.stock-neutral {
+  color: var(--muted);
+}
+.stock-cell.stock-good {
+  color: #5c7a4a;
+}
+.stock-cell.stock-warn {
+  color: #c9922f;
+}
+.stock-cell.stock-bad {
+  color: #b23b3b;
+  font-weight: 700;
+}
+
+#stockRefreshBtn {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+#stockAsOf {
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .td-color {
@@ -1194,6 +1237,10 @@ button.success:active,
     width: 2.5rem;
   }
 
+  .th-stock {
+    width: 2.6rem;
+  }
+
   .th-packs {
     width: 4.7rem;
   }
@@ -1234,6 +1281,8 @@ button.success:active,
 
   .th-bundle,
   .td-bundle,
+  .th-stock,
+  .td-stock,
   .th-packs,
   .td-packs,
   .th-qty,
