@@ -262,6 +262,18 @@ main {
   white-space: nowrap;
 }
 
+/* Toolbar controls run denser than page-action buttons so the whole row still
+   fits on one line when "Προσθήκη έτοιμων γραμμών" gains a "(N)" prepared-rows
+   badge. Space comes off the button padding, not the search field. */
+.toolbar button,
+.toolbar .btn {
+  padding: 8px 11px;
+  font-size: 13px;
+}
+.toolbar #toolbarQty {
+  max-width: 70px;
+}
+
 /* The search field is the flexible item in the toolbar: everything after it is
    fixed-width, so it has to absorb the slack. The basis (not just min-width) has
    to stay small — with flex-wrap:wrap the browser wraps on the hypothetical
@@ -1216,8 +1228,15 @@ button.success:active,
   }
 
   .toolbar {
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin: 0.5rem;
+  }
+
+  /* Keep the search row on one line even with the "(N)" prepared-rows badge. */
+  .toolbar button,
+  .toolbar .btn {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.78rem;
   }
 
   input[type="search"] {
