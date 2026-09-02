@@ -709,13 +709,14 @@ button.success:active,
 
 /* Desktop-only: make +/- controls more discreet */
 @media (min-width: 1101px) {
+  /* ΣΥΣΚΕΥΑΣΙΕΣ only holds one number input, so it runs narrow and hands the
+     spare width to ΠΕΡΙΓΡΑΦΗ (net-neutral on the table's total width). */
   .th-desc {
-    width: 15%;
+    width: 17%;
   }
 
-  /* The new ΑΠΟΘΕΜΑ column has to come out of the other columns' budget or the
-     wide 80px steppers + "Προσθήκη" in ΤΕΜΑΧΙΑ get clipped by the wrap's
-     overflow:hidden. Trim the roomy columns, give ΤΕΜΑΧΙΑ a touch more. */
+  /* Trimmed for the ΑΠΟΘΕΜΑ column so the 80px steppers + "Προσθήκη" in
+     ΤΕΜΑΧΙΑ don't get clipped by the wrap's overflow:hidden. */
   .th-code {
     width: 80px;
   }
@@ -729,7 +730,7 @@ button.success:active,
   }
 
   .th-packs {
-    width: 130px;
+    width: 104px;
   }
 
   .th-qty {
@@ -1291,7 +1292,7 @@ button.success:active,
   }
 
   .th-packs {
-    width: 4.7rem;
+    width: 3.9rem;
   }
 
   .th-packs,
@@ -1310,7 +1311,7 @@ button.success:active,
   }
 
   .th-desc {
-    width: 16%;
+    width: 18%;
   }
 
   .th-desc,
