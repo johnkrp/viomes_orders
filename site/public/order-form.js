@@ -1569,7 +1569,8 @@ function updateStockAsOfLabel() {
   }
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  els.stockAsOf.textContent = `απόθεμα ${hh}:${mm}`;
+  // Just the time - the button's icon and title already say "απόθεμα / ανανέωση".
+  els.stockAsOf.textContent = `${hh}:${mm}`;
 }
 
 function hydrateStockColumn(items) {
