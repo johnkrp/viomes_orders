@@ -581,7 +581,7 @@ function buildCartItemFromCatalog(product, qty, fallbackDescription = "") {
     qty,
     image_url: product.image_url || "",
     pieces_per_package: product.pieces_per_package,
-    volume_liters: getVolLitersFromProduct(product),
+    volume_liters: getVolM3PerPiece(product),
     color: product.color || "",
   };
 }
@@ -776,7 +776,10 @@ function fmtM3(value) {
     .replace(/(\.\d*[1-9])0+$/, "$1");
 }
 
-function getVolLitersFromProduct(product) {
+// products.volume_liters is misnamed: it holds the volume in m³ of ONE piece (τεμάχιο)
+// — the same "ν ΚΜΕΤ = 1 ΤΕΜ" figure ES1 stores on the item. It is NOT a per-package
+// volume.
+function getVolM3PerPiece(product) {
   const value =
     product?.volume_liters ??
     product?.volume_l ??
@@ -786,12 +789,13 @@ function getVolLitersFromProduct(product) {
   return toNum(value, 0);
 }
 
-function calcVolumes(pieces, piecesPerPack, volumeLitersPerPack) {
+function calcVolumes(pieces, piecesPerPack, volumeM3PerPiece) {
   const qty = toNum(pieces, 0);
   const perPack = Math.max(1, parseInt(piecesPerPack, 10) || 1);
   const packages = qty / perPack;
-  const totalLiters = packages * toNum(volumeLitersPerPack, 0);
-  return { packages, totalLiters };
+  // Volume scales with pieces, not packages: a 6-piece carton is 6 × the piece volume.
+  const volumeM3 = qty * toNum(volumeM3PerPiece, 0);
+  return { packages, volumeM3 };
 }
 
 function productTitle(product) {
@@ -1043,7 +1047,7 @@ function addToCart(product, qty) {
     qty: previousQty + qty,
     image_url: product.image_url || "",
     pieces_per_package: product.pieces_per_package,
-    volume_liters: getVolLitersFromProduct(product),
+    volume_liters: getVolM3PerPiece(product),
     color: product.color || "",
   });
 
@@ -1460,7 +1464,7 @@ function renderCart() {
     return;
   }
 
-  let totalLiters = 0;
+  let totalVolumeM3 = 0;
   let totalPackages = 0;
 
   const itemsHtml = Array.from(cart.values())
@@ -1471,7 +1475,7 @@ function renderCart() {
         item.pieces_per_package,
         item.volume_liters,
       );
-      totalLiters += totals.totalLiters;
+      totalVolumeM3 += totals.volumeM3;
       totalPackages += totals.packages;
 
       const image = item.image_url || PLACEHOLDER_CART_IMAGE;
@@ -1488,7 +1492,7 @@ function renderCart() {
             <div style="min-width:0;">
               <div class="cartTitle">${escapeHtml(item.title || item.code)}</div>
               <div class="cartCode">${escapeHtml(item.code)}${item.color ? " - " + escapeHtml(item.color) : ""}</div>
-              <div class="small" style="margin-top:2px;">${totals.packages} συσκ. - ${fmtM3(totals.totalLiters)} m³</div>
+              <div class="small" style="margin-top:2px;">${totals.packages} συσκ. - ${fmtM3(totals.volumeM3)} m³</div>
             </div>
           </div>
           <div class="cartRight">
@@ -1516,7 +1520,7 @@ function renderCart() {
     ${itemsHtml}
     <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; gap:10px; align-items:center;">
       <div class="small">Σύνολο όγκου συσκευασιών:</div>
-      <div style="font-weight:700;">${fmtM3(totalLiters)} m³ (${totalPackages} συσκ.)</div>
+      <div style="font-weight:700;">${fmtM3(totalVolumeM3)} m³ (${totalPackages} συσκ.)</div>
     </div>
   `;
 
@@ -1595,7 +1599,7 @@ function renderCart() {
 
 function calcTotals(cartMap) {
   let totalPackages = 0;
-  let totalLiters = 0;
+  let totalVolumeM3 = 0;
   let totalPieces = 0;
 
   for (const item of cartMap.values()) {
@@ -1605,17 +1609,17 @@ function calcTotals(cartMap) {
     );
     const qty = parseInt(item.qty, 10) || 0;
     const packages = qty / piecesPerPack;
-    const volumePerPack = toNum(item.volume_liters, 0);
+    // volume_liters is m³ per single piece — scale by pieces, not packages.
+    const volumeM3PerPiece = toNum(item.volume_liters, 0);
 
     totalPieces += qty;
     totalPackages += packages;
-    totalLiters += packages * volumePerPack;
+    totalVolumeM3 += qty * volumeM3PerPiece;
   }
 
   return {
     totalPackages,
-    totalLiters,
-    totalM3: totalLiters / 1000,
+    totalVolumeM3,
     totalPieces,
   };
 }
