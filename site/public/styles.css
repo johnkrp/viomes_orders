@@ -1307,11 +1307,11 @@ button.success:active,
   }
 
   .th-qty {
-    width: 7rem;
+    width: 8.6rem;
   }
 
   .th-desc {
-    width: 18%;
+    width: 17%;
   }
 
   .th-desc,
@@ -1357,23 +1357,26 @@ button.success:active,
 
   .td-packs input,
   .qty-inline input {
-    width: 2.55rem;
-    height: 1.7rem;
+    width: 2.7rem;
+    height: 1.95rem;
     padding: 0.15rem;
   }
 
+  /* ΤΕΜΑΧΙΑ controls: bigger touch targets on tablet than the old ~20px ones,
+     still well below the 80x36 desktop footprint (which lives in the
+     min-width:1101px block and is untouched). */
   .qty-inline .addBtn {
-    height: 1.95rem;
-    min-width: 3.2rem;
-    font-size: 0.62rem;
+    height: 2.2rem;
+    min-width: 3.5rem;
+    font-size: 0.72rem;
   }
 
   .stepBtn {
-    width: 1.3rem;
-    height: 1.25rem;
-    min-width: 1.3rem;
-    font-size: 0.95rem;
-    border-radius: 0.3rem;
+    width: 1.95rem;
+    height: 1.75rem;
+    min-width: 1.95rem;
+    font-size: 1.05rem;
+    border-radius: 0.35rem;
     padding: 0;
   }
 
@@ -1392,9 +1395,9 @@ button.success:active,
 
   .qty-inline .addBtn {
     width: auto;
-    min-width: 3.2rem;
-    padding-left: 0.28rem;
-    padding-right: 0.28rem;
+    min-width: 3.5rem;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
     flex: 0 0 auto;
   }
 
