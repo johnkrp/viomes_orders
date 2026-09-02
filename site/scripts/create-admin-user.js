@@ -1,6 +1,15 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 import { hashPassword } from "../lib/admin-auth.js";
 import { openDatabase } from "../lib/db/client.js";
 import { initDatabaseSchema } from "../lib/db/init-schema.js";
+
+// Load site/.env the same way server.js does, so `npm run admin:create-user` talks to the
+// real (remote Plesk) MySQL instead of falling back to 127.0.0.1 when the shell has only
+// a partial MYSQL_* set. override:true keeps .env authoritative over stray shell vars.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, "..", ".env"), override: true, quiet: true });
 
 function parseArgs(argv) {
   const args = {};
@@ -34,10 +43,6 @@ async function main() {
   if (!username || !password) {
     printUsage();
     throw new Error("Missing required --username or --password.");
-  }
-
-  if (password.length < 8) {
-    throw new Error("Password must be at least 8 characters.");
   }
 
   const db = await openDatabase({ env: process.env });

@@ -1,7 +1,14 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 import { hashPassword } from "../lib/admin-auth.js";
 import { getImportedCustomerByCode } from "../lib/admin-customer-search.js";
 import { openDatabase } from "../lib/db/client.js";
 import { initDatabaseSchema } from "../lib/db/init-schema.js";
+
+// Load site/.env the same way server.js does (see create-admin-user.js).
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, "..", ".env"), override: true, quiet: true });
 
 function parseArgs(argv) {
   const args = {};
@@ -37,10 +44,6 @@ async function main() {
     throw new Error(
       "Missing required --username, --password, or --customer-code.",
     );
-  }
-
-  if (password.length < 8) {
-    throw new Error("Password must be at least 8 characters.");
   }
 
   const db = await openDatabase({ env: process.env });
