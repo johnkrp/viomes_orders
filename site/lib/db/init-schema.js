@@ -785,6 +785,18 @@ export async function initDatabaseSchema({ db, kind }) {
     "customer_substore_code",
     `customer_substore_code ${typeText}`,
   );
+  // Αρ. Παραγγελίας - the reference number the customer quotes for their own order
+  // (their PO / internal order id). Optional free text: it can be a bare number, a
+  // hyphenated range, or a number+date. The viomes_db ΠΑΡ writer puts it into the
+  // document's dd/dt.ADReasoning as "Αρ.Παραγγελίας:<value>". Nullable - blank when the
+  // customer gave no reference.
+  await ensureColumn(
+    db,
+    kind,
+    "orders",
+    "customer_order_no",
+    `customer_order_no ${kind === "mysql" ? "VARCHAR(128)" : "TEXT"}`,
+  );
   // Writer lifecycle, not an approval state: a submitted order is 'ready' for the
   // viomes_db ΠΑΡ writer to pick up (there is no human approval step any more - ES1's
   // own '100. Πιστωτικός Έλεγχος' is the gate). The writer moves it ready -> writing ->

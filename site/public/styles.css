@@ -709,6 +709,7 @@ button.success:active,
 
 .actions .customerName,
 .actions .customerSubstore,
+.actions .customerOrderNoField,
 .actions .customerEmail,
 .actions #customerPickerPanel {
   display: grid;
@@ -718,6 +719,7 @@ button.success:active,
 }
 .actions .customerName input,
 .actions .customerSubstore input,
+.actions .customerOrderNoField input,
 .actions .customerEmail input,
 .actions #customerPickerPanel input {
   width: 100%;
@@ -725,6 +727,7 @@ button.success:active,
 
 .actions .customerName label,
 .actions .customerSubstore label,
+.actions .customerOrderNoField label,
 .actions .customerEmail label,
 .actions #customerPickerPanel label {
   font-size: 13px;

@@ -177,6 +177,10 @@ export function validateOrderSubmission(body) {
   // Exact branch code (== ES1 ESGOSites.Code) for the ΠΑΡ writer's delivery-site
   // resolver. Optional - blank for retail / no-branch orders.
   const customerSubstoreCode = sanitizeText(body?.customerSubstoreCode, 128);
+  // Αρ. Παραγγελίας - the customer's own order reference (their PO / internal order id).
+  // Optional free text (bare number, hyphenated range, or number+date). The ΠΑΡ writer
+  // puts it in the document's dd/dt.ADReasoning as "Αρ.Παραγγελίας:<value>".
+  const customerOrderNo = sanitizeText(body?.customerOrderNo, 128);
   const customerEmail = sanitizeText(body?.customerEmail, MAX_TEXT_LENGTH);
   const notes = sanitizeText(body?.notes, MAX_NOTES_LENGTH);
   const desiredDeliveryDate = validateOptionalOrderDate(
@@ -237,6 +241,7 @@ export function validateOrderSubmission(body) {
     customerCode,
     customerSubstore,
     customerSubstoreCode,
+    customerOrderNo,
     customerEmail,
     notes,
     desiredDeliveryDate,
@@ -262,6 +267,7 @@ export async function resolveOrderSubmissionIdentity(
       customerName: customer.name,
       customerSubstore: submission.customerSubstore || null,
       customerSubstoreCode: submission.customerSubstoreCode || null,
+      customerOrderNo: submission.customerOrderNo || null,
       submittedBy: actor.username || null,
       submittedByRole: "customer",
     };
@@ -287,6 +293,7 @@ export async function resolveOrderSubmissionIdentity(
     customerName: customer.name,
     customerSubstore: submission.customerSubstore || null,
     customerSubstoreCode: submission.customerSubstoreCode || null,
+    customerOrderNo: submission.customerOrderNo || null,
     submittedBy: actor?.username || null,
     submittedByRole: actor?.role || null,
   };
@@ -386,12 +393,12 @@ export async function createOrderSubmission(db, submission, { pricingClient } = 
     `
       INSERT INTO orders(
         customer_name, customer_email, customer_code, customer_substore,
-        customer_substore_code, notes,
+        customer_substore_code, customer_order_no, notes,
         desired_delivery_date, es1_order_channel_code, total_qty_pieces,
         total_net_value, needs_manual_price_review, status, submitted_by,
         submitted_by_role, submitted_at, created_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready', ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready', ?, ?, ?, ?)
     `,
     [
       submission.customerName,
@@ -399,6 +406,7 @@ export async function createOrderSubmission(db, submission, { pricingClient } = 
       submission.customerCode || null,
       submission.customerSubstore || null,
       submission.customerSubstoreCode || null,
+      submission.customerOrderNo || null,
       submission.notes || null,
       submission.desiredDeliveryDate || null,
       ES1_ORDER_CHANNEL_PLATFORM,
@@ -466,7 +474,8 @@ export async function listOrderSubmissions(
 
   const orders = await db.all(
     `
-    SELECT id, customer_name, customer_email, customer_code, customer_substore, notes,
+    SELECT id, customer_name, customer_email, customer_code, customer_substore,
+           customer_order_no, notes,
            desired_delivery_date, dispatch_date, es1_order_channel_code,
            total_qty_pieces, total_net_value, needs_manual_price_review, status,
            es1_document_code, es1_written_at, es1_write_error, es1_write_attempts,

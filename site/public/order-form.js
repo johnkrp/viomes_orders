@@ -52,6 +52,7 @@ const els = {
   desiredDeliveryDate: document.getElementById("desiredDeliveryDate"),
   customerName: document.getElementById("customerName"),
   customerSubstore: document.getElementById("customerSubstore"),
+  customerOrderNo: document.getElementById("customerOrderNo"),
   customerEmail: document.getElementById("customerEmail"),
   clearBtn: document.getElementById("clearBtn"),
   downloadExcelBtn: document.getElementById("downloadExcelBtn"),
@@ -491,6 +492,7 @@ function saveOrderFormState() {
       customerCode: isStaff ? selectedStaffCustomer?.code || "" : "",
       customerName: isStaff ? els.customerName?.value || "" : "",
       customerSubstore: isStaff ? els.customerSubstore?.value || "" : "",
+      customerOrderNo: els.customerOrderNo?.value || "",
       customerEmail: els.customerEmail?.value || "",
       notes: els.notes?.value || "",
       currentPage,
@@ -535,6 +537,7 @@ function restoreOrderFormFields(state) {
       if (els.customerPickerQuery) els.customerPickerQuery.value = "";
     }
   }
+  if (els.customerOrderNo) els.customerOrderNo.value = state?.customerOrderNo || "";
   if (els.customerEmail) els.customerEmail.value = state?.customerEmail || "";
   if (els.notes) els.notes.value = state?.notes || "";
 }
@@ -678,6 +681,7 @@ async function applyCustomerRankingDraft(draft) {
   if (els.toolbarQty) els.toolbarQty.value = "";
   await applyDraftCustomerContext(draft);
   if (els.customerEmail) els.customerEmail.value = draft.customerEmail || "";
+  if (els.customerOrderNo) els.customerOrderNo.value = "";
   if (els.notes) els.notes.value = "";
   currentPage = 1;
   lastQuery = "";
@@ -1641,12 +1645,15 @@ function downloadOrderExcelFromCart(cartMap) {
     document.getElementById("customerName")?.value?.trim() || "";
   const customerSubstore =
     document.getElementById("customerSubstore")?.value?.trim() || "";
+  const customerOrderNo =
+    document.getElementById("customerOrderNo")?.value?.trim() || "";
   const comments = document.getElementById("notes")?.value?.trim() || "";
 
   const rows = [
     ["ΣΤΟΙΧΕΙΑ ΠΑΡΑΓΓΕΛΙΑΣ", ""],
     ["Ονοματεπώνυμο / Επωνυμία Πελάτη", customerName],
     ["Υποκατάστημα", customerSubstore],
+    ["Αρ. Παραγγελίας", customerOrderNo],
     ["Σχόλια", comments],
     ["", ""],
     ["ΚΩΔΙΚΟΣ", "ΤΕΜΑΧΙΑ", "ΠΕΡΙΓΡΑΦΗ"],
@@ -1761,6 +1768,7 @@ async function submitOrderToBackend(meta) {
         customerName: meta.payload.customer_name,
         customerSubstore: meta.payload.customer_substore,
         customerSubstoreCode: meta.payload.customer_substore_code,
+        customerOrderNo: meta.payload.customer_order_no,
         customerEmail: meta.payload.customer_email,
         notes: meta.payload.notes,
         desiredDeliveryDate: meta.payload.desired_delivery_date,
@@ -1819,6 +1827,8 @@ function prepareOrderMeta() {
     "";
   const customerEmail =
     document.getElementById("customerEmail")?.value?.trim() || "";
+  const customerOrderNo =
+    document.getElementById("customerOrderNo")?.value?.trim() || "";
   const notes = els.notes?.value?.trim() || "";
   const desiredDeliveryDate =
     document.getElementById("desiredDeliveryDate")?.value || "";
@@ -1830,6 +1840,7 @@ function prepareOrderMeta() {
       customer_name: customerName,
       customer_substore: customerSubstore,
       customer_substore_code: customerSubstoreCode,
+      customer_order_no: customerOrderNo,
       customer_email: customerEmail,
       notes,
       desired_delivery_date: desiredDeliveryDate,
@@ -2004,6 +2015,7 @@ els.customerSubstoreResults?.addEventListener("click", (event) => {
   selectCustomerSubstoreOption(button.dataset.value || "");
 });
 els.customerEmail?.addEventListener("input", saveOrderFormState);
+els.customerOrderNo?.addEventListener("input", saveOrderFormState);
 els.notes?.addEventListener("input", saveOrderFormState);
 
 els.toolbarAddBtn?.addEventListener("click", addFromUnifiedBar);
@@ -2019,6 +2031,7 @@ els.clearBtn?.addEventListener("click", () => {
     if (els.customerPickerResults) els.customerPickerResults.innerHTML = "";
   }
   if (els.customerEmail) els.customerEmail.value = "";
+  if (els.customerOrderNo) els.customerOrderNo.value = "";
   if (els.notes) els.notes.value = "";
   if (els.desiredDeliveryDate) els.desiredDeliveryDate.value = "";
   setToolbarMsg("");

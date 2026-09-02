@@ -302,6 +302,7 @@ function createDbFixture() {
           customerCode,
           customerSubstore,
           customerSubstoreCode,
+          customerOrderNo,
           notes,
           desiredDeliveryDate,
           es1OrderChannelCode,
@@ -321,6 +322,7 @@ function createDbFixture() {
           customer_code: customerCode,
           customer_substore: customerSubstore,
           customer_substore_code: customerSubstoreCode,
+          customer_order_no: customerOrderNo,
           notes,
           desired_delivery_date: desiredDeliveryDate,
           dispatch_date: null,
@@ -550,6 +552,7 @@ test("order submission endpoint validates and persists a writer-ready order", as
         customerCode: "C001",
         customerSubstore: "ΤΟΜΠΑΖΗ - (040)",
         customerSubstoreCode: "5040",
+        customerOrderNo: "4521990094",
         customerEmail: "buyer@example.com",
         notes: "Please ship fast",
         items: [
@@ -573,6 +576,8 @@ test("order submission endpoint validates and persists a writer-ready order", as
     // different number than its real code.
     assert.equal(order.customer_substore, "ΤΟΜΠΑΖΗ - (040)");
     assert.equal(order.customer_substore_code, "5040");
+    // Αρ. Παραγγελίας persists verbatim - the ΠΑΡ writer prefixes it into ADReasoning.
+    assert.equal(order.customer_order_no, "4521990094");
     assert.equal(order.total_qty_pieces, 5);
     assert.equal(order.submitted_by, "admin");
     assert.equal(order.submitted_by_role, "staff");

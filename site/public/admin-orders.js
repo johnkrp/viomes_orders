@@ -230,6 +230,9 @@ function buildDetailRow(order, context, { isExpanded }) {
   if (order.customer_code) {
     metaParts.push(`Κωδ. πελάτη: ${escapeHtml(order.customer_code)}`);
   }
+  if (order.customer_order_no) {
+    metaParts.push(`Αρ. Παραγγελίας: ${escapeHtml(order.customer_order_no)}`);
+  }
   if (order.customer_email) {
     metaParts.push(`Email: ${escapeHtml(order.customer_email)}`);
   }
