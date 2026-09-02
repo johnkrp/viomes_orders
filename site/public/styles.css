@@ -268,8 +268,8 @@ main {
    basis size before it ever shrinks an item, so a 320px basis pushed the count
    pill onto a second row. flex-grow still lets it fill whatever space is left. */
 input[type="search"] {
-  flex: 1 1 140px;
-  min-width: 140px;
+  flex: 1 1 180px;
+  min-width: 180px;
   padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-input);
@@ -605,39 +605,23 @@ button.success:active,
   font-weight: 700;
 }
 
-/* ΑΠΟΘΕΜΑ column header: label + a small "↻" refresh control, stacked so the
-   64-78px column can hold both. Lives in the <thead> (not the search toolbar) so
-   it never crowds that row. */
-.th-stock {
-  white-space: normal;
-}
-.th-stock .th-stock-label {
-  display: block;
-}
-.stock-refresh-btn {
+#stockRefreshBtn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 3px;
-  padding: 2px 6px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--card);
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 8px;
+  font-size: 12px;
   line-height: 1;
-  cursor: pointer;
 }
-.stock-refresh-btn:hover {
-  border-color: var(--viomes-dark);
-  color: var(--viomes-dark);
-}
-.stock-refresh-btn svg {
+#stockRefreshBtn svg {
   display: block;
 }
-.stock-refresh-btn .stock-asof:empty {
+#stockAsOf {
+  color: var(--muted);
+  white-space: nowrap;
+}
+#stockAsOf:empty {
   display: none;
 }
 
@@ -714,12 +698,12 @@ button.success:active,
 /* Desktop-only: make +/- controls more discreet */
 @media (min-width: 1101px) {
   .th-desc {
-    width: 17%;
+    width: 15%;
   }
 
-  /* The ΑΠΟΘΕΜΑ column comes out of the other columns' budget or the wide 80px
-     steppers + "Προσθήκη" in ΤΕΜΑΧΙΑ get clipped by the wrap's overflow:hidden.
-     ΣΥΣΚΕΥΑΣΙΕΣ only holds one number input, so it gives width back to ΠΕΡΙΓΡΑΦΗ. */
+  /* The new ΑΠΟΘΕΜΑ column has to come out of the other columns' budget or the
+     wide 80px steppers + "Προσθήκη" in ΤΕΜΑΧΙΑ get clipped by the wrap's
+     overflow:hidden. Trim the roomy columns, give ΤΕΜΑΧΙΑ a touch more. */
   .th-code {
     width: 80px;
   }
@@ -729,11 +713,11 @@ button.success:active,
   }
 
   .th-stock {
-    width: 78px;
+    width: 64px;
   }
 
   .th-packs {
-    width: 104px;
+    width: 130px;
   }
 
   .th-qty {
@@ -1237,17 +1221,9 @@ button.success:active,
   }
 
   input[type="search"] {
-    flex-basis: 8.5rem;
-    min-width: 8.5rem;
+    min-width: 11rem;
     padding: 0.55rem 0.65rem;
     font-size: 0.88rem;
-  }
-
-  /* Keep the whole search row on one line even with the "(N)" prepared-rows
-     badge on "Προσθήκη έτοιμων γραμμών" - the count pill was wrapping. */
-  #countPill {
-    padding: 3px 8px;
-    letter-spacing: 0.02em;
   }
 
   input[type="text"],
@@ -1292,11 +1268,11 @@ button.success:active,
   }
 
   .th-stock {
-    width: 3.2rem;
+    width: 2.6rem;
   }
 
   .th-packs {
-    width: 3.9rem;
+    width: 4.7rem;
   }
 
   .th-packs,
@@ -1315,7 +1291,7 @@ button.success:active,
   }
 
   .th-desc {
-    width: 19%;
+    width: 16%;
   }
 
   .th-desc,

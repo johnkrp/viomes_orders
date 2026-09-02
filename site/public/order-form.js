@@ -48,6 +48,8 @@ const els = {
   cart: document.getElementById("cart"),
   countPill: document.getElementById("countPill"),
   catalogStatus: document.getElementById("catalogStatus"),
+  stockRefreshBtn: document.getElementById("stockRefreshBtn"),
+  stockAsOf: document.getElementById("stockAsOf"),
   notes: document.getElementById("notes"),
   desiredDeliveryDate: document.getElementById("desiredDeliveryDate"),
   customerName: document.getElementById("customerName"),
@@ -967,7 +969,6 @@ function applyCatalogView(page = 1, query = "") {
   catalog = items.slice(start, start + PAGE_SIZE);
 
   renderCatalog(catalog);
-  updateStockAsOfLabel();
   hydrateStockColumn(catalog);
   renderPager({ page: safePage, pages, total });
   els.countPill.textContent = `${total} προϊόντα`;
@@ -1295,18 +1296,7 @@ function renderCatalog(items) {
           <th class="th-desc">ΠΕΡΙΓΡΑΦΗ</th>
           <th class="th-pack">ΕΙΔΟΣ</th>
           <th class="th-bundle">ΤΕΜ./ΣΥΣΚ.</th>
-          <th class="th-stock">
-            <span class="th-stock-label">ΑΠΟΘΕΜΑ</span>
-            <button
-              type="button"
-              class="stock-refresh-btn"
-              aria-label="Ανανέωση αποθέματος"
-              title="Ανανέωση αποθέματος για την τρέχουσα σελίδα"
-            >
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M21 21v-5h-5"/></svg>
-              <span class="stock-asof" aria-live="polite"></span>
-            </button>
-          </th>
+          <th class="th-stock">ΑΠΟΘΕΜΑ</th>
           <th class="th-packs">ΣΥΣΚΕΥΑΣΙΕΣ</th>
           <th class="th-qty">ΤΕΜΑΧΙΑ</th>
         </tr>
@@ -1566,20 +1556,21 @@ function applyStockLevelsToDom(levelByCode) {
   });
 }
 
-// The label lives inside the catalog <thead>, which renderCatalog rebuilds on every
-// page - so query it fresh each call rather than caching a stale node.
 function updateStockAsOfLabel() {
-  const label = els.catalog?.querySelector(".stock-asof");
-  if (!label) return;
-  const d = latestStockAsOf ? new Date(latestStockAsOf) : null;
-  if (!d || Number.isNaN(d.getTime())) {
-    label.textContent = "";
+  if (!els.stockAsOf) return;
+  if (!latestStockAsOf) {
+    els.stockAsOf.textContent = "";
+    return;
+  }
+  const d = new Date(latestStockAsOf);
+  if (Number.isNaN(d.getTime())) {
+    els.stockAsOf.textContent = "";
     return;
   }
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   // Just the time - the button's icon and title already say "απόθεμα / ανανέωση".
-  label.textContent = `${hh}:${mm}`;
+  els.stockAsOf.textContent = `${hh}:${mm}`;
 }
 
 function hydrateStockColumn(items) {
@@ -2242,14 +2233,7 @@ els.reloadBtn?.addEventListener("touchend", clearTopFilters, {
   passive: false,
 });
 
-// The "↻" refresh control lives in the ΑΠΟΘΕΜΑ column header, which renderCatalog
-// rebuilds each page - so delegate off the catalog container, which survives.
-els.catalog?.addEventListener("click", (event) => {
-  if (event.target.closest?.(".stock-refresh-btn")) {
-    event.preventDefault();
-    refreshStockColumn();
-  }
-});
+els.stockRefreshBtn?.addEventListener("click", refreshStockColumn);
 
 // Recolour a row's "Απόθεμα" cell as its quantity input changes (red/amber/green vs
 // available). Delegated on the catalog container, which survives innerHTML swaps.
