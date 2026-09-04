@@ -17,7 +17,8 @@
     "reset:business-data": "node scripts/reset-business-data.js",
     "reload:sales": "node scripts/reset-and-reload-sales.js",
     "generate:catalog": "node scripts/generate-catalog-from-db.js",
-    "generate:catalog:csv": "node scripts/generate-catalog-from-products-csv.js"
+    "generate:catalog:csv": "node scripts/generate-catalog-from-products-csv.js",
+    "activity:recap": "node scripts/activity-recap.js"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

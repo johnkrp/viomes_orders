@@ -10,6 +10,7 @@ import {
   newSessionToken,
   verifyPassword,
 } from "./lib/admin-auth.js";
+import { initActivityLog, logActivity } from "./lib/activity-log.js";
 import {
   getImportedCustomerByCode,
   searchImportedCustomers,
@@ -446,6 +447,8 @@ export function createApp({
     throw new Error("createApp requires runtime settings.");
   }
 
+  initActivityLog({ logDir: path.join(settings.siteDir, "logs") });
+
   const app = express();
   const corsPolicy = buildCorsOriginDelegate({
     nodeEnv: settings.nodeEnv,
@@ -508,6 +511,12 @@ export function createApp({
       res.redirect(302, `/login?next=${next}`);
       return;
     }
+    logActivity("orderform.page_view", {
+      req,
+      role: actor.customer_code ? "customer" : "admin",
+      username: actor.username,
+      customerCode: actor.customer_code || null,
+    });
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
     res.sendFile(path.join(settings.publicDir, "index.html"));
   });
@@ -524,6 +533,25 @@ export function createApp({
     }
     res.setHeader("Cache-Control", "no-store");
     res.sendFile(path.join(settings.publicDir, "login.html"));
+  });
+
+  // admin.html itself has no server-side gate (the client JS checks /api/admin/me
+  // and redirects) - this only records who loaded it before falling through to the
+  // static handler below, which actually serves the file.
+  app.get("/admin.html", async (req, res, next) => {
+    let admin = null;
+    try {
+      admin = await getAuthenticatedAdmin(req);
+    } catch (error) {
+      logRouteError(error);
+    }
+    logActivity("admin.page_view", {
+      req,
+      username: admin?.username || null,
+      isOwner: Boolean(admin?.is_owner),
+      authenticated: Boolean(admin),
+    });
+    next();
   });
 
   // index: false so a bare GET / is never auto-answered with index.html behind the
@@ -742,6 +770,7 @@ export function createApp({
     createOrderSubmission,
     resolveOrderSubmissionIdentity,
     getImportedCustomerByCode,
+    logActivity,
   });
 
   registerAdminImportRoutes(app, {
@@ -770,6 +799,7 @@ export function createApp({
     buildSessionCookieOptions,
     shouldUseSecureCookie,
     logRouteError,
+    logActivity,
   });
 
   registerAdminCustomerRoutes(app, {
@@ -790,6 +820,7 @@ export function createApp({
     rejectHeldOrderSubmission,
     validateListFilterDate,
     logRouteError,
+    logActivity,
   });
 
   registerCustomerAuthRoutes(app, {
@@ -801,6 +832,7 @@ export function createApp({
     shouldUseSecureCookie,
     getImportedCustomerByCode,
     logRouteError,
+    logActivity,
   });
 
   app.post("/api/order/export-xlsx", requireStaffOrCustomer, async (req, res) => {

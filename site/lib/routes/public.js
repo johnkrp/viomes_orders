@@ -26,6 +26,7 @@ export function registerPublicRoutes(app, context) {
     createOrderSubmission,
     resolveOrderSubmissionIdentity,
     getImportedCustomerByCode,
+    logActivity,
   } = context;
 
   // "/" and "/index.html" are served by the auth-gated handler registered in
@@ -234,9 +235,23 @@ export function registerPublicRoutes(app, context) {
         { ...submission, ...identity },
         { pricingClient },
       );
+      logActivity("order.submitted", {
+        req,
+        role: req.actor?.role || null,
+        username: req.actor?.username || null,
+        customerCode: identity?.customerCode || req.actor?.customerCode || null,
+        orderId,
+        lineCount: Array.isArray(submission?.items) ? submission.items.length : null,
+      });
       res.json({ ok: true, order_id: orderId });
     } catch (error) {
       logRouteError(error);
+      logActivity("order.submit_failed", {
+        req,
+        role: req.actor?.role || null,
+        username: req.actor?.username || null,
+        error: error.message || String(error),
+      });
       res
         .status(error.status || 500)
         .json({ error: error.message || String(error) });

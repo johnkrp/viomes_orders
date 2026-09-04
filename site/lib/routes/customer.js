@@ -8,6 +8,7 @@ export function registerCustomerAuthRoutes(app, context) {
     shouldUseSecureCookie,
     getImportedCustomerByCode,
     logRouteError,
+    logActivity,
   } = context;
 
   async function resolveCustomerDisplayName(customerCode) {
@@ -34,6 +35,7 @@ export function registerCustomerAuthRoutes(app, context) {
         !customer.is_active ||
         !verifyPassword(password, customer.password_hash)
       ) {
+        logActivity("customer.login.failed", { req, username });
         res.status(401).json({
           ok: false,
           username: null,
@@ -62,6 +64,11 @@ export function registerCustomerAuthRoutes(app, context) {
       res.cookie(settings.customerSessionCookieName, token, {
         ...cookieOptions,
         maxAge: settings.sessionMaxAgeSeconds * 1000,
+      });
+      logActivity("customer.login.success", {
+        req,
+        username: customer.username,
+        customerCode: customer.customer_code,
       });
       res.json({
         ok: true,
@@ -128,9 +135,23 @@ export function registerCustomerAuthRoutes(app, context) {
     try {
       const token = req.cookies?.[settings.customerSessionCookieName];
       if (token) {
+        const customer = await db.get(
+          `
+            SELECT u.username, u.customer_code
+            FROM customer_sessions s
+            JOIN customer_users u ON u.id = s.customer_user_id
+            WHERE s.token = ?
+          `,
+          [token],
+        );
         await db.run(`DELETE FROM customer_sessions WHERE token = ?`, [
           token,
         ]);
+        logActivity("customer.logout", {
+          req,
+          username: customer?.username || null,
+          customerCode: customer?.customer_code || null,
+        });
       }
       res.clearCookie(
         settings.customerSessionCookieName,

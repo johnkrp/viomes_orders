@@ -115,6 +115,7 @@ export function registerAdminAuthRoutes(app, context) {
     buildSessionCookieOptions,
     shouldUseSecureCookie,
     logRouteError,
+    logActivity,
   } = context;
 
   app.post("/api/admin/login", async (req, res) => {
@@ -132,6 +133,7 @@ export function registerAdminAuthRoutes(app, context) {
       );
 
       if (!admin || !admin.is_active || !verifyPassword(password, admin.password_hash)) {
+        logActivity("admin.login.failed", { req, username });
         res
           .status(401)
           .json({ ok: false, username: null, authenticated: false, is_owner: false });
@@ -155,6 +157,11 @@ export function registerAdminAuthRoutes(app, context) {
       res.cookie(settings.sessionCookieName, token, {
         ...cookieOptions,
         maxAge: settings.sessionMaxAgeSeconds * 1000,
+      });
+      logActivity("admin.login.success", {
+        req,
+        username: admin.username,
+        isOwner: Boolean(admin.is_owner),
       });
       res.json({
         ok: true,
@@ -209,7 +216,17 @@ export function registerAdminAuthRoutes(app, context) {
     try {
       const token = req.cookies?.[settings.sessionCookieName];
       if (token) {
+        const admin = await db.get(
+          `
+            SELECT u.username
+            FROM admin_sessions s
+            JOIN admin_users u ON u.id = s.admin_user_id
+            WHERE s.token = ?
+          `,
+          [token],
+        );
         await db.run(`DELETE FROM admin_sessions WHERE token = ?`, [token]);
+        logActivity("admin.logout", { req, username: admin?.username || null });
       }
       res.clearCookie(
         settings.sessionCookieName,
@@ -283,6 +300,7 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
     rejectHeldOrderSubmission,
     validateListFilterDate,
     logRouteError,
+    logActivity,
   } = context;
 
   // Read-only feed. The approve/reject routes were removed with the approval step - a
@@ -354,6 +372,11 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
           req.params.id,
           req.admin?.username,
         );
+        logActivity("order.approved", {
+          req,
+          username: req.admin?.username || null,
+          orderId: req.params.id,
+        });
         res.json(result);
       } catch (error) {
         logRouteError(error);
@@ -375,6 +398,12 @@ export function registerAdminOrderSubmissionRoutes(app, context) {
           req.admin?.username,
           req.body?.reason,
         );
+        logActivity("order.rejected", {
+          req,
+          username: req.admin?.username || null,
+          orderId: req.params.id,
+          reason: req.body?.reason || null,
+        });
         res.json(result);
       } catch (error) {
         logRouteError(error);
