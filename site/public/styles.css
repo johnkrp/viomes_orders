@@ -155,7 +155,7 @@ body.tablet-portrait-lock .rotate-overlay {
 /* Header — warm canvas with a hairline rule, matching the homepage Navbar
    (bg-background/95 + border-b border-border), not a dark bar. */
 header {
-  padding: 18px 16px;
+  padding: 10px 16px;
   background: rgba(220, 216, 207, 0.95);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--viomes-panel);
@@ -175,7 +175,7 @@ header {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 16px;
-  min-height: 52px;
+  min-height: 40px;
 }
 
 .header-slot {
@@ -195,7 +195,7 @@ header {
 }
 
 .brand-logo {
-  height: 40px;
+  height: 32px;
   width: auto;
   object-fit: contain;
   display: block;
