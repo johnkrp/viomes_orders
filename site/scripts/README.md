@@ -33,17 +33,44 @@ Operational scripts used by Plesk/local maintenance.
   - Removes historical duplicate logical sales lines from `imported_sales_lines`.
   - Rebuilds imported aggregates and mirrored customers afterwards.
 
-- `generate-catalog-from-db.js`
-  - Generates `site/public/catalog.json` directly from the live `products` table — the same source the server validates order quantities against, so the browser and the server can no longer disagree on pack sizes.
-  - Supports `--output`, `--dry-run`, and the same non-secret `--mysql-*` CLI overrides as the importer scripts.
-  - Run this after any change to `products.pieces_per_package` (e.g. an Entersoft re-import or manual catalog correction) so the order form stays in sync.
+### Order catalog pipeline
 
-Example (project root, production DB):
+The order form's catalog is `site/public/catalog.json`. It is regenerated from the
+`products` table, which the server also validates order quantities against — so the
+`products` table, not the JSON, is the thing that has to track ES1. Two steps:
+
+```
+exports/products.csv  ──▶  sync-products-from-csv.js   ──▶  products table
+                      ──▶  generate-catalog-from-db.js  ──▶  public/catalog.json
+```
+
+- `sync-products-from-csv.js` (`npm run sync:catalog`)
+  - Upserts the `products` table from a fresh ES1 item export (`exports/products.csv`, tab-separated).
+  - Membership: keeps `Χ5-orders = 1`, drops `X6-Private Label = 1`, drops "mixed content" movement-control SKUs. In-scope codes get `orderable = 1`; everything else gets `orderable = 0` (rows are never deleted — `order_lines.product_id` references `products.id`).
+  - From the CSV: `code`, `description`, `color`, `pieces_per_package` (`Υποσυσκευασία` else `Συσκευασία`). Not in the CSV: `volume_liters` is preserved from the existing row by code (0 + logged for brand-new codes); `image_url` is computed from the code (`…/packshot_photos/viomes_<code>.jpg`).
+  - Before any write it dumps the current table + a `rollback-<ts>.sql` to `site/logs/catalog-sync/`, and always writes `catalog-sync-anomalies.json` (new codes at volume 0, pack fallbacks, de-flagged codes, mixed-content skips). Refuses to run if >200 codes would be de-flagged in one pass unless `--force`.
+  - Flags: `--input=<path>` (default `D:/Desktop/programming/viomes/viomes_db/exports/products.csv`), `--dry-run` (backup + anomalies only, no DB writes), `--log-dir=<path>`, `--force`, and the same non-secret `--mysql-*` overrides as the importer scripts.
+
+- `generate-catalog-from-db.js` (`npm run generate:catalog`)
+  - Generates `site/public/catalog.json` from `products WHERE orderable = 1`.
+  - Supports `--output`, `--dry-run`, and the non-secret `--mysql-*` overrides.
+  - Run it right after `sync:catalog`, then review the diff and upload `catalog.json`.
+
+Example (production DB):
 
 ```bash
 cd site
+# 1. dry run — review site/logs/catalog-sync/ before the real run
+MYSQL_PASSWORD='YOUR_DB_PASSWORD' npm run sync:catalog -- --dry-run --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+# 2. apply
+MYSQL_PASSWORD='YOUR_DB_PASSWORD' npm run sync:catalog -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+# 3. regenerate catalog.json + review the diff
 MYSQL_PASSWORD='YOUR_DB_PASSWORD' npm run generate:catalog -- --mysql-host=213.158.90.203 --mysql-port=3306 --mysql-database=admin_viomes_orders --mysql-user=admin_viomes_app
+git -C .. diff -- site/public/catalog.json
 ```
+
+- `generate-catalog-from-products-csv.js` (`npm run generate:catalog:csv`, legacy)
+  - Wrote `catalog.json` straight from `exports/products.csv`, bypassing the `products` table — so the server kept validating against stale table data. Superseded by the two-step pipeline above; kept for reference.
 
 - `generate-catalog-from-xlsx.py` (legacy, superseded)
   - Generated `site/public/catalog.json` from an Excel source (default: `backend/archive/legacy-inputs/products.xlsx`), decoupled from the `products` table.

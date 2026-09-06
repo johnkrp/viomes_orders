@@ -16,6 +16,7 @@
     "rebuild:projections": "node scripts/rebuild-projections.js",
     "reset:business-data": "node scripts/reset-business-data.js",
     "reload:sales": "node scripts/reset-and-reload-sales.js",
+    "sync:catalog": "node scripts/sync-products-from-csv.js",
     "generate:catalog": "node scripts/generate-catalog-from-db.js",
     "generate:catalog:csv": "node scripts/generate-catalog-from-products-csv.js",
     "activity:recap": "node scripts/activity-recap.js"

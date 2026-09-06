@@ -103,7 +103,8 @@ async function initSqliteSchema(db) {
         volume_liters REAL NOT NULL DEFAULT 0,
         color TEXT NOT NULL DEFAULT 'N/A',
         description_norm TEXT NOT NULL DEFAULT '',
-        color_norm TEXT NOT NULL DEFAULT ''
+        color_norm TEXT NOT NULL DEFAULT '',
+        orderable INTEGER NOT NULL DEFAULT 1
       )
     `,
     `
@@ -410,7 +411,8 @@ async function initMysqlSchema(db) {
         volume_liters DOUBLE NOT NULL DEFAULT 0,
         color VARCHAR(128) NOT NULL DEFAULT 'N/A',
         description_norm TEXT NOT NULL,
-        color_norm TEXT NOT NULL
+        color_norm TEXT NOT NULL,
+        orderable TINYINT NOT NULL DEFAULT 1
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `,
     `
@@ -527,6 +529,22 @@ export async function initDatabaseSchema({ db, kind }) {
   const typeReal = kind === "mysql" ? "DOUBLE" : "REAL";
 
   await ensureOwnerAdminColumn(db, kind, "admin");
+  // Catalog membership flag. The order form's catalog.json is regenerated from this
+  // table (scripts/generate-catalog-from-db.js) and the server validates order
+  // quantities against it, so membership has to live here, not only in the JSON.
+  // scripts/sync-products-from-csv.js sets orderable=1 for every code on ES1's
+  // Χ5-orders channel and orderable=0 for the rest; rows are never deleted because
+  // order_lines.product_id references products.id. Existing databases predate this
+  // column and every current row is already an order-channel item, so DEFAULT 1 is
+  // the correct backfill — the first sync flips any that should not be.
+  await ensureColumn(
+    db,
+    kind,
+    "products",
+    "orderable",
+    `orderable ${kind === "mysql" ? "TINYINT" : "INTEGER"} NOT NULL DEFAULT 1`,
+  );
+  await ensureIndex(db, kind, "products", "idx_products_orderable", "(orderable)");
   await ensureColumn(
     db,
     kind,
