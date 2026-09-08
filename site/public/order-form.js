@@ -1871,6 +1871,7 @@ function downloadExcelOnly() {
 
   try {
     const filename = downloadOrderExcelFromCart(cart);
+    reportOrderFormActivity("orderform.excel_download", { lineCount: cart.size });
     setToolbarMsg(`Κατέβηκε το αρχείο: ${filename}`, "ok");
   } catch (error) {
     console.error(error);
@@ -1939,6 +1940,22 @@ function openGmailDraft(toEmail, subject, body) {
     `&body=${encodeURIComponent(body)}`;
 
   window.open(url, "_blank");
+}
+
+// Tell the activity tracker the user picked a non-submit action (Excel download,
+// mail draft). Fire-and-forget: never blocks the action, never surfaces an error.
+function reportOrderFormActivity(event, extra = {}) {
+  try {
+    fetch(`${API_BASE}/api/order-form/activity`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      keepalive: true,
+      body: JSON.stringify({ event, ...extra }),
+    }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
 }
 
 async function submitOrderToBackend(meta) {
@@ -2123,6 +2140,10 @@ sendGmailBtn?.addEventListener("click", async () => {
       ? `Καταχωρήθηκε η παραγγελία (#${submission.orderId}). Κατέβηκε το ${filename}. Άνοιξε draft στο Gmail.`
       : `Προσοχή: δεν καταχωρήθηκε στο σύστημα (${submission.error?.message || "σφάλμα"}). Κατέβηκε το ${filename}. Άνοιξε draft στο Gmail.`;
     openGmailDraft(ORDERS_EMAIL, lastOrder.subject, body);
+    reportOrderFormActivity("orderform.email_draft", {
+      channel: "gmail",
+      lineCount: cart.size,
+    });
   } catch (error) {
     console.error(error);
     els.submitStatus.textContent = `Σφάλμα Excel: ${error?.message || error}`;
@@ -2147,6 +2168,10 @@ sendMailtoBtn?.addEventListener("click", async () => {
       ? `Καταχωρήθηκε η παραγγελία (#${submission.orderId}). Κατέβηκε το ${filename}. Άνοιξε draft στο Outlook.`
       : `Προσοχή: δεν καταχωρήθηκε στο σύστημα (${submission.error?.message || "σφάλμα"}). Κατέβηκε το ${filename}. Άνοιξε draft στο Outlook.`;
     openOutlookWebDraft(ORDERS_EMAIL, lastOrder.subject, body);
+    reportOrderFormActivity("orderform.email_draft", {
+      channel: "outlook",
+      lineCount: cart.size,
+    });
   } catch (error) {
     console.error(error);
     els.submitStatus.textContent = `Σφάλμα Excel: ${error?.message || error}`;

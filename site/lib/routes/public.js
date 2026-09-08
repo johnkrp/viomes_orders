@@ -222,6 +222,38 @@ export function registerPublicRoutes(app, context) {
     },
   );
 
+  // Fire-and-forget activity pings for order-form actions that otherwise never
+  // reach the server: "Λήψη Excel" builds the file in-browser, and the mail-draft
+  // buttons open Gmail/Outlook in a new tab. Υποβολή is already covered by
+  // order.submitted below. Event name is whitelisted; body is advisory only.
+  const ORDER_FORM_CLIENT_EVENTS = new Set([
+    "orderform.excel_download",
+    "orderform.email_draft",
+  ]);
+
+  app.post("/api/order-form/activity", requireStaffOrCustomer, (req, res) => {
+    const event = String(req.body?.event || "");
+    if (!ORDER_FORM_CLIENT_EVENTS.has(event)) {
+      res.status(400).json({ error: "Unknown activity event." });
+      return;
+    }
+
+    const channel = req.body?.channel;
+    const lineCount = req.body?.lineCount;
+
+    logActivity(event, {
+      req,
+      role: req.actor?.role || null,
+      username: req.actor?.username || null,
+      customerCode: req.actor?.customerCode || null,
+      channel:
+        typeof channel === "string" && channel ? channel.slice(0, 40) : null,
+      lineCount: Number.isInteger(lineCount) ? lineCount : null,
+    });
+
+    res.json({ ok: true });
+  });
+
   app.post("/api/orders/submit", requireStaffOrCustomer, async (req, res) => {
     try {
       const submission = validateOrderSubmission(req.body);

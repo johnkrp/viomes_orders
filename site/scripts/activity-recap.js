@@ -71,6 +71,8 @@ function main() {
   const logouts = new Map();
   const ordersSubmitted = new Map(); // customerCode -> count
   const orderSubmitFailed = new Map();
+  const excelDownloads = new Map(); // "role:username" -> count
+  const emailDrafts = new Map(); // "role:username (channel)" -> count
   const adminPageViews = new Map();
   const orderformPageViews = new Map();
   const approvals = [];
@@ -101,6 +103,15 @@ function main() {
         break;
       case "order.submit_failed":
         bump(orderSubmitFailed, `${e.username}: ${e.error}`);
+        break;
+      case "orderform.excel_download":
+        bump(excelDownloads, `${e.role || "?"}:${e.username || "?"}`);
+        break;
+      case "orderform.email_draft":
+        bump(
+          emailDrafts,
+          `${e.role || "?"}:${e.username || "?"} (${e.channel || "?"})`,
+        );
         break;
       case "admin.page_view":
         bump(adminPageViews, e.username ? `admin:${e.username}` : "(unauthenticated)");
@@ -134,6 +145,10 @@ function main() {
     console.log("\n== Order submit FAILURES ==");
     console.log(formatCounts(orderSubmitFailed));
   }
+  console.log("\n== Excel downloads ==");
+  console.log(formatCounts(excelDownloads));
+  console.log("\n== Mail drafts opened ==");
+  console.log(formatCounts(emailDrafts));
   console.log("\n== Admin panel page views ==");
   console.log(formatCounts(adminPageViews));
   console.log("\n== Order-form page views ==");
