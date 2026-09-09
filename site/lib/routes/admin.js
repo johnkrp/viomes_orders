@@ -250,22 +250,37 @@ export function registerAdminCustomerRoutes(app, context) {
     searchImportedCustomers,
     customerStatsProvider,
     logRouteError,
+    logActivity,
   } = context;
 
   app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
     try {
-      const payload = await searchImportedCustomers(
-        db,
-        {
-          customer_name: String(req.query.customer_name || "").trim(),
-          customer_code: String(req.query.customer_code || "").trim(),
-          branch_code: String(req.query.branch_code || "").trim(),
-          branch_description: String(req.query.branch_description || "").trim(),
-        },
-        {
-          limit: req.query.limit,
-        },
-      );
+      const filters = {
+        customer_name: String(req.query.customer_name || "").trim(),
+        customer_code: String(req.query.customer_code || "").trim(),
+        branch_code: String(req.query.branch_code || "").trim(),
+        branch_description: String(req.query.branch_description || "").trim(),
+      };
+      const payload = await searchImportedCustomers(db, filters, {
+        limit: req.query.limit,
+      });
+
+      // Only the admin page's deliberate "Αναζήτηση" submit sends track=1 - the
+      // order form's staff customer picker and the typeahead hit this same route
+      // on every keystroke and must not flood the log.
+      if (String(req.query.track || "") === "1") {
+        logActivity("admin.customer_search", {
+          req,
+          username: req.admin?.username || null,
+          isOwner: Boolean(req.admin?.is_owner),
+          name: filters.customer_name || null,
+          code: filters.customer_code || null,
+          branchCode: filters.branch_code || null,
+          branchDescription: filters.branch_description || null,
+          resultCount: Array.isArray(payload?.items) ? payload.items.length : null,
+        });
+      }
+
       res.json(payload);
     } catch (error) {
       logRouteError(error);

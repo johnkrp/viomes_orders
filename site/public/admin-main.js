@@ -549,7 +549,7 @@ function setCurrentCustomerSearchFilters(filters = {}) {
 }
 
 async function performCustomerSearch(filters, options = {}) {
-  const { limit = 20, renderTable = true, silent = false } = options;
+  const { limit = 20, renderTable = true, silent = false, track = false } = options;
 
   if (!hasCustomerSearchFilters(filters)) {
     if (renderTable) resetSearchResults();
@@ -558,6 +558,9 @@ async function performCustomerSearch(filters, options = {}) {
 
   const params = buildCustomerSearchParams(filters);
   params.set("limit", String(limit));
+  // Marks this as a deliberate user search so the activity tracker records it;
+  // omitted by the typeahead/suggestion calls that share this function.
+  if (track) params.set("track", "1");
   const payload = await apiFetch(
     `/api/admin/customers/search?${params.toString()}`,
     { method: "GET" },

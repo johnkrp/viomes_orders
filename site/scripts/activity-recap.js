@@ -73,6 +73,7 @@ function main() {
   const orderSubmitFailed = new Map();
   const excelDownloads = new Map(); // "role:username" -> count
   const emailDrafts = new Map(); // "role:username (channel)" -> count
+  const customerSearches = new Map(); // "username -> term" -> count
   const adminPageViews = new Map();
   const orderformPageViews = new Map();
   const approvals = [];
@@ -113,6 +114,17 @@ function main() {
           `${e.role || "?"}:${e.username || "?"} (${e.channel || "?"})`,
         );
         break;
+      case "admin.customer_search": {
+        const term =
+          [e.name, e.code, e.branchCode, e.branchDescription]
+            .filter(Boolean)
+            .join(" / ") || "(empty)";
+        bump(
+          customerSearches,
+          `${e.username || "?"} -> ${term} (${e.resultCount ?? "?"} hits)`,
+        );
+        break;
+      }
       case "admin.page_view":
         bump(adminPageViews, e.username ? `admin:${e.username}` : "(unauthenticated)");
         break;
@@ -149,6 +161,8 @@ function main() {
   console.log(formatCounts(excelDownloads));
   console.log("\n== Mail drafts opened ==");
   console.log(formatCounts(emailDrafts));
+  console.log("\n== Admin customer searches ==");
+  console.log(formatCounts(customerSearches));
   console.log("\n== Admin panel page views ==");
   console.log(formatCounts(adminPageViews));
   console.log("\n== Order-form page views ==");

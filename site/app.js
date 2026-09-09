@@ -808,6 +808,7 @@ export function createApp({
     searchImportedCustomers,
     customerStatsProvider,
     logRouteError,
+    logActivity,
   });
 
   registerAdminOrderSubmissionRoutes(app, {

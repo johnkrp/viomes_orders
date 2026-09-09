@@ -212,6 +212,7 @@ export async function searchCustomers(context, event) {
       renderTable: true,
       renderSuggestions: false,
       silent: false,
+      track: true,
     });
     if (requestId !== context.counters.currentSearchRequestId.value) return;
   } catch (error) {
