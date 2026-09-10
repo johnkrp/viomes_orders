@@ -16,6 +16,7 @@ import {
   searchImportedCustomers,
 } from "./lib/admin-customer-search.js";
 import { createCustomerStatsProvider } from "./lib/customer-stats/index.js";
+import { createCustomerTermsStore } from "./lib/customer-terms.js";
 import { openDatabase } from "./lib/db/client.js";
 import { initDatabaseSchema } from "./lib/db/init-schema.js";
 import {
@@ -449,6 +450,11 @@ export function createApp({
 
   initActivityLog({ logDir: path.join(settings.siteDir, "logs") });
 
+  const customerTerms = createCustomerTermsStore({
+    filePath: path.join(settings.siteDir, "data", "customer-terms.json"),
+    logger: { warn: (message) => console.warn(message) },
+  });
+
   const app = express();
   const corsPolicy = buildCorsOriginDelegate({
     nodeEnv: settings.nodeEnv,
@@ -807,6 +813,7 @@ export function createApp({
     db,
     searchImportedCustomers,
     customerStatsProvider,
+    customerTerms,
     logRouteError,
     logActivity,
   });

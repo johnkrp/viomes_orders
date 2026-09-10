@@ -39,3 +39,8 @@ Thumbs.db
 site/.env
 site/.env.*
 !site/.env.example
+
+# Per-customer ES1 commercial / credit terms (names + negotiated discounts,
+# credit limits, payment terms). Deployed straight to the server, never committed
+# to this public repo. See site/data/README.md.
+site/data/customer-terms.json

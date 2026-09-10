@@ -803,6 +803,7 @@ export function resetStats(context) {
   context.state.rangeSummaryPending.clear();
   context.elements.customerNameHeading.textContent = "Πελάτης";
   context.elements.customerMeta.textContent = "-";
+  renderCustomerTerms(context, null);
   if (context.elements.totalOrdersValue)
     context.elements.totalOrdersValue.textContent = "0";
   context.elements.totalPiecesValue.textContent = "0";
@@ -916,6 +917,57 @@ export function resetStats(context) {
   context.elements.statsPanel.hidden = true;
 }
 
+function formatTermPercent(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return "-";
+  return `${new Intl.NumberFormat("el-GR", { maximumFractionDigits: 2 }).format(
+    numericValue,
+  )}%`;
+}
+
+// The ES1 commercial / credit terms cards on the customer hero. `terms` is
+// `data.customer.terms` from the weekly customer-terms.json export, or null when the
+// file has no record for this customer (or is not deployed yet) - in which case every
+// card falls back to "-" and the freshness line is blank.
+export function renderCustomerTerms(context, terms) {
+  const elements = context.elements;
+  const setText = (element, text) => {
+    if (element) element.textContent = text;
+  };
+
+  const paymentMethod = terms
+    ? [terms.paymentMethodCode, terms.paymentMethodLabel].filter(Boolean).join(" / ")
+    : "";
+
+  setText(
+    elements.customerTradeDiscountValue,
+    terms ? formatTermPercent(terms.tradeDiscountPct) : "-",
+  );
+  setText(elements.customerPaymentMethodValue, paymentMethod || "-");
+  setText(elements.customerSettlementMeansValue, terms?.settlementMeans || "-");
+  setText(
+    elements.customerCommercialBalanceLimitValue,
+    terms && terms.commercialBalanceLimit !== null &&
+      terms.commercialBalanceLimit !== undefined
+      ? formatMoney(terms.commercialBalanceLimit)
+      : "-",
+  );
+  setText(
+    elements.customerCreditDaysValue,
+    terms && terms.creditDays !== null && terms.creditDays !== undefined
+      ? formatDays(terms.creditDays)
+      : "-",
+  );
+
+  if (elements.customerTermsFreshness) {
+    elements.customerTermsFreshness.textContent =
+      terms && terms.generatedAt
+        ? `Ενημέρωση: ${formatDate(terms.generatedAt)}`
+        : "";
+  }
+}
+
 export function renderStats(context, data) {
   const customer = data?.customer || {};
   const summary = data?.summary || {};
@@ -983,6 +1035,7 @@ export function renderStats(context, data) {
     customer.name || "Άγνωστος πελάτης";
   context.elements.customerMeta.textContent =
     metaParts.filter(Boolean).join(" | ") || "-";
+  renderCustomerTerms(context, customer.terms || null);
   if (context.elements.totalOrdersValue)
     context.elements.totalOrdersValue.textContent = formatNumber(
       summary.total_orders ?? 0,

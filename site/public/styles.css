@@ -1879,9 +1879,33 @@ button.success:active,
 
 .admin-stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
   gap: 14px;
   padding: 4px 18px 18px;
+}
+
+/* Full-width rule between the activity metrics and the ES1 terms cards. */
+.admin-stat-grid-sep {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(128, 114, 68, 0.22);
+}
+
+.admin-stat-sep-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.admin-stat-sep-freshness {
+  font-size: 12px;
 }
 
 .admin-stat-card {
@@ -1898,10 +1922,21 @@ button.success:active,
 
 .admin-stat-card-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
+}
+
+/* ES1 commercial / credit terms: short text values, not big numerals, and the
+   payment-method string can be long - shrink the value and let it wrap. */
+.admin-stat-card--term strong {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .admin-stat-range {

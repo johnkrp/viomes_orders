@@ -2,9 +2,72 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  renderCustomerTerms,
   renderRecentOrdersTable,
   renderSelectedOrderDetails,
 } from "../public/admin-render.js";
+
+function makeTermsElements() {
+  return {
+    customerTradeDiscountValue: { textContent: "" },
+    customerPaymentMethodValue: { textContent: "" },
+    customerSettlementMeansValue: { textContent: "" },
+    customerCommercialBalanceLimitValue: { textContent: "" },
+    customerCreditDaysValue: { textContent: "" },
+    customerTermsFreshness: { textContent: "" },
+  };
+}
+
+test("renderCustomerTerms fills the ES1 terms cards from a record", () => {
+  const elements = makeTermsElements();
+  renderCustomerTerms(
+    { elements },
+    {
+      tradeDiscountPct: 35,
+      paymentMethodCode: "12080",
+      paymentMethodLabel: "ΕΠΙΤΑΓΗ 120 ΗΜΕΡΩΝ",
+      settlementMeans: "Με έμβασμα",
+      commercialBalanceLimit: 700000,
+      creditDays: 140,
+      generatedAt: "2026-09-10T09:50:03Z",
+    },
+  );
+
+  assert.equal(elements.customerTradeDiscountValue.textContent, "35%");
+  assert.equal(
+    elements.customerPaymentMethodValue.textContent,
+    "12080 / ΕΠΙΤΑΓΗ 120 ΗΜΕΡΩΝ",
+  );
+  assert.equal(elements.customerSettlementMeansValue.textContent, "Με έμβασμα");
+  assert.match(elements.customerCommercialBalanceLimitValue.textContent, /700[.\s]000/);
+  assert.equal(elements.customerCreditDaysValue.textContent, "140 ημ.");
+  assert.match(elements.customerTermsFreshness.textContent, /Ενημέρωση:/);
+});
+
+test("renderCustomerTerms shows dashes and no freshness when terms is null", () => {
+  const elements = makeTermsElements();
+  renderCustomerTerms({ elements }, null);
+
+  assert.equal(elements.customerTradeDiscountValue.textContent, "-");
+  assert.equal(elements.customerPaymentMethodValue.textContent, "-");
+  assert.equal(elements.customerSettlementMeansValue.textContent, "-");
+  assert.equal(elements.customerCommercialBalanceLimitValue.textContent, "-");
+  assert.equal(elements.customerCreditDaysValue.textContent, "-");
+  assert.equal(elements.customerTermsFreshness.textContent, "");
+});
+
+test("renderCustomerTerms tolerates partially populated records", () => {
+  const elements = makeTermsElements();
+  renderCustomerTerms(
+    { elements },
+    { tradeDiscountPct: 0, creditDays: null, commercialBalanceLimit: null },
+  );
+
+  assert.equal(elements.customerTradeDiscountValue.textContent, "0%");
+  assert.equal(elements.customerCommercialBalanceLimitValue.textContent, "-");
+  assert.equal(elements.customerCreditDaysValue.textContent, "-");
+  assert.equal(elements.customerPaymentMethodValue.textContent, "-");
+});
 
 test("recent orders table renders the progress step column", () => {
   const originalDocument = globalThis.document;

@@ -249,6 +249,7 @@ export function registerAdminCustomerRoutes(app, context) {
     db,
     searchImportedCustomers,
     customerStatsProvider,
+    customerTerms,
     logRouteError,
     logActivity,
   } = context;
@@ -296,6 +297,21 @@ export function registerAdminCustomerRoutes(app, context) {
         branchScopeDescription: String(req.query.filter_branch_description || "").trim() || null,
         salesTimeRange: String(req.query.sales_time_range || "").trim() || null,
       });
+
+      // Fold in the ES1 commercial / credit terms (weekly customer-terms.json export).
+      // Best-effort: a missing file or unknown code just leaves `terms` null, and a read
+      // failure here must not fail the whole stats response.
+      if (customerTerms && payload && payload.customer) {
+        try {
+          payload.customer.terms = await customerTerms.get(
+            payload.customer.code || req.params.code,
+          );
+        } catch (termsError) {
+          logRouteError(termsError);
+          payload.customer.terms = null;
+        }
+      }
+
       res.json(payload);
     } catch (error) {
       logRouteError(error);
